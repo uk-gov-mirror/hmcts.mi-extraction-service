@@ -1,0 +1,3 @@
+java:
+  environment:
+    image: 'ssprivatesbox.azurecr.io/mi/mi-extraction-service:latest'

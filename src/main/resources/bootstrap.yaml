@@ -1,0 +1,9 @@
+spring:
+  cloud:
+    propertiesvolume:
+      enabled: true
+      prefixed: false
+      paths: /mnt/secrets/mi-vault
+      name: mi-vault
+      aliases:
+        mi-staging-storage-connection-string: azure.storage-account.staging.connection-string

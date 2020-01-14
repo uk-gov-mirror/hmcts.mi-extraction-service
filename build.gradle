@@ -56,12 +56,16 @@ task functional(type: Test, description: 'Runs the functional tests.', group: 'V
   classpath = sourceSets.functionalTest.runtimeClasspath
 }
 
-task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
+task integrationPreTest(type: Test, description: 'Runs the pre-job integration tests.', group: 'Verification') {
   testClassesDirs = sourceSets.integrationTest.output.classesDirs
   classpath = sourceSets.integrationTest.runtimeClasspath
   useJUnitPlatform()
-  // set your environment variables here
-  // environment("APPINSIGHTS_INSTRUMENTATIONKEY", "test-key")
+}
+
+task integrationPostTest(type: Test, description: 'Runs the post-job integration verfications.', group: 'Verification') {
+  testClassesDirs = sourceSets.integrationTest.output.classesDirs
+  classpath = sourceSets.integrationTest.runtimeClasspath
+  useJUnitPlatform()
 }
 
 task smoke(type: Test) {
@@ -87,11 +91,11 @@ pmd {
 }
 
 jacocoTestReport {
-  executionData(test, integration)
+  executionData(test, functional)
   reports {
     xml.enabled = true
     csv.enabled = false
-    xml.destination file("${buildDir}/reports/jacoco/test/jacocoTestReport.xml")
+    xml.destination file("${buildDir}/reports/jacoco/jacocoTestReport.xml")
   }
 }
 
@@ -148,48 +152,62 @@ repositories {
 }
 
 def versions = [
-  junit           : '5.5.0',
-  reformLogging   : '5.1.1',
-  springBoot      : springBoot.class.package.implementationVersion,
-  springfoxSwagger: '2.9.2'
+  azureSpringBoot  : '2.2.0',
+  junit            : '5.5.0',
+  miCoreLib        : '2.8.1',
+  reformLogging    : '5.1.1',
+  springfoxSwagger : '2.9.2',
+  testContainers   : '1.12.3',
 ]
 
 dependencies {
-  compile group: 'org.springframework.boot', name: 'spring-boot-starter-web'
-  compile group: 'org.springframework.boot', name: 'spring-boot-starter-actuator'
-  compile group: 'org.springframework.boot', name: 'spring-boot-starter-aop'
-  compile group: 'org.springframework.boot', name: 'spring-boot-starter-json'
-  compile group: 'uk.gov.hmcts.reform', name: 'health-spring-boot-starter', version: '0.0.5'
 
-  compile group: 'io.springfox', name: 'springfox-swagger2', version: versions.springfoxSwagger
+  implementation 'org.projectlombok:lombok'
+  annotationProcessor 'org.projectlombok:lombok'
 
-  compile group: 'uk.gov.hmcts.reform', name: 'logging', version: versions.reformLogging
-  compile group: 'uk.gov.hmcts.reform', name: 'logging-appinsights', version: versions.reformLogging
-  compile group: 'org.springframework.cloud', name: 'spring-cloud-starter-netflix-hystrix', version: '2.2.1.RELEASE'
+  implementation group: 'com.microsoft.azure', name: 'azure-spring-boot-starter', version: versions.azureSpringBoot
+
+  implementation group: 'uk.gov.hmcts.reform.mi', name: 'mi-core-lib', version: versions.miCoreLib
+
+  implementation group: 'uk.gov.hmcts.reform', name: 'logging', version: versions.reformLogging
+  implementation group: 'uk.gov.hmcts.reform', name: 'logging-appinsights', version: versions.reformLogging
 
   testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: versions.junit
-  testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: versions.junit
+  testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: versions.junit
   testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: versions.junit
 
-  testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test'
+  testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
 
-  integrationTestCompile sourceSets.main.runtimeClasspath
-  integrationTestCompile sourceSets.test.runtimeClasspath
+  integrationTestImplementation sourceSets.main.runtimeClasspath
+  integrationTestImplementation sourceSets.test.runtimeClasspath
 
-  functionalTestCompile sourceSets.main.runtimeClasspath
+  functionalTestImplementation sourceSets.main.runtimeClasspath
 
-  smokeTestCompile sourceSets.main.runtimeClasspath
+  functionalTestImplementation group: 'org.testcontainers', name: 'junit-jupiter', version: versions.testContainers
+
+  smokeTestImplementation sourceSets.main.runtimeClasspath
 }
 
 test {
   useJUnitPlatform()
-  failFast = true
 }
 
-mainClassName = 'uk.gov.hmcts.reform.demo.Application'
+integrationPreTest {
+  filter {
+    includeTestsMatching "*PreDeployTest"
+  }
+}
+
+integrationPostTest {
+  filter {
+    includeTestsMatching "*PostDeployTest"
+  }
+}
+
+mainClassName = 'uk.gov.hmcts.reform.mi.miextractionservice.MiExtractionServiceApplication'
 
 bootJar {
-  archiveName = 'spring-boot-template.jar'
+  archiveFileName = project.name + '.jar'
 
   manifest {
     attributes('Implementation-Version': project.version.toString())

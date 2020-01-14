@@ -1,0 +1,33 @@
+#!groovy
+
+properties([
+    [
+        $class: 'GithubProjectProperty',
+        displayName: 'MI staging service',
+        projectUrlStr: 'https://github.com/hmcts/mi-staging-service'
+    ],
+    pipelineTriggers([
+        [$class: 'GitHubPushTrigger']
+    ])
+])
+
+@Library("Infrastructure")
+
+def type = "java"
+def product = "mi"
+def component = "mi-extraction-service"
+
+def channel = '#mi-dev'
+
+withPipeline(type, product, component) {
+
+    enableDockerBuild()
+    disableLegacyDeployment()
+    nonServiceApp()
+
+    after('checkout') {
+        echo '${product}-${component} checked out'
+    }
+
+    enableSlackNotifications(channel)
+}
