@@ -159,11 +159,15 @@ repositories {
 
 def versions = [
   azureSpringBoot  : '2.2.0',
+  dumbster         : '1.7.1',
   junit            : '5.5.0',
-  miCoreLib        : '2.8.1',
+  miCoreLib        : '3.0.5',
   reformLogging    : '5.1.1',
+  openCsv          : '5.1',
+  springBootMail   : '2.2.2.RELEASE',
   springfoxSwagger : '2.9.2',
   testContainers   : '1.12.3',
+  zip4j            : '2.3.1'
 ]
 
 dependencies {
@@ -172,6 +176,10 @@ dependencies {
   annotationProcessor 'org.projectlombok:lombok'
 
   implementation group: 'com.microsoft.azure', name: 'azure-spring-boot-starter', version: versions.azureSpringBoot
+  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-mail', version: versions.springBootMail
+
+  implementation group: 'com.opencsv', name: 'opencsv', version: versions.openCsv
+  implementation group: 'net.lingala.zip4j', name: 'zip4j', version: versions.zip4j
 
   implementation group: 'uk.gov.hmcts.reform.mi', name: 'mi-core-lib', version: versions.miCoreLib
 
@@ -182,16 +190,26 @@ dependencies {
   testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: versions.junit
   testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: versions.junit
 
-  testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
+  testImplementation group: 'com.github.kirviq', name: 'dumbster', version: versions.dumbster
 
-  integrationTestImplementation sourceSets.main.runtimeClasspath
-  integrationTestImplementation sourceSets.test.runtimeClasspath
-
-  functionalTestImplementation sourceSets.main.runtimeClasspath
+  testImplementation('org.springframework.boot:spring-boot-starter-test') {
+    exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+  }
 
   functionalTestImplementation group: 'org.testcontainers', name: 'junit-jupiter', version: versions.testContainers
 
-  smokeTestImplementation sourceSets.main.runtimeClasspath
+  integrationTestImplementation 'org.projectlombok:lombok'
+  integrationTestAnnotationProcessor 'org.projectlombok:lombok'
+
+  integrationTestImplementation group: 'uk.gov.hmcts.reform.mi', name: 'mi-core-lib', version: versions.miCoreLib
+
+  integrationTestImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: versions.junit
+  integrationTestImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: versions.junit
+  integrationTestRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: versions.junit
+
+  integrationTestImplementation('org.springframework.boot:spring-boot-starter-test') {
+    exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+  }
 }
 
 test {
