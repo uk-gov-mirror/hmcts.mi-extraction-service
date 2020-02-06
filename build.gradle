@@ -103,16 +103,15 @@ jacocoTestReport {
 project.tasks['sonarqube'].dependsOn test, jacocoTestReport
 
 def sonarExclusions = [
-  '**uk/gov/hmcts/reform/mi/mistagingservice/MiStagingServiceApplication.java'
+  '**uk/gov/hmcts/reform/mi/miextractionservice/MiExtractionServiceApplication.java'
 ]
 
 sonarqube {
   properties {
-    property "sonar.projectName", "Reform :: mi-staging-service"
-    property "sonar.projectKey", "uk.gov.hmcts.reform:mi-staging-service"
+    property "sonar.projectName", "Reform :: mi-extraction-service"
+    property "sonar.projectKey", "uk.gov.hmcts.reform:mi-extraction-service"
     property "sonar.coverage.jacoco.xmlReportPaths", "${buildDir}/reports/jacoco/jacocoTestReport.xml"
     property "sonar.exclusions", sonarExclusions.join(", ")
-
   }
 }
 
