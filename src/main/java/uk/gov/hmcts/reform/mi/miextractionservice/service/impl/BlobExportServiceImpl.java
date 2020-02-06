@@ -37,10 +37,10 @@ public class BlobExportServiceImpl implements BlobExportService {
     @Override
     public void exportBlobs() {
         OffsetDateTime fromDate = StringUtils.isEmpty(retrieveFromDate)
-            ? getMidnight(dateTimeUtil.getCurrentDateTime().minusDays(7L)) : dateTimeUtil.parseDateString(retrieveFromDate);
+            ? getStartOfDay(dateTimeUtil.getCurrentDateTime().minusDays(7L)) : dateTimeUtil.parseDateString(retrieveFromDate);
 
         OffsetDateTime toDate  = StringUtils.isEmpty(retrieveToDate)
-            ? dateTimeUtil.getCurrentDateTime() : dateTimeUtil.parseDateString(retrieveToDate).plusDays(1L);
+            ? dateTimeUtil.getCurrentDateTime() : getEndOfDay(dateTimeUtil.parseDateString(retrieveToDate));
 
         String url = exportBlobDataComponent.exportBlobsAndReturnUrl(
             extractionBlobServiceClientFactory.getStagingClient(),
@@ -51,7 +51,11 @@ public class BlobExportServiceImpl implements BlobExportService {
         sendBlobUrlToTargetsComponent.sendBlobUrl(url);
     }
 
-    private OffsetDateTime getMidnight(OffsetDateTime offsetDateTime) {
+    private OffsetDateTime getStartOfDay(OffsetDateTime offsetDateTime) {
         return offsetDateTime.withHour(0).withMinute(0).withSecond(0).withNano(0);
+    }
+
+    private OffsetDateTime getEndOfDay(OffsetDateTime offsetDateTime) {
+        return offsetDateTime.withHour(23).withMinute(59).withSecond(59).withNano(999);
     }
 }

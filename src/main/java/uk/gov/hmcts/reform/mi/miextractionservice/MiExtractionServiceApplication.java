@@ -1,6 +1,7 @@
 package uk.gov.hmcts.reform.mi.miextractionservice;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -12,6 +13,7 @@ import uk.gov.hmcts.reform.mi.miextractionservice.service.BlobExportService;
 
 import java.time.Clock;
 
+@Slf4j
 @SpringBootApplication(scanBasePackages = "uk.gov.hmcts.reform")
 @SuppressWarnings("HideUtilityClassConstructor") // Spring needs a constructor, its not a utility class
 public class MiExtractionServiceApplication implements ApplicationRunner {
@@ -35,6 +37,10 @@ public class MiExtractionServiceApplication implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
+        log.info("Starting application runner.");
+
         blobExportService.exportBlobs();
+
+        log.info("Finished application runner.");
     }
 }

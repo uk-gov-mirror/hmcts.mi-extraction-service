@@ -82,7 +82,7 @@ public class BlobExportServiceImplTest {
             eq(stagingClient),
             eq(exportClient),
             eq(OffsetDateTime.of(2000, 1, 10, 0, 0, 0, 0, ZoneOffset.UTC)),
-            eq(OffsetDateTime.of(2000, 1, 21, 0, 0, 0, 0, ZoneOffset.UTC))
+            eq(OffsetDateTime.of(2000, 1, 20, 23, 59, 59, 999, ZoneOffset.UTC))
         )).thenReturn(TEST_BLOB_URL);
 
         underTest.exportBlobs();

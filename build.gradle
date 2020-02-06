@@ -48,12 +48,13 @@ sourceSets {
 }
 
 tasks.withType(JavaCompile) {
-  options.compilerArgs << "-Xlint:unchecked" << "-Werror"
+  options.compilerArgs << "-Xlint:unchecked"
 }
 
 task functional(type: Test, description: 'Runs the functional tests.', group: 'Verification') {
   testClassesDirs = sourceSets.functionalTest.output.classesDirs
   classpath = sourceSets.functionalTest.runtimeClasspath
+  useJUnitPlatform()
 }
 
 task integrationPreTest(type: Test, description: 'Runs the pre-job integration tests.', group: 'Verification') {
@@ -159,7 +160,7 @@ repositories {
 
 def versions = [
   azureSpringBoot  : '2.2.0',
-  dumbster         : '1.7.1',
+  greenMail        : '1.5.11',
   junit            : '5.5.0',
   miCoreLib        : '3.0.5',
   reformLogging    : '5.1.1',
@@ -190,13 +191,23 @@ dependencies {
   testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: versions.junit
   testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: versions.junit
 
-  testImplementation group: 'com.github.kirviq', name: 'dumbster', version: versions.dumbster
-
   testImplementation('org.springframework.boot:spring-boot-starter-test') {
     exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
   }
 
+  functionalTestImplementation group: 'uk.gov.hmcts.reform.mi', name: 'mi-core-lib', version: versions.miCoreLib
+
+  functionalTestImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: versions.junit
+  functionalTestImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: versions.junit
+  functionalTestRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: versions.junit
+
   functionalTestImplementation group: 'org.testcontainers', name: 'junit-jupiter', version: versions.testContainers
+
+  functionalTestImplementation group: 'com.icegreen', name: 'greenmail', version: versions.greenMail
+
+  functionalTestImplementation('org.springframework.boot:spring-boot-starter-test') {
+    exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+  }
 
   integrationTestImplementation 'org.projectlombok:lombok'
   integrationTestAnnotationProcessor 'org.projectlombok:lombok'

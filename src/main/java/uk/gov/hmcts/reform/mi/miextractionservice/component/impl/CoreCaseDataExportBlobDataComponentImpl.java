@@ -15,6 +15,7 @@ import uk.gov.hmcts.reform.mi.miextractionservice.component.DataParserComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.EncryptArchiveComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.GenerateBlobUrlComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.exception.ExportException;
 import uk.gov.hmcts.reform.mi.miextractionservice.model.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.ReaderUtil;
@@ -59,6 +60,7 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
     @Autowired
     private DateTimeUtil dateTimeUtil;
 
+    @SuppressWarnings("PMD.LawOfDemeter")
     @Override
     public String exportBlobsAndReturnUrl(BlobServiceClient sourceBlobServiceClient,
                                           BlobServiceClient targetBlobServiceClient,
@@ -67,10 +69,13 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
 
         List<OutputCoreCaseData> outputData = new ArrayList<>();
 
+        List<String> blobNameIndexes = getYearMonthIndexes(fromDate, toDate);
+
         for (BlobContainerItem blobContainerItem : sourceBlobServiceClient.listBlobContainers()) {
             if (blobContainerItem.getName().startsWith(CCD_DATA_CONTAINER_PREFIX)) {
                 for (BlobItem blobItem : sourceBlobServiceClient.getBlobContainerClient(blobContainerItem.getName()).listBlobs()) {
-                    if (getYearMonthIndexes(fromDate, toDate).parallelStream().anyMatch(blobItem.getName()::contains)) {
+                    if (blobNameIndexes.parallelStream().anyMatch(blobItem.getName()::contains)) {
+
                         byte[] blobData = blobDownloadComponent
                             .downloadBlob(sourceBlobServiceClient, blobContainerItem.getName(), blobItem.getName());
 
@@ -80,6 +85,10 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
                     }
                 }
             }
+        }
+
+        if (Boolean.TRUE.equals(outputData.isEmpty())) {
+            throw new ExportException("No data to output.");
         }
 
         csvWriterComponent.writeBeansAsCsvFile(WORKING_FILE_NAME, outputData);
