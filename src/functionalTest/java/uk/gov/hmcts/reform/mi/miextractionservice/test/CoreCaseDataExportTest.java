@@ -1,12 +1,15 @@
 package uk.gov.hmcts.reform.mi.miextractionservice.test;
 
 import com.azure.storage.blob.BlobServiceClient;
+import com.dumbster.smtp.SimpleSmtpServer;
+import com.dumbster.smtp.SmtpMessage;
 import org.junit.ClassRule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -20,7 +23,9 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.CCD_EXPORT_CONTAINER_NAME;
@@ -34,7 +39,6 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST
 public class CoreCaseDataExportTest {
 
     private static final String AZURITE_IMAGE = String.format("%s/mi-azurite", System.getenv("AZURE_CONTAINER_REGISTRY"));
-    private static final String SMTP_MOCK_IMAGE = "greenmail/standalone";
 
     private static final Integer DEFAULT_PORT = 10_000;
     private static final Integer DEFAULT_SMTP_PORT = 3025;
@@ -47,7 +51,6 @@ public class CoreCaseDataExportTest {
     private static final String DEFAULT_HOST = "127.0.0.1";
     private static final String STAGING_HOST = "localhost1";
     private static final String EXPORT_HOST = "localhost2";
-    private static final String MAIL_HOST = "smtpmock";
 
     @Autowired
     private BlobServiceClientFactory blobServiceClientFactory;
@@ -72,13 +75,6 @@ public class CoreCaseDataExportTest {
             .withExposedPorts(DEFAULT_PORT);
 
     @Container
-    private static final GenericContainer MAIL_SERVER_CONTAINER =
-        new GenericContainer(SMTP_MOCK_IMAGE)
-            .withNetwork(NETWORK)
-            .withNetworkAliases(MAIL_HOST)
-            .withExposedPorts(DEFAULT_SMTP_PORT);
-
-    @Container
     private static final GenericContainer UNDER_TEST =
         new GenericContainer(new ImageFromDockerfile().withFileFromPath(".", Path.of(".")))
             .withNetwork(NETWORK);
@@ -86,11 +82,15 @@ public class CoreCaseDataExportTest {
     private BlobServiceClient stagingBlobServiceClient;
     private BlobServiceClient exportBlobServiceClient;
 
+    private SimpleSmtpServer dumbster;
+
     @BeforeEach
     public void setUp() throws Exception {
+        dumbster = SimpleSmtpServer.start(SimpleSmtpServer.AUTO_SMTP_PORT);
+        Testcontainers.exposeHostPorts(dumbster.getPort());
+
         STAGING_CONTAINER.start();
         EXPORT_CONTAINER.start();
-        MAIL_SERVER_CONTAINER.start();
 
         Integer stagingPort = STAGING_CONTAINER.getMappedPort(DEFAULT_PORT);
         Integer exportPort = EXPORT_CONTAINER.getMappedPort(DEFAULT_PORT);
@@ -106,8 +106,8 @@ public class CoreCaseDataExportTest {
         // Initialise environment variables before each test
         UNDER_TEST.setEnv(new ArrayList<>());
 
-        UNDER_TEST.addEnv("SPRING_MAIL_HOST", MAIL_HOST);
-        UNDER_TEST.addEnv("SPRING_MAIL_PORT", String.valueOf(DEFAULT_SMTP_PORT));
+        UNDER_TEST.addEnv("SPRING_MAIL_HOST", "host.testcontainers.internal");
+        UNDER_TEST.addEnv("SPRING_MAIL_PORT", String.valueOf(dumbster.getPort()));
         UNDER_TEST.addEnv("SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH", "false");
 
         UNDER_TEST.addEnv("STORAGE_STAGING_CONNECTION_STRING", String.format(DEFAULT_CONN_STRING, STAGING_HOST, DEFAULT_PORT));
@@ -118,7 +118,6 @@ public class CoreCaseDataExportTest {
     public void tearDown() {
         STAGING_CONTAINER.stop();
         EXPORT_CONTAINER.stop();
-        MAIL_SERVER_CONTAINER.stop();
     }
 
     @Test
@@ -134,7 +133,7 @@ public class CoreCaseDataExportTest {
 
         assertFalse(exportBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME).exists(), "Leftover container exists.");
         assertFalse(exportBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)
-                .getBlobClient(TEST_BLOB_NAME).exists(), "Leftover first blob exists.");
+            .getBlobClient(TEST_BLOB_NAME).exists(), "Leftover first blob exists.");
 
         UNDER_TEST.addEnv("ARCHIVE_PASSWORD", "testPassword");
         UNDER_TEST.addEnv("RETRIEVE_FROM_DATE", "1970-01-01");
@@ -145,19 +144,17 @@ public class CoreCaseDataExportTest {
 
         assertTrue(exportBlobServiceClient.getBlobContainerClient(CCD_EXPORT_CONTAINER_NAME).exists(), "No container was created.");
         assertTrue(exportBlobServiceClient.getBlobContainerClient(CCD_EXPORT_CONTAINER_NAME)
-                .getBlobClient(TEST_EXPORT_BLOB).exists(), "No first blob was created.");
+            .getBlobClient(TEST_EXPORT_BLOB).exists(), "No first blob was created.");
 
-        /**
-         * Work in Progress
-            GreenMail greenMail = new GreenMail(
-                new ServerSetup(MAIL_SERVER_CONTAINER.getMappedPort(DEFAULT_SMTP_PORT), "localhost", "http")
-            );
+        List<SmtpMessage> receivedEmails = dumbster.getReceivedEmails();
+        assertEquals(1, receivedEmails.size());
 
-            assertEquals(1, greenMail.getReceivedMessages().length,
-                "Should be exactly 1 email sent.");
-            assertEquals("TestMailAddress", greenMail.getReceivedMessages()[0].getAllRecipients()[0].toString(),
-                "Should have exactly one sender matching passed in TestMailAddress.");
-         */
+        String expectedBlobOutputName = "1970-01-01-1970-01-02-CCD_EXTRACT.zip";
+
+        SmtpMessage email = receivedEmails.get(0);
+        assertEquals("TestMailAddress", email.getHeaderValue("To"));
+        assertEquals("Management Information Exported Data Url", email.getHeaderValue("Subject"));
+        assertTrue(email.getBody().contains(expectedBlobOutputName));
 
         UNDER_TEST.stop();
     }

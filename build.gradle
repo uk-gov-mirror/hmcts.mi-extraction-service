@@ -105,7 +105,7 @@ project.tasks['sonarqube'].dependsOn test, jacocoTestReport
 
 def sonarExclusions = [
     '**uk/gov/hmcts/reform/mi/miextractionservice/MiExtractionServiceApplication.java',
-    '**uk/gov/hmcts/reform/mi/miextractionservice/domain/**'
+    '**uk/gov/hmcts/reform/mi/miextractionservice/model/**'
 ]
 
 sonarqube {
@@ -161,7 +161,7 @@ repositories {
 
 def versions = [
   azureSpringBoot  : '2.2.0',
-  greenMail        : '1.5.11',
+  dumbster         : '1.7.1',
   junit            : '5.5.0',
   miCoreLib        : '3.0.5',
   reformLogging    : '5.1.1',
@@ -204,7 +204,7 @@ dependencies {
 
   functionalTestImplementation group: 'org.testcontainers', name: 'junit-jupiter', version: versions.testContainers
 
-  functionalTestImplementation group: 'com.icegreen', name: 'greenmail', version: versions.greenMail
+  functionalTestImplementation group: 'com.github.kirviq', name: 'dumbster', version: versions.dumbster
 
   functionalTestImplementation('org.springframework.boot:spring-boot-starter-test') {
     exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
