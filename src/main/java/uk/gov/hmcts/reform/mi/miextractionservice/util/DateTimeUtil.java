@@ -53,7 +53,7 @@ public class DateTimeUtil {
         LocalDate finalDate = toDate.toLocalDate().withDayOfMonth(28);
 
         do {
-            dateList.add(currentDate.getYear() + "-" + getFormattedMonthNumber(currentDate.getMonthValue()));
+            dateList.add(currentDate.format(DateTimeFormatter.ofPattern(YEAR_MONTH_FORMAT)));
             currentDate = currentDate.plusMonths(1L);
         } while (currentDate.isBefore(finalDate));
 
