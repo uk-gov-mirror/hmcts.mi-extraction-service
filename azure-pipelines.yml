@@ -24,8 +24,8 @@ pr:
 variables:
   #  group: pipeline-env-variables
   ${{ if eq( variables['Build.Reason'], 'PullRequest') }}:
-    environment: 'sbox'
-    env.upper: 'SBOX'
+    environment: 'test'
+    env.upper: 'TEST'
   ${{ if ne( variables['Build.Reason'], 'PullRequest') }}:
     environment: 'test' #Uset test and promoting to stg until prod is ready
     env.upper: 'TEST'
@@ -59,7 +59,7 @@ stages:
       product: $(product)
       chartEnv: $(environment)
       preIntegrationTest: true
-      functionalTest: false
+      functionalTest: true
       azureVault: $(vault)
       azureSecreKeys: 'mi-staging-storage-connection-string,mi-export-storage-connection-string,mail-username,mail-password,archive-password'
       azureKeyMapping:
