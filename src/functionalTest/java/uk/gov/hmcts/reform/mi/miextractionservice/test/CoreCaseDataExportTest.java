@@ -120,7 +120,7 @@ public class CoreCaseDataExportTest {
     }
 
     @Test
-    public void givenTestContainer_whenCopyToLanding_thenTestContainerIsCopiedOver() throws Exception {
+    public void givenTestContainer_whenExportBlob_thenArchivedBlobIsCreatedInExportAndEmailIsSent() throws Exception {
         byte[] inputData = TEST_CCD_JSONL.getBytes();
         InputStream inputStream = new ByteArrayInputStream(inputData);
 
@@ -161,7 +161,7 @@ public class CoreCaseDataExportTest {
     }
 
     @Test
-    public void givenInvalidConnectionString_whenCopyToLanding_thenExceptionIsThrown() {
+    public void givenInvalidConnectionString_whenExportBlob_thenExceptionIsThrown() {
         UNDER_TEST.waitingFor(Wait.forLogMessage(".*Application run failed.*", 1));
         UNDER_TEST.addEnv("STORAGE_EXTRACTION_CONNECTION_STRING", "InvalidConnectionString");
 
@@ -174,7 +174,7 @@ public class CoreCaseDataExportTest {
     }
 
     @Test
-    public void givenInvalidManagedIdentity_whenCopyToLanding_thenExceptionIsThrown() {
+    public void givenInvalidManagedIdentity_whenExportBlob_thenExceptionIsThrown() {
         UNDER_TEST.waitingFor(Wait.forLogMessage(".*Application run failed.*", 1));
         UNDER_TEST.addEnv("MI_CLIENT_ID", "InvalidIdentity");
 

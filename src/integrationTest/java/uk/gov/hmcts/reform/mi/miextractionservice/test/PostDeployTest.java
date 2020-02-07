@@ -40,7 +40,7 @@ public class PostDeployTest {
     }
 
     @Test
-    public void givenTestBlob_whenCopyContainer_thenTestBlobsExistInStaging() {
+    public void givenTestBlob_whenExportBlobData_thenTestBlobsExistInExport() {
         // Verify blob is copied over to the staging blob storage account.
         assertTrue(exportBlobServiceClient
             .getBlobContainerClient(CCD_EXPORT_CONTAINER_NAME)
