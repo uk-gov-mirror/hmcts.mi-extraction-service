@@ -183,6 +183,12 @@ dependencies {
   implementation group: 'com.opencsv', name: 'opencsv', version: versions.openCsv
   implementation group: 'net.lingala.zip4j', name: 'zip4j', version: versions.zip4j
 
+  implementation group: 'uk.gov.hmcts.reform', name: 'logging', version: versions.reformLogging
+  implementation group: 'uk.gov.hmcts.reform', name: 'logging-appinsights', version: versions.reformLogging
+  implementation('uk.gov.hmcts.reform:properties-volume-spring-boot-starter:0.0.4') {
+    exclude group: 'org.springframework.boot', module: 'spring-boot-starter-web'
+  }
+
   implementation group: 'uk.gov.hmcts.reform.mi', name: 'mi-core-lib', version: versions.miCoreLib
 
   implementation group: 'uk.gov.hmcts.reform', name: 'logging', version: versions.reformLogging
