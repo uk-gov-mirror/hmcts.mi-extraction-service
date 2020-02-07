@@ -7,3 +7,7 @@ spring:
       name: mi-vault
       aliases:
         mi-staging-storage-connection-string: azure.storage-account.staging.connection-string
+        mi-export-storage-connection-string: azure.storage-account.export.connection-string
+        mail-username: spring.mail.username
+        mail-password: spring.mail.password
+        archive-password: archive.password

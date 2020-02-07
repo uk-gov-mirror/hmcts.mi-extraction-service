@@ -1,3 +1,26 @@
-java:
+mi-job:
+  image: ${IMAGE_NAME}
+  memoryLimits: '2048Mi'
+  cpuLimits: '2000m'
+  activeDeadlineSeconds: 3600
+  aadIdentityName: mi-extraction-service
+  kind: Job
+  labels:
+    app.kubernetes.io/instance : mi-extraction-service-build-001
+    app.kubernetes.io/name: mi-extraction-service-build
   environment:
-    image: 'ssprivatesbox.azurecr.io/mi/mi-extraction-service:latest'
+    STORAGE_STAGING_NAME: mipersistent{{ .Values.global.environment }}
+    STORAGE_EXPORT_NAME: miexport{{ .Values.global.environment }}
+  keyVaults:
+    "mi-vault":
+      resourceGroup: mi-{{ .Values.global.environment }}-rg
+      secrets:
+        - mail-username
+        - mail-password
+        - archive-password
+
+global:
+  enableKeyVaults: true
+  usepodidentity: true
+  tenantId: "531ff96d-0ae9-462a-8d2d-bec7c0b42082"
+

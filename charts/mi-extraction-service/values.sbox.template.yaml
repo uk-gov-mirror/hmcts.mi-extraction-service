@@ -1,0 +1,11 @@
+mi-job:
+  image: ${IMAGE_NAME}
+  environment:
+    APPINSIGHTS_INSTRUMENTATIONKEY: c3043e63-3383-4add-a507-e0adf8588e4a
+    CONTAINER_WHITELIST: testcontainer-1c9640ba-d3e4-4cdb-bf04-36f00e751189
+    MI_CLIENT_ID: e719c01d-0095-462c-93e8-78f29ca20cff
+    RETRIEVE_FROM_DATE: 1970-01-01
+    RETRIEVE_TO_DATE: 1970-01-02
+global:
+  subscriptionId: "a8140a9e-f1b0-481f-a4de-09e2ee23f7ab"
+  environment: sbox
