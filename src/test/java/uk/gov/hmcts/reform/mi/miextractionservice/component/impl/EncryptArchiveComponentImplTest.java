@@ -81,10 +81,16 @@ public class EncryptArchiveComponentImplTest {
     }
 
     @Test
+    public void givenNoFilesToZip_whenCreateEncryptedArchive_thenThrowArchiveException() {
+        assertThrows(ArchiveException.class, () -> underTest.createEncryptedArchive(Collections.emptyList(), uniqueZipName),
+            "Expected exception was not thrown for missing files.");
+    }
+
+    @Test
     public void givenPasswordNotSet_whenCreateEncryptedArchive_thenThrowArchiveException() {
         ReflectionTestUtils.setField(underTest, "archivePassword", null);
 
         assertThrows(ArchiveException.class, () -> underTest.createEncryptedArchive(Collections.singletonList("/"), uniqueZipName),
-            "Expected exception was not thrown.");
+            "Expected exception was not thrown for no password.");
     }
 }

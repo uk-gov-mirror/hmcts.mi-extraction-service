@@ -104,7 +104,8 @@ jacocoTestReport {
 project.tasks['sonarqube'].dependsOn test, jacocoTestReport
 
 def sonarExclusions = [
-    '**uk/gov/hmcts/reform/mi/miextractionservice/MiExtractionServiceApplication.java'
+    '**uk/gov/hmcts/reform/mi/miextractionservice/MiExtractionServiceApplication.java',
+    '**uk/gov/hmcts/reform/mi/miextractionservice/domain/**'
 ]
 
 sonarqube {

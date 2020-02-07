@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
 import uk.gov.hmcts.reform.mi.miextractionservice.model.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.ReaderUtil;
 
@@ -18,14 +19,15 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_CASE_DATA_ID;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_CASE_METADATA_EVENT_ID;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_CASE_STATE_ID;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_CASE_TYPE_ID;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_CASE_TYPE_VERSION;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_CREATED_DATE_FORMATTED;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_DATA_JSON_STRING;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_EXTRACTION_DATE;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_DATA_ID;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_METADATA_EVENT_ID;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_STATE_ID;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_TYPE_ID;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_TYPE_VERSION;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CREATED_DATE_FORMATTED;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_DATA_JSON_STRING;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_EXTRACTION_DATE;
 
 @ExtendWith(SpringExtension.class)
 public class CsvWriterComponentImplTest {
@@ -54,16 +56,17 @@ public class CsvWriterComponentImplTest {
 
     @Test
     public void givenValidFilePathAndBeans_whenWriteBeanToCsv_thenCsvFileIsCreated() throws Exception {
-        OutputCoreCaseData outputCoreCaseData = new OutputCoreCaseData(
-            TEST_EXTRACTION_DATE,
-            TEST_CASE_METADATA_EVENT_ID,
-            TEST_CASE_DATA_ID,
-            TEST_CREATED_DATE_FORMATTED,
-            TEST_CASE_TYPE_ID,
-            TEST_CASE_TYPE_VERSION,
-            TEST_CASE_STATE_ID,
-            TEST_DATA_JSON_STRING
-        );
+        OutputCoreCaseData outputCoreCaseData = OutputCoreCaseData
+            .builder()
+            .extraction_date(TEST_EXTRACTION_DATE)
+            .case_metadata_event_id(TEST_CASE_METADATA_EVENT_ID)
+            .ce_case_data_id(TEST_CASE_DATA_ID)
+            .ce_created_date(TEST_CREATED_DATE_FORMATTED)
+            .ce_case_type_id(TEST_CASE_TYPE_ID)
+            .ce_case_type_version(TEST_CASE_TYPE_VERSION)
+            .ce_state_id(TEST_CASE_STATE_ID)
+            .data(TEST_DATA_JSON_STRING)
+            .build();
 
         underTest.writeBeansAsCsvFile(uniqueFileName, Collections.singletonList(outputCoreCaseData));
 
@@ -89,6 +92,11 @@ public class CsvWriterComponentImplTest {
             assertEquals(expectedHeaderRow, dataAsString.get(0), "Header row did not match expected.");
             assertEquals(expectedDataRow, dataAsString.get(1), "Data row did not match expected.");
         }
+    }
+
+    @Test
+    public void givenInvalidFilePath_whenWriteBeanToCsv_thenParserExceptionIsThrown() {
+        assertThrows(ParserException.class, () -> underTest.writeBeansAsCsvFile("/", Collections.emptyList()));
     }
 
     private String wrapStringInQuotes(String inputString) {

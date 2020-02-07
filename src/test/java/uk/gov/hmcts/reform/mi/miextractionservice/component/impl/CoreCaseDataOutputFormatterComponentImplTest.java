@@ -19,15 +19,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.DEFAULT_TEST_CORE_CASE_DATA_JSON_STRING;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_CASE_DATA_ID;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_CASE_METADATA_EVENT_ID;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_CASE_STATE_ID;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_CASE_TYPE_ID;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_CASE_TYPE_VERSION;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_CREATED_DATE_FORMATTED;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_DATA_JSON_STRING;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_EXTRACTION_DATE;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.DEFAULT_TEST_CORE_CASE_DATA_JSON_STRING;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_DATA_ID;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_METADATA_EVENT_ID;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_STATE_ID;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_TYPE_ID;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_TYPE_VERSION;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CREATED_DATE_FORMATTED;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_DATA_JSON_STRING;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_EXTRACTION_DATE;
 
 @ExtendWith(SpringExtension.class)
 public class CoreCaseDataOutputFormatterComponentImplTest {
@@ -50,16 +50,17 @@ public class CoreCaseDataOutputFormatterComponentImplTest {
 
         CoreCaseData coreCaseData = new ObjectMapper().readValue(dataString, CoreCaseData.class);
 
-        OutputCoreCaseData expected = new OutputCoreCaseData(
-            TEST_EXTRACTION_DATE,
-            TEST_CASE_METADATA_EVENT_ID,
-            TEST_CASE_DATA_ID,
-            TEST_CREATED_DATE_FORMATTED,
-            TEST_CASE_TYPE_ID,
-            TEST_CASE_TYPE_VERSION,
-            TEST_CASE_STATE_ID,
-            TEST_DATA_JSON_STRING
-        );
+        OutputCoreCaseData expected = OutputCoreCaseData
+            .builder()
+            .extraction_date(TEST_EXTRACTION_DATE)
+            .case_metadata_event_id(TEST_CASE_METADATA_EVENT_ID)
+            .ce_case_data_id(TEST_CASE_DATA_ID)
+            .ce_created_date(TEST_CREATED_DATE_FORMATTED)
+            .ce_case_type_id(TEST_CASE_TYPE_ID)
+            .ce_case_type_version(TEST_CASE_TYPE_VERSION)
+            .ce_state_id(TEST_CASE_STATE_ID)
+            .data(TEST_DATA_JSON_STRING)
+            .build();
 
         when(objectMapper.writeValueAsString(any())).thenCallRealMethod();
 

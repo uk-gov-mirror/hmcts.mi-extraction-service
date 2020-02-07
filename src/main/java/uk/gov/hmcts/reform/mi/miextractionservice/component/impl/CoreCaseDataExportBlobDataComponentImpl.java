@@ -148,6 +148,5 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
         return (year == fromDate.getYear() && month >= fromDate.getMonthValue())
             || (year > fromDate.getYear() && year < toDate.getYear())
             || (year == toDate.getYear() && month <= toDate.getMonthValue());
-
     }
 }

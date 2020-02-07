@@ -29,7 +29,7 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_CONTAINER_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_EXPORT_BLOB;
 
-@SuppressWarnings("PMD.AvoidUsingHardCodedIP")
+@SuppressWarnings({"unchecked","PMD.AvoidUsingHardCodedIP"})
 @SpringBootTest(classes = TestConfig.class)
 public class CoreCaseDataExportTest {
 

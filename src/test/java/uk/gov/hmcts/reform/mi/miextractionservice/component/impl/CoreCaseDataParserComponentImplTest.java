@@ -8,18 +8,20 @@ import org.mockito.Spy;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import uk.gov.hmcts.reform.mi.micore.model.CoreCaseData;
+import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
 
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.DEFAULT_TEST_CORE_CASE_DATA_JSON_STRING;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_CASE_DATA_ID;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_CASE_METADATA_EVENT_ID;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_CASE_STATE_ID;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_CASE_TYPE_ID;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_CASE_TYPE_VERSION;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_CREATED_DATE;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.TestConstants.TEST_EXTRACTION_DATE;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.DEFAULT_TEST_CORE_CASE_DATA_JSON_STRING;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_DATA_ID;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_METADATA_EVENT_ID;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_STATE_ID;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_TYPE_ID;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_TYPE_VERSION;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CREATED_DATE;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_EXTRACTION_DATE;
 
 @ExtendWith(SpringExtension.class)
 public class CoreCaseDataParserComponentImplTest {
@@ -45,5 +47,10 @@ public class CoreCaseDataParserComponentImplTest {
             .build();
 
         assertEquals(expected, underTest.parse(DEFAULT_TEST_CORE_CASE_DATA_JSON_STRING), "Result does not match expected properties.");
+    }
+
+    @Test
+    public void givenInvalidCoreCaseDataJsonString_whenParseData_thenThrowParserException() {
+        assertThrows(ParserException.class, () -> underTest.parse("InvalidJsonString"));
     }
 }

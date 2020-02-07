@@ -23,16 +23,17 @@ public class CoreCaseDataOutputFormatterComponentImpl implements CoreCaseDataFor
     @Override
     public OutputCoreCaseData formatData(CoreCaseData coreCaseData) {
         try {
-            return new OutputCoreCaseData(
-                coreCaseData.getExtractionDate(),
-                String.valueOf(coreCaseData.getCaseMetadataEventId()),
-                String.valueOf(coreCaseData.getCeCaseDataId()),
-                dateTimeUtil.getTimestampFormatFromLong(coreCaseData.getCeCreatedDate()),
-                coreCaseData.getCeCaseTypeId(),
-                String.valueOf(coreCaseData.getCeCaseTypeVersion()),
-                coreCaseData.getCeStateId(),
-                objectMapper.writeValueAsString(coreCaseData.getCeData())
-            );
+            return OutputCoreCaseData
+                .builder()
+                .extraction_date(coreCaseData.getExtractionDate())
+                .case_metadata_event_id(String.valueOf(coreCaseData.getCaseMetadataEventId()))
+                .ce_case_data_id(String.valueOf(coreCaseData.getCeCaseDataId()))
+                .ce_created_date(dateTimeUtil.getTimestampFormatFromLong(coreCaseData.getCeCreatedDate()))
+                .ce_case_type_id(coreCaseData.getCeCaseTypeId())
+                .ce_case_type_version(String.valueOf(coreCaseData.getCeCaseTypeVersion()))
+                .ce_state_id(coreCaseData.getCeStateId())
+                .data(objectMapper.writeValueAsString(coreCaseData.getCeData()))
+                .build();
         } catch (JsonProcessingException e) {
             throw new ParserException("Unable to format given CoreCaseData to output format", e);
         }

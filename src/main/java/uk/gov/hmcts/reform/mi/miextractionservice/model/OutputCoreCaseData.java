@@ -1,9 +1,11 @@
 package uk.gov.hmcts.reform.mi.miextractionservice.model;
 
 import com.opencsv.bean.CsvBindByPosition;
+import lombok.Builder;
 import lombok.Value;
 
 @SuppressWarnings({"checkstyle:MemberName","PMD.FieldNamingConventions"})
+@Builder
 @Value
 public class OutputCoreCaseData {
 
