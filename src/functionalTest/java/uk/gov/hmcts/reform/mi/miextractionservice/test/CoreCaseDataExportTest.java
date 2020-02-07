@@ -41,7 +41,6 @@ public class CoreCaseDataExportTest {
     private static final String AZURITE_IMAGE = String.format("%s/mi-azurite", System.getenv("AZURE_CONTAINER_REGISTRY"));
 
     private static final Integer DEFAULT_PORT = 10_000;
-    private static final Integer DEFAULT_SMTP_PORT = 3025;
 
     private static final String DEFAULT_COMMAND = "azurite -l /data --blobHost 0.0.0.0 --loose";
     private static final String DEFAULT_CONN_STRING = "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;"
@@ -147,14 +146,16 @@ public class CoreCaseDataExportTest {
             .getBlobClient(TEST_EXPORT_BLOB).exists(), "No first blob was created.");
 
         List<SmtpMessage> receivedEmails = dumbster.getReceivedEmails();
-        assertEquals(1, receivedEmails.size());
+        assertEquals(1, receivedEmails.size(), "Should have receivied only 1 email.");
 
         String expectedBlobOutputName = "1970-01-01-1970-01-02-CCD_EXTRACT.zip";
 
         SmtpMessage email = receivedEmails.get(0);
-        assertEquals("TestMailAddress", email.getHeaderValue("To"));
-        assertEquals("Management Information Exported Data Url", email.getHeaderValue("Subject"));
-        assertTrue(email.getBody().contains(expectedBlobOutputName));
+        assertEquals("TestMailAddress", email.getHeaderValue("To"), "Should have sent an email to TestMailAddress.");
+        assertEquals("Management Information Exported Data Url", email.getHeaderValue("Subject"),
+            "Should have a static subject message.");
+        assertTrue(email.getBody().contains(expectedBlobOutputName),
+            "Should have output blob name somewhere in email body as part of the generated SAS url.");
 
         UNDER_TEST.stop();
     }
