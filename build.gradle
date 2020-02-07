@@ -209,7 +209,7 @@ dependencies {
   functionalTestRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: versions.junit
 
   functionalTestImplementation group: 'org.testcontainers', name: 'junit-jupiter', version: versions.testContainers
-
+  functionalTestImplementation group: 'net.lingala.zip4j', name: 'zip4j', version: versions.zip4j
   functionalTestImplementation group: 'com.github.kirviq', name: 'dumbster', version: versions.dumbster
 
   functionalTestImplementation('org.springframework.boot:spring-boot-starter-test') {

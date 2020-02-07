@@ -13,6 +13,8 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -66,9 +68,24 @@ public class DateTimeUtilTest {
 
         LocalDate resultDate = LocalDate.parse(testDate, dateTimeFormatter);
 
-        assertEquals(resultDate.getYear(), 2000, "Resultant year is wrong.");
-        assertEquals(resultDate.getMonthValue(), 1, "Resultant month is wrong.");
-        assertEquals(resultDate.getDayOfMonth(), 1, "Resultant day is wrong.");
+        assertEquals(2000, resultDate.getYear(), "Resultant year is wrong.");
+        assertEquals(1, resultDate.getMonthValue(), "Resultant month is wrong.");
+        assertEquals(1, resultDate.getDayOfMonth(), "Resultant day is wrong.");
+    }
+
+    @Test
+    public void givenFromDateAndToDate_whenGetListOfYearsAndMonthsBetweenDates_thenReturnListOfDateStrings() {
+        OffsetDateTime fromDate = OffsetDateTime.of(1999, 12, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+        OffsetDateTime toDate = OffsetDateTime.of(2001, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+
+        List<String> expectedList = Arrays.asList(
+            "1999-12", "2000-01", "2000-02", "2000-03", "2000-04", "2000-05", "2000-06",
+            "2000-07", "2000-08", "2000-09", "2000-10", "2000-11", "2000-12", "2001-01"
+        );
+
+        List<String> resultList = underTest.getListOfYearsAndMonthsBetweenDates(fromDate, toDate);
+
+        assertEquals(expectedList, resultList, "List of returned date strings does not match the expected.");
     }
 
 }

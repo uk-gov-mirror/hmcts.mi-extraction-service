@@ -26,6 +26,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataComponent {
@@ -69,7 +70,7 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
 
         List<OutputCoreCaseData> outputData = new ArrayList<>();
 
-        List<String> blobNameIndexes = getYearMonthIndexes(fromDate, toDate);
+        List<String> blobNameIndexes = dateTimeUtil.getListOfYearsAndMonthsBetweenDates(fromDate, toDate);
 
         for (BlobContainerItem blobContainerItem : sourceBlobServiceClient.listBlobContainers()) {
             if (blobContainerItem.getName().startsWith(CCD_DATA_CONTAINER_PREFIX)) {
@@ -81,7 +82,12 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
 
                         List<String> stringData = readerUtil.readBytesAsStrings(blobData);
 
-                        outputData.addAll(convertDataStringsToOutput(stringData, fromDate, toDate));
+                        List<CoreCaseData> filteredData = filterDataInDateRange(stringData, fromDate, toDate);
+                        List<OutputCoreCaseData> formattedData = filteredData.stream()
+                            .map(coreCaseDataFormatterComponent::formatData)
+                            .collect(Collectors.toList());
+
+                        outputData.addAll(formattedData);
                     }
                 }
             }
@@ -112,41 +118,15 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
         return generateBlobUrlComponent.generateUrlForBlob(targetBlobServiceClient, CCD_OUTPUT_CONTAINER_NAME, outputBlobName);
     }
 
-    private List<OutputCoreCaseData> convertDataStringsToOutput(List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate) {
-        List<CoreCaseData> coreCaseDataList = new ArrayList<>();
-        data.forEach(string -> coreCaseDataList.add(dataParserComponent.parse(string)));
-
-        List<OutputCoreCaseData> outputCoreCaseDataList = new ArrayList<>();
-        coreCaseDataList.forEach(coreCaseData -> {
-            OffsetDateTime eventCreatedDate = OffsetDateTime.ofInstant(Instant.ofEpochMilli(coreCaseData.getCeCreatedDate()), ZoneOffset.UTC);
-            if (eventCreatedDate.isAfter(fromDate) && eventCreatedDate.isBefore(toDate)) {
-                outputCoreCaseDataList.add(coreCaseDataFormatterComponent.formatData(coreCaseData));
-            }
-        });
-
-        return outputCoreCaseDataList;
-    }
-
-    private List<String> getYearMonthIndexes(OffsetDateTime fromDate, OffsetDateTime toDate) {
-        List<String> listOfIndexes = new ArrayList<>();
-
-        for (int i = fromDate.getYear(); i <= toDate.getYear(); i++) {
-            // For every month
-            for (int j = 1; j <= 12; j++) {
-                if (isYearAndMonthBetweenDates(i, j, fromDate, toDate)) {
-                    String index = i + NAME_DELIMITER + dateTimeUtil.getFormattedMonthNumber(j);
-                    listOfIndexes.add(index);
-                }
-            }
-        }
-
-        return listOfIndexes;
-    }
-
-    @SuppressWarnings("PMD.UselessParentheses")
-    private boolean isYearAndMonthBetweenDates(int year, int month, OffsetDateTime fromDate, OffsetDateTime toDate) {
-        return (year == fromDate.getYear() && month >= fromDate.getMonthValue())
-            || (year > fromDate.getYear() && year < toDate.getYear())
-            || (year == toDate.getYear() && month <= toDate.getMonthValue());
+    private List<CoreCaseData> filterDataInDateRange(List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate) {
+        return data
+            .stream()
+            .map(dataRow -> dataParserComponent.parse(dataRow))
+            .filter(coreCaseData -> {
+                OffsetDateTime eventCreatedDate = OffsetDateTime.ofInstant(Instant.ofEpochMilli(coreCaseData.getCeCreatedDate()), ZoneOffset.UTC);
+                return eventCreatedDate.isEqual(fromDate) || eventCreatedDate.isEqual(toDate)
+                    || eventCreatedDate.isAfter(fromDate) && eventCreatedDate.isBefore(toDate);
+            })
+            .collect(Collectors.toList());
     }
 }

@@ -3,6 +3,8 @@ package uk.gov.hmcts.reform.mi.miextractionservice.test;
 import com.azure.storage.blob.BlobServiceClient;
 import com.dumbster.smtp.SimpleSmtpServer;
 import com.dumbster.smtp.SmtpMessage;
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.exception.ZipException;
 import org.junit.ClassRule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,21 +22,26 @@ import uk.gov.hmcts.reform.mi.micore.factory.BlobServiceClientFactory;
 import uk.gov.hmcts.reform.mi.miextractionservice.TestConfig;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.CCD_EXPORT_CONTAINER_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_BLOB_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_CCD_JSONL;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_CONTAINER_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_EXPORT_BLOB;
 
-@SuppressWarnings({"unchecked","PMD.AvoidUsingHardCodedIP"})
+@SuppressWarnings({"unchecked","PMD.AvoidUsingHardCodedIP","PMD.ExcessiveImports"})
 @SpringBootTest(classes = TestConfig.class)
 public class CoreCaseDataExportTest {
 
@@ -50,6 +57,9 @@ public class CoreCaseDataExportTest {
     private static final String DEFAULT_HOST = "127.0.0.1";
     private static final String STAGING_HOST = "localhost1";
     private static final String EXPORT_HOST = "localhost2";
+    private static final String TEST_PASSWORD = "testPassword";
+    private static final String TEST_MAIL_ADDRESS = "TestMailAddress";
+    private static final String CSV_EXTRACT_FILE_NAME = "CCD_EXTRACT.csv";
 
     @Autowired
     private BlobServiceClientFactory blobServiceClientFactory;
@@ -117,6 +127,18 @@ public class CoreCaseDataExportTest {
     public void tearDown() {
         STAGING_CONTAINER.stop();
         EXPORT_CONTAINER.stop();
+
+        // Cleanup local created files
+        File exportZip = new File(TEST_EXPORT_BLOB);
+        File exportFile = new File(CSV_EXTRACT_FILE_NAME);
+
+        if (exportZip.exists()) {
+            exportZip.delete();
+        }
+
+        if (exportFile.exists()) {
+            exportFile.delete();
+        }
     }
 
     @Test
@@ -134,10 +156,10 @@ public class CoreCaseDataExportTest {
         assertFalse(exportBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)
             .getBlobClient(TEST_BLOB_NAME).exists(), "Leftover first blob exists.");
 
-        UNDER_TEST.addEnv("ARCHIVE_PASSWORD", "testPassword");
+        UNDER_TEST.addEnv("ARCHIVE_PASSWORD", TEST_PASSWORD);
         UNDER_TEST.addEnv("RETRIEVE_FROM_DATE", "1970-01-01");
         UNDER_TEST.addEnv("RETRIEVE_TO_DATE", "1970-01-02");
-        UNDER_TEST.addEnv("MAIL_TARGETS", "TestMailAddress");
+        UNDER_TEST.addEnv("MAIL_TARGETS", TEST_MAIL_ADDRESS);
 
         UNDER_TEST.start();
 
@@ -145,16 +167,35 @@ public class CoreCaseDataExportTest {
         assertTrue(exportBlobServiceClient.getBlobContainerClient(CCD_EXPORT_CONTAINER_NAME)
             .getBlobClient(TEST_EXPORT_BLOB).exists(), "No first blob was created.");
 
+        try (OutputStream outputStream = Files.newOutputStream(Paths.get(TEST_EXPORT_BLOB))) {
+            exportBlobServiceClient.getBlobContainerClient(CCD_EXPORT_CONTAINER_NAME).getBlobClient(TEST_EXPORT_BLOB).download(outputStream);
+        }
+
+        ZipFile zipFile = new ZipFile(TEST_EXPORT_BLOB);
+
+        assertTrue(zipFile.isEncrypted(), "Zip file should be password protected.");
+
+        try {
+            zipFile.setPassword("wrongPassword".toCharArray());
+            zipFile.extractFile(CSV_EXTRACT_FILE_NAME, ".");
+            fail("Wrong password exception should have been thrown.");
+        } catch (ZipException e) {
+            assertTrue(e.getType().equals(ZipException.Type.WRONG_PASSWORD), "Expected error to be wrong password.");
+        }
+
+        zipFile.setPassword(TEST_PASSWORD.toCharArray());
+        zipFile.extractFile(CSV_EXTRACT_FILE_NAME, ".");
+
+        assertTrue(new File(CSV_EXTRACT_FILE_NAME).exists(), "Expected archived file to be extracted.");
+
         List<SmtpMessage> receivedEmails = dumbster.getReceivedEmails();
         assertEquals(1, receivedEmails.size(), "Should have receivied only 1 email.");
 
-        String expectedBlobOutputName = "1970-01-01-1970-01-02-CCD_EXTRACT.zip";
-
         SmtpMessage email = receivedEmails.get(0);
-        assertEquals("TestMailAddress", email.getHeaderValue("To"), "Should have sent an email to TestMailAddress.");
+        assertEquals(TEST_MAIL_ADDRESS, email.getHeaderValue("To"), "Should have sent an email to TestMailAddress.");
         assertEquals("Management Information Exported Data Url", email.getHeaderValue("Subject"),
             "Should have a static subject message.");
-        assertTrue(email.getBody().contains(expectedBlobOutputName),
+        assertTrue(email.getBody().contains(TEST_EXPORT_BLOB),
             "Should have output blob name somewhere in email body as part of the generated SAS url.");
 
         UNDER_TEST.stop();

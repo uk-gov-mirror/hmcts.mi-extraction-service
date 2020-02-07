@@ -8,11 +8,10 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import uk.gov.hmcts.reform.mi.miextractionservice.component.SendEmailComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.exception.ExportException;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -42,7 +41,11 @@ public class EmailBlobUrlToTargetsComponentImplTest {
     }
 
     @Test
-    public void givenNoTargets_whenEmailBlobUrlToTargets_thenThrowExportException() {
-        assertThrows(ExportException.class, () -> underTest.sendBlobUrl(TEST_BLOB_URL), "Export exception was not thrown.");
+    public void givenNoTargets_whenEmailBlobUrlToTargets_thenDoNothing() {
+        ReflectionTestUtils.setField(underTest, "targets", "");
+
+        underTest.sendBlobUrl(TEST_BLOB_URL);
+
+        verify(sendEmailComponent, never()).sendEmail(anyString(), anyString(), anyString());
     }
 }

@@ -156,8 +156,10 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         assertEquals(TEST_SAS_URL, result, "Returned url does not match expected.");
 
         verify(targetBlobContainerClient, never()).create();
-        verify(csvWriterComponent).writeBeansAsCsvFile(WORKING_FILE_NAME, Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA));
-        verify(encryptArchiveComponent).createEncryptedArchive(Collections.singletonList(WORKING_FILE_NAME), WORKING_ARCHIVE);
+        verify(csvWriterComponent)
+            .writeBeansAsCsvFile(WORKING_FILE_NAME, Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA));
+        verify(encryptArchiveComponent)
+            .createEncryptedArchive(Collections.singletonList(WORKING_FILE_NAME), WORKING_ARCHIVE);
         verify(targetBlobClient).uploadFromFile(WORKING_ARCHIVE, true);
     }
 
@@ -203,8 +205,10 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         assertEquals(TEST_SAS_URL, result, "Returned url does not match the expected url.");
 
         verify(targetBlobContainerClient, times(1)).create();
-        verify(csvWriterComponent).writeBeansAsCsvFile(WORKING_FILE_NAME, Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA));
-        verify(encryptArchiveComponent).createEncryptedArchive(Collections.singletonList(WORKING_FILE_NAME), WORKING_ARCHIVE);
+        verify(csvWriterComponent)
+            .writeBeansAsCsvFile(WORKING_FILE_NAME, Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA));
+        verify(encryptArchiveComponent)
+            .createEncryptedArchive(Collections.singletonList(WORKING_FILE_NAME), WORKING_ARCHIVE);
         verify(targetBlobClient).uploadFromFile(WORKING_ARCHIVE, true);
     }
 

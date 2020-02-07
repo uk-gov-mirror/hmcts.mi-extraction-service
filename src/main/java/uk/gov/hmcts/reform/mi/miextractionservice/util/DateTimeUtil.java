@@ -10,11 +10,14 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class DateTimeUtil {
 
     public static final String DATE_FORMAT = "yyyy-MM-dd";
+    public static final String YEAR_MONTH_FORMAT = "yyyy-MM";
 
     @Autowired
     private Clock clock;
@@ -41,5 +44,19 @@ public class DateTimeUtil {
 
     public DateTimeFormatter getDateFormat() {
         return DateTimeFormatter.ofPattern(DATE_FORMAT);
+    }
+
+    public List<String> getListOfYearsAndMonthsBetweenDates(OffsetDateTime fromDate, OffsetDateTime toDate) {
+        List<String> dateList = new ArrayList<>();
+
+        LocalDate currentDate = fromDate.toLocalDate().withDayOfMonth(1);
+        LocalDate finalDate = toDate.toLocalDate().withDayOfMonth(28);
+
+        do {
+            dateList.add(currentDate.getYear() + "-" + getFormattedMonthNumber(currentDate.getMonthValue()));
+            currentDate = currentDate.plusMonths(1L);
+        } while (currentDate.isBefore(finalDate));
+
+        return dateList;
     }
 }
