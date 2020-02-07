@@ -15,8 +15,6 @@ mi-job:
     "mi-vault":
       resourceGroup: mi-{{ .Values.global.environment }}-rg
       secrets:
-        - mi-staging-storage-connection-string
-        - mi-export-storage-connection-string
         - mail-username
         - mail-password
         - archive-password
