@@ -5,6 +5,14 @@
 
 name: '$(SourceBranchName)-$(Build.SourceVersion) Build-$(Build.BuildId)'
 
+schedules:
+  - cron: "0 0 * * *"
+    displayName: Daily midnight build
+    branches:
+      include:
+        - master
+    always: true
+
 trigger:
   batch: true
   branches:
@@ -60,6 +68,10 @@ stages:
       chartEnv: $(environment)
       preIntegrationTest: true
       functionalTest: true
+      ${{ if eq(variables['Build.Reason'], 'Schedule') }}:
+        mutationTest: true
+      ${{ if ne(variables['Build.Reason'], 'Schedule') }}:
+        mutationTest: false
       azureVault: $(vault)
       azureSecreKeys: 'mi-staging-storage-connection-string,mi-export-storage-connection-string,mail-username,mail-password,archive-password'
       azureKeyMapping:
