@@ -41,15 +41,11 @@ public class CsvWriterComponentImpl implements CsvWriterComponent<OutputCoreCase
         }
     }
 
-    @SuppressWarnings("PMD.LawOfDemeter")
     private String[] getHeaders() {
         List<String> headers = new ArrayList<>();
 
         for (Field field : FieldUtils.getAllFields(OutputCoreCaseData.class)) {
-            // Ignore generated fields with certain prefix
-            if (Boolean.FALSE.equals(field.getName().startsWith("$"))) {
-                headers.add(field.getName());
-            }
+            headers.add(field.getName());
         }
 
         return headers.toArray(new String[0]);
