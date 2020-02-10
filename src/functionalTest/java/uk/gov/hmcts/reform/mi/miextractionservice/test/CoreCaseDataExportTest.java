@@ -6,6 +6,7 @@ import com.dumbster.smtp.SmtpMessage;
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -140,6 +141,7 @@ public class CoreCaseDataExportTest {
         }
     }
 
+    @Ignore
     @Test
     public void givenTestContainer_whenExportBlob_thenArchivedBlobIsCreatedInExportAndEmailIsSent() throws Exception {
         byte[] inputData = TEST_CCD_JSONL.getBytes();
