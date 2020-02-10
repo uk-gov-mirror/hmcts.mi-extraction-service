@@ -5,6 +5,7 @@ import com.opencsv.bean.StatefulBeanToCsv;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvDataTypeMismatchException;
 import com.opencsv.exceptions.CsvRequiredFieldEmptyException;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.springframework.stereotype.Component;
 
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CsvWriterComponent;
@@ -43,7 +44,7 @@ public class CsvWriterComponentImpl implements CsvWriterComponent<OutputCoreCase
     private String[] getHeaders() {
         List<String> headers = new ArrayList<>();
 
-        for (Field field : OutputCoreCaseData.class.getDeclaredFields()) {
+        for (Field field : FieldUtils.getAllFields(OutputCoreCaseData.class)) {
             headers.add(field.getName());
         }
 
