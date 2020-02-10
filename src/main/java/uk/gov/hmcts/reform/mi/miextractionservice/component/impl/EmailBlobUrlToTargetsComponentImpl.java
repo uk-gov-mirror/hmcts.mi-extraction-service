@@ -8,10 +8,11 @@ import org.springframework.util.StringUtils;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.EmailBlobUrlToTargetsComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.SendEmailComponent;
 
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.COMMA_DELIMITER;
+
 @Component
 public class EmailBlobUrlToTargetsComponentImpl implements EmailBlobUrlToTargetsComponent {
 
-    private static final String DELIMITER = ",";
     private static final String EMAIL_SUBJECT = "Management Information Exported Data Url";
 
     @Value("${mail.targets}")
@@ -25,7 +26,7 @@ public class EmailBlobUrlToTargetsComponentImpl implements EmailBlobUrlToTargets
     public void sendBlobUrl(String url) {
         if (Boolean.FALSE.equals(StringUtils.isEmpty(targets))) {
             // Assume list of targets is comma separated string.
-            String[] recipients = targets.split(DELIMITER);
+            String[] recipients = targets.split(COMMA_DELIMITER);
 
             for (String toEmail : recipients) {
                 sendEmailComponent.sendEmail(toEmail, EMAIL_SUBJECT, url);

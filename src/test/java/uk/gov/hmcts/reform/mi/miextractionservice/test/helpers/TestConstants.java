@@ -1,7 +1,7 @@
 package uk.gov.hmcts.reform.mi.miextractionservice.test.helpers;
 
 import uk.gov.hmcts.reform.mi.micore.model.CoreCaseData;
-import uk.gov.hmcts.reform.mi.miextractionservice.model.OutputCoreCaseData;
+import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 
 import java.util.Collections;
 

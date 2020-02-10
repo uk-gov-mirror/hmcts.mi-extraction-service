@@ -15,8 +15,8 @@ import uk.gov.hmcts.reform.mi.miextractionservice.component.DataParserComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.EncryptArchiveComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.GenerateBlobUrlComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ExportException;
-import uk.gov.hmcts.reform.mi.miextractionservice.model.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.ReaderUtil;
 
@@ -28,14 +28,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_DATA_CONTAINER_PREFIX;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_OUTPUT_CONTAINER_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_WORKING_ARCHIVE;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_WORKING_FILE_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NAME_DELIMITER;
+
 @Component
 public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataComponent {
-
-    private static final String CCD_OUTPUT_CONTAINER_NAME = "ccd";
-    private static final String NAME_DELIMITER = "-";
-    private static final String CCD_DATA_CONTAINER_PREFIX = CCD_OUTPUT_CONTAINER_NAME + NAME_DELIMITER;
-    private static final String WORKING_FILE_NAME = "CCD_EXTRACT.csv";
-    private static final String WORKING_ARCHIVE = "CCD_EXTRACT.zip";
 
     @Autowired
     private BlobDownloadComponent<byte[]> blobDownloadComponent;
@@ -97,9 +97,9 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
             throw new ExportException("No data to output.");
         }
 
-        csvWriterComponent.writeBeansAsCsvFile(WORKING_FILE_NAME, outputData);
+        csvWriterComponent.writeBeansAsCsvFile(CCD_WORKING_FILE_NAME, outputData);
 
-        encryptArchiveComponent.createEncryptedArchive(Collections.singletonList(WORKING_FILE_NAME), WORKING_ARCHIVE);
+        encryptArchiveComponent.createEncryptedArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
 
         BlobContainerClient blobContainerClient = targetBlobServiceClient.getBlobContainerClient(CCD_OUTPUT_CONTAINER_NAME);
 
@@ -111,9 +111,9 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
             + NAME_DELIMITER
             + toDate.format(dateTimeUtil.getDateFormat())
             + NAME_DELIMITER
-            + WORKING_ARCHIVE;
+            + CCD_WORKING_ARCHIVE;
 
-        blobContainerClient.getBlobClient(outputBlobName).uploadFromFile(WORKING_ARCHIVE, true);
+        blobContainerClient.getBlobClient(outputBlobName).uploadFromFile(CCD_WORKING_ARCHIVE, true);
 
         return generateBlobUrlComponent.generateUrlForBlob(targetBlobServiceClient, CCD_OUTPUT_CONTAINER_NAME, outputBlobName);
     }

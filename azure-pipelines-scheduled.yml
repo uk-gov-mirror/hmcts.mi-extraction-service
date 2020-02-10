@@ -59,10 +59,8 @@ stages:
           value: 'mi-staging-storage-connection-string'
         - key: STORAGE_EXPORT_CONNECTION_STRING
           value: 'mi-export-storage-connection-string'
-        - key: MAIL_USERNAME
-          value: 'mail-username'
-        - key: MAIL_PASSWORD
-          value: 'mail-password'
+        - key: GOV_UK_NOTIFY_API_KEY
+          value: 'gov-uk-notify-api-key'
         - key: ARCHIVE_PASSWORD
           value: 'archive-password'
         - key: AZURE_CONTAINER_REGISTRY

@@ -8,6 +8,5 @@ spring:
       aliases:
         mi-staging-storage-connection-string: azure.storage-account.staging.connection-string
         mi-export-storage-connection-string: azure.storage-account.export.connection-string
-        mail-username: spring.mail.username
-        mail-password: spring.mail.password
+        gov-uk-notify-api-key: mail.gov-uk.api-key
         archive-password: archive.password

@@ -9,8 +9,8 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.springframework.stereotype.Component;
 
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CsvWriterComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
-import uk.gov.hmcts.reform.mi.miextractionservice.model.OutputCoreCaseData;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
