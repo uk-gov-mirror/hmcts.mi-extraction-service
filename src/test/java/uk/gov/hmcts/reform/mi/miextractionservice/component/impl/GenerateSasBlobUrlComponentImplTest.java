@@ -11,11 +11,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import uk.gov.hmcts.reform.mi.miextractionservice.factory.BlobClientGenerateSasUrlFactory;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
 
 import java.time.OffsetDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -33,6 +35,9 @@ public class GenerateSasBlobUrlComponentImplTest {
 
     @Mock
     private DateTimeUtil dateTimeUtil;
+
+    @Mock
+    private BlobClientGenerateSasUrlFactory blobClientGenerateSasUrlFactory;
 
     @InjectMocks
     private GenerateSasBlobUrlComponentImpl underTest;
@@ -59,7 +64,9 @@ public class GenerateSasBlobUrlComponentImplTest {
             dateTimeUtil.getCurrentDateTime().plusHours(TIME_TO_EXPIRY), new BlobSasPermission().setReadPermission(true)
         );
 
-        when(mockBlobClient.generateSas(refEq(blobServiceSasSignatureValues, LOGGER_PROPERTY))).thenReturn(TEST_QUERY_PARAMS);
+        when(blobClientGenerateSasUrlFactory
+            .getSasUrl(eq(blobServiceClient), eq(containerName), eq(blobName), refEq(blobServiceSasSignatureValues, LOGGER_PROPERTY)))
+            .thenReturn(TEST_QUERY_PARAMS);
 
         // When
         String sasUrl = underTest.generateUrlForBlob(blobServiceClient, containerName, blobName);
