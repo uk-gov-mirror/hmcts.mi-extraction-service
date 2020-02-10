@@ -27,7 +27,7 @@ variables:
     environment: 'test'
     env.upper: 'TEST'
   ${{ if ne( variables['Build.Reason'], 'PullRequest') }}:
-    environment: 'test' #Uset test and promoting to stg until prod is ready
+    environment: 'test' #Use test and promoting to stg until prod is ready
     env.upper: 'TEST'
   env.prom: 'stg'
   env.prom.upper: 'STG'
@@ -62,7 +62,7 @@ stages:
       functionalTest: true
       mutationTest: false
       azureVault: $(vault)
-      azureSecreKeys: 'mi-staging-storage-connection-string,mi-export-storage-connection-string,mail-username,mail-password,archive-password'
+      azureSecreKeys: 'mi-staging-storage-connection-string,mi-export-storage-connection-string,gov-uk-notify-api-key,archive-password'
       azureKeyMapping:
         - key: STORAGE_STAGING_CONNECTION_STRING
           value: 'mi-staging-storage-connection-string'
