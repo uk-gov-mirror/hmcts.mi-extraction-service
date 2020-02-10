@@ -68,7 +68,8 @@ public class BlobClientGenerateSasUrlFactoryTest {
         when(mockBlobClient.generateUserDelegationSas(eq(blobServiceSasSignatureValues), eq(userDelegationKey)))
             .thenReturn(TEST_QUERY_PARAMS);
 
-        assertEquals(TEST_QUERY_PARAMS, underTest.getSasUrl(blobServiceClient, containerName, blobName, blobServiceSasSignatureValues));
+        assertEquals(TEST_QUERY_PARAMS, underTest.getSasUrl(blobServiceClient, containerName, blobName, blobServiceSasSignatureValues),
+            "Result string should match output of getSasUrl function when using managed identity.");
 
         verify(mockBlobClient, never()).generateSas(any());
     }
@@ -95,7 +96,8 @@ public class BlobClientGenerateSasUrlFactoryTest {
 
         when(mockBlobClient.generateSas(eq(blobServiceSasSignatureValues))).thenReturn(TEST_QUERY_PARAMS);
 
-        assertEquals(TEST_QUERY_PARAMS, underTest.getSasUrl(blobServiceClient, containerName, blobName, blobServiceSasSignatureValues));
+        assertEquals(TEST_QUERY_PARAMS, underTest.getSasUrl(blobServiceClient, containerName, blobName, blobServiceSasSignatureValues),
+            "Result string should match output of getSasUrl function without managed identity.");
 
         verify(mockBlobClient, never()).generateUserDelegationSas(any(), any());
     }
