@@ -15,6 +15,7 @@ public final class MiExtractionServiceConstants {
 
     public static final String NOTIFY_BLOB_URL_TEMPLATE_PARAMETER = "blobUrl";
     public static final String NOTIFY_VALID_PERIOD_TEMPLATE_PARAMETER = "validPeriod";
+    public static final String NOTIFY_EMAIL_REFERENCE = "Management Information Extraction Service";
 
     private MiExtractionServiceConstants() {
         // Private Constructor
