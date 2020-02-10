@@ -10,8 +10,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import uk.gov.hmcts.reform.mi.micore.model.CoreCaseData;
+import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
-import uk.gov.hmcts.reform.mi.miextractionservice.model.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

@@ -7,8 +7,8 @@ import org.springframework.stereotype.Component;
 
 import uk.gov.hmcts.reform.mi.micore.model.CoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CoreCaseDataFormatterComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
-import uk.gov.hmcts.reform.mi.miextractionservice.model.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
 
 @Component

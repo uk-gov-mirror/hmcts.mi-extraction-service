@@ -117,7 +117,6 @@ public class CoreCaseDataExportTest {
 
         UNDER_TEST.addEnv("SPRING_MAIL_HOST", "host.testcontainers.internal");
         UNDER_TEST.addEnv("SPRING_MAIL_PORT", String.valueOf(dumbster.getPort()));
-        UNDER_TEST.addEnv("SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH", "false");
 
         UNDER_TEST.addEnv("STORAGE_STAGING_CONNECTION_STRING", String.format(DEFAULT_CONN_STRING, STAGING_HOST, DEFAULT_PORT));
         UNDER_TEST.addEnv("STORAGE_EXPORT_CONNECTION_STRING", String.format(DEFAULT_CONN_STRING, EXPORT_HOST, DEFAULT_PORT));

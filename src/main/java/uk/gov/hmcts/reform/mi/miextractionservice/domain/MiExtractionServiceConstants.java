@@ -1,4 +1,4 @@
-package uk.gov.hmcts.reform.mi.miextractionservice.model;
+package uk.gov.hmcts.reform.mi.miextractionservice.domain;
 
 public final class MiExtractionServiceConstants {
 
