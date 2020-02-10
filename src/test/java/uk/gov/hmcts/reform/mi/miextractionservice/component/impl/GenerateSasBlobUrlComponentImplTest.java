@@ -3,6 +3,7 @@ package uk.gov.hmcts.reform.mi.miextractionservice.component.impl;
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
+import com.azure.storage.blob.models.UserDelegationKey;
 import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,7 @@ import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
 import java.time.OffsetDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -59,7 +61,12 @@ public class GenerateSasBlobUrlComponentImplTest {
             dateTimeUtil.getCurrentDateTime().plusHours(TIME_TO_EXPIRY), new BlobSasPermission().setReadPermission(true)
         );
 
-        when(mockBlobClient.generateSas(refEq(blobServiceSasSignatureValues, LOGGER_PROPERTY))).thenReturn(TEST_QUERY_PARAMS);
+        UserDelegationKey userDelegationKey = mock(UserDelegationKey.class);
+        when(blobServiceClient.getUserDelegationKey(MOCK_CURRENT_DATETIME, MOCK_CURRENT_DATETIME.plusHours(TIME_TO_EXPIRY)))
+            .thenReturn(userDelegationKey);
+
+        when(mockBlobClient.generateUserDelegationSas(refEq(blobServiceSasSignatureValues, LOGGER_PROPERTY), eq(userDelegationKey)))
+            .thenReturn(TEST_QUERY_PARAMS);
 
         // When
         String sasUrl = underTest.generateUrlForBlob(blobServiceClient, containerName, blobName);

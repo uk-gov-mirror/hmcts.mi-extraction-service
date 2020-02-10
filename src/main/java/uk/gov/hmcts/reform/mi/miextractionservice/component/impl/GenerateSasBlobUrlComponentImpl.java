@@ -2,6 +2,7 @@ package uk.gov.hmcts.reform.mi.miextractionservice.component.impl;
 
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobServiceClient;
+import com.azure.storage.blob.models.UserDelegationKey;
 import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,13 @@ public class GenerateSasBlobUrlComponentImpl implements GenerateBlobUrlComponent
             .getBlobContainerClient(containerName)
             .getBlobClient(blobName);
 
-        return String.join(QUERY_PART_DELIMITER, blobClient.getBlobUrl(), blobClient.generateSas(blobServiceSasSignatureValues));
+        UserDelegationKey userDelegationKey = blobServiceClient
+            .getUserDelegationKey(dateTimeUtil.getCurrentDateTime(), dateTimeUtil.getCurrentDateTime().plusHours(TIME_TO_EXPIRY));
+
+        return String.join(
+            QUERY_PART_DELIMITER,
+            blobClient.getBlobUrl(),
+            blobClient.generateUserDelegationSas(blobServiceSasSignatureValues, userDelegationKey)
+        );
     }
 }
