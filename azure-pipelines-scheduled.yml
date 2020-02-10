@@ -5,30 +5,21 @@
 
 name: '$(SourceBranchName)-$(Build.SourceVersion) Build-$(Build.BuildId)'
 
-trigger:
-  batch: true
-  branches:
-    include:
-      - master
+schedules:
+  - cron: "0 0 * * *"
+    displayName: Daily midnight build
+    branches:
+      include:
+        - master
+    always: true
 
-  tags:
-    include:
-      - v*
-
-pr:
-  autoCancel: true
-  branches:
-    include:
-      - master
+trigger: none
+pr: none
 
 variables:
   #  group: pipeline-env-variables
-  ${{ if eq( variables['Build.Reason'], 'PullRequest') }}:
-    environment: 'test'
-    env.upper: 'TEST'
-  ${{ if ne( variables['Build.Reason'], 'PullRequest') }}:
-    environment: 'test' #Uset test and promoting to stg until prod is ready
-    env.upper: 'TEST'
+  environment: 'test' #Use test and promoting to stg until prod is ready
+  env.upper: 'TEST'
   env.prom: 'stg'
   env.prom.upper: 'STG'
   application.name: 'mi-extraction-service'
@@ -43,6 +34,7 @@ variables:
   product: 'mi'
   vault: 'mi-vault-$(env)'
   azure.prom.acr: 'ssprivate$(env.prom)'
+  helmRepo: 'ssprivate-$(env)'
 
 resources:
   repositories:
@@ -58,9 +50,8 @@ stages:
       applicationName: $(application.name)
       product: $(product)
       chartEnv: $(environment)
-      preIntegrationTest: true
       functionalTest: true
-      mutationTest: false
+      mutationTest: true
       azureVault: $(vault)
       azureSecreKeys: 'mi-staging-storage-connection-string,mi-export-storage-connection-string,mail-username,mail-password,archive-password'
       azureKeyMapping:
