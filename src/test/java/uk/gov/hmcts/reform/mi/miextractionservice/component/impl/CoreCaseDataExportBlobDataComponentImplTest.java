@@ -213,6 +213,112 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
     }
 
     @Test
+    public void givenSameFromDate_whenExportBlobDataAndGetUrl_thenCreateContainerAndReturnUrlOfUploadedExtractedDataBlob() {
+        OffsetDateTime fromDateSameAsEventDate = OffsetDateTime.of(2000, 01, 29, 0, 0, 0, 0, ZoneOffset.UTC);
+        String testOutputBlobName = "2000-01-29-2001-01-01-CCD_EXTRACT.zip";
+
+        BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
+
+        when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
+
+        when(blobContainerItem.getName()).thenReturn(TEST_CONTAINER_NAME);
+
+        BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
+
+        when(sourceBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)).thenReturn(blobContainerClient);
+
+        BlobItem blobItem = mock(BlobItem.class);
+
+        when(blobContainerClient.listBlobs()).thenReturn(new PagedIterableStub<>(blobItem));
+
+        when(blobItem.getName()).thenReturn(TEST_BLOB_NAME_ONE);
+
+        when(blobDownloadComponent.downloadBlob(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
+            .thenReturn(TEST_CCD_JSONL.getBytes());
+
+        when(dataParserComponent.parse(TEST_CCD_JSONL)).thenReturn(TEST_CCD_JSONL_AS_CORE_CASE_DATA);
+
+        when(coreCaseDataFormatterComponent.formatData(TEST_CCD_JSONL_AS_CORE_CASE_DATA)).thenReturn(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA);
+
+        BlobContainerClient targetBlobContainerClient = mock(BlobContainerClient.class);
+
+        when(targetBlobServiceClient.getBlobContainerClient(TEST_OUTPUT_CONTAINER_NAME)).thenReturn(targetBlobContainerClient);
+        when(targetBlobContainerClient.exists()).thenReturn(false);
+
+        BlobClient targetBlobClient = mock(BlobClient.class);
+
+        when(targetBlobContainerClient.getBlobClient(testOutputBlobName)).thenReturn(targetBlobClient);
+
+        when(generateBlobUrlComponent.generateUrlForBlob(targetBlobServiceClient, TEST_OUTPUT_CONTAINER_NAME, testOutputBlobName))
+            .thenReturn(TEST_SAS_URL);
+
+        String result = underTest
+            .exportBlobsAndReturnUrl(sourceBlobServiceClient, targetBlobServiceClient, fromDateSameAsEventDate, TEST_TO_DATE_TIME);
+
+        assertEquals(TEST_SAS_URL, result, "Returned url does not match the expected url.");
+
+        verify(targetBlobContainerClient, times(1)).create();
+        verify(csvWriterComponent)
+            .writeBeansAsCsvFile(CCD_WORKING_FILE_NAME, Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA));
+        verify(encryptArchiveComponent)
+            .createEncryptedArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
+        verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
+    }
+
+    @Test
+    public void givenSameToDate_whenExportBlobDataAndGetUrl_thenCreateContainerAndReturnUrlOfUploadedExtractedDataBlob() {
+        OffsetDateTime toDateSameAsEventDate = OffsetDateTime.of(2000, 01, 29, 0, 0, 0, 0, ZoneOffset.UTC);
+        String testOutputBlobName = "1999-12-01-2000-01-29-CCD_EXTRACT.zip";
+
+        BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
+
+        when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
+
+        when(blobContainerItem.getName()).thenReturn(TEST_CONTAINER_NAME);
+
+        BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
+
+        when(sourceBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)).thenReturn(blobContainerClient);
+
+        BlobItem blobItem = mock(BlobItem.class);
+
+        when(blobContainerClient.listBlobs()).thenReturn(new PagedIterableStub<>(blobItem));
+
+        when(blobItem.getName()).thenReturn(TEST_BLOB_NAME_ONE);
+
+        when(blobDownloadComponent.downloadBlob(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
+            .thenReturn(TEST_CCD_JSONL.getBytes());
+
+        when(dataParserComponent.parse(TEST_CCD_JSONL)).thenReturn(TEST_CCD_JSONL_AS_CORE_CASE_DATA);
+
+        when(coreCaseDataFormatterComponent.formatData(TEST_CCD_JSONL_AS_CORE_CASE_DATA)).thenReturn(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA);
+
+        BlobContainerClient targetBlobContainerClient = mock(BlobContainerClient.class);
+
+        when(targetBlobServiceClient.getBlobContainerClient(TEST_OUTPUT_CONTAINER_NAME)).thenReturn(targetBlobContainerClient);
+        when(targetBlobContainerClient.exists()).thenReturn(false);
+
+        BlobClient targetBlobClient = mock(BlobClient.class);
+
+        when(targetBlobContainerClient.getBlobClient(testOutputBlobName)).thenReturn(targetBlobClient);
+
+        when(generateBlobUrlComponent.generateUrlForBlob(targetBlobServiceClient, TEST_OUTPUT_CONTAINER_NAME, testOutputBlobName))
+            .thenReturn(TEST_SAS_URL);
+
+        String result = underTest
+            .exportBlobsAndReturnUrl(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, toDateSameAsEventDate);
+
+        assertEquals(TEST_SAS_URL, result, "Returned url does not match the expected url.");
+
+        verify(targetBlobContainerClient, times(1)).create();
+        verify(csvWriterComponent)
+            .writeBeansAsCsvFile(CCD_WORKING_FILE_NAME, Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA));
+        verify(encryptArchiveComponent)
+            .createEncryptedArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
+        verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
+    }
+
+    @Test
     public void givenNoDataToOutput_whenExportBlobData_thenThrowExportException() {
         when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>());
 
