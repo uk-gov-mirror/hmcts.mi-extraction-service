@@ -16,6 +16,7 @@ mi-job:
       resourceGroup: mi-{{ .Values.global.environment }}-rg
       secrets:
         - gov-uk-notify-api-key
+        - mailing-targets
         - archive-password
 
 global:
