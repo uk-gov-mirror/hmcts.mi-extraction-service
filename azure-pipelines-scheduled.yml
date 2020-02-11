@@ -53,7 +53,7 @@ stages:
       functionalTest: true
       mutationTest: true
       azureVault: $(vault)
-      azureSecreKeys: 'mi-staging-storage-connection-string,mi-export-storage-connection-string,mail-username,mail-password,archive-password'
+      azureSecreKeys: 'mi-staging-storage-connection-string,mi-export-storage-connection-string,gov-uk-notify-api-key,mailing-targets,archive-password'
       azureKeyMapping:
         - key: STORAGE_STAGING_CONNECTION_STRING
           value: 'mi-staging-storage-connection-string'
