@@ -89,8 +89,8 @@ public class CsvWriterComponentImplTest {
                 wrapStringInQuotes("{\"\"hello\"\":\"\"world\"\"}")
             );
 
-            // Remove generated fields from mutation test if exists
-            String actualHeader = dataAsString.get(0).replaceFirst(",$$*", "");
+            // Remove generated fields (prefixed with non-word characters) from mutation test if exists
+            String actualHeader = dataAsString.get(0).replaceAll(",\"\\W.*\"", "");
 
             assertEquals(expectedHeaderRow, actualHeader, "Header row did not match expected.");
             assertEquals(expectedDataRow, dataAsString.get(1), "Data row did not match expected.");

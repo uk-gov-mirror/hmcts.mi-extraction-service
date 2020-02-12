@@ -267,7 +267,7 @@ integrationPostTest {
 pitest {
   targetClasses = ['uk.gov.hmcts.reform.mi.miextractionservice.*']
   excludedClasses = ['uk.gov.hmcts.reform.mi.miextractionservice.MiExtractionServiceApplication*',
-                     'uk.gov.hmcts.reform.mi.miextractionservice.model.*']
+                     'uk.gov.hmcts.reform.mi.miextractionservice.domain.*']
   testSourceSets = [sourceSets.test]
   threads = 10
   outputFormats = ['XML', 'HTML']
