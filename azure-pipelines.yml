@@ -43,6 +43,7 @@ variables:
   product: 'mi'
   vault: 'mi-vault-$(env)'
   azure.prom.acr: 'ssprivate$(env.prom)'
+  helmRepo: 'ssprivate-$(env)'
 
 resources:
   repositories:
