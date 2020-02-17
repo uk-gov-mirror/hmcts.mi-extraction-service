@@ -12,21 +12,31 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST
 @Slf4j
 public final class TestUtils {
 
-    public static void cleanUpTestFiles(BlobServiceClient blobServiceClient, String containerName) {
+    public static void cleanUpTestFiles(BlobServiceClient blobServiceClient, String containerName) throws Exception {
         BlobContainerClient blobContainerClient = blobServiceClient.getBlobContainerClient(containerName);
 
         // Delete test container if it exists
         if (blobContainerClient.exists()) {
             blobContainerClient.delete();
         }
+
+        while (blobContainerClient.exists()) {
+            log.info("Waiting 5 seconds for container deletion");
+            Thread.sleep(5_000);
+        }
     }
 
-    public static void cleanUpSingleBlob(BlobServiceClient blobServiceClient, String containerName, String blobName) {
+    public static void cleanUpSingleBlob(BlobServiceClient blobServiceClient, String containerName, String blobName) throws Exception {
         BlobClient blobClient = blobServiceClient.getBlobContainerClient(containerName).getBlobClient(blobName);
 
         // Delete test container if it exists
         if (blobClient.exists()) {
             blobClient.delete();
+        }
+
+        while (blobClient.exists()) {
+            log.info("Waiting 5 seconds for container deletion");
+            Thread.sleep(5_000);
         }
     }
 
