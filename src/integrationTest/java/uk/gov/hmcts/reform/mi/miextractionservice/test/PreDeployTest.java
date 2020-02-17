@@ -39,7 +39,7 @@ public class PreDeployTest {
     private BlobServiceClient exportBlobServiceClient;
 
     @BeforeEach
-    public void setUp() {
+    public void setUp() throws InterruptedException {
         // Set up blob clients.
         stagingBlobServiceClient = blobServiceClientFactory
             .getBlobClientWithConnectionString(stagingConnectionString);

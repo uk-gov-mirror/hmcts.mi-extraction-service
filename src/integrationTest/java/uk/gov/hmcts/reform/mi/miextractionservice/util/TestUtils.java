@@ -12,7 +12,7 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST
 @Slf4j
 public final class TestUtils {
 
-    public static void cleanUpTestFiles(BlobServiceClient blobServiceClient, String containerName) throws Exception {
+    public static void cleanUpTestFiles(BlobServiceClient blobServiceClient, String containerName) throws InterruptedException {
         BlobContainerClient blobContainerClient = blobServiceClient.getBlobContainerClient(containerName);
 
         // Delete test container if it exists
@@ -26,7 +26,7 @@ public final class TestUtils {
         }
     }
 
-    public static void cleanUpSingleBlob(BlobServiceClient blobServiceClient, String containerName, String blobName) throws Exception {
+    public static void cleanUpSingleBlob(BlobServiceClient blobServiceClient, String containerName, String blobName) throws InterruptedException {
         BlobClient blobClient = blobServiceClient.getBlobContainerClient(containerName).getBlobClient(blobName);
 
         // Delete test container if it exists
