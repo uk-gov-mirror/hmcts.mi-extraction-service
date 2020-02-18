@@ -50,7 +50,7 @@ public final class TestUtils {
         }
     }
 
-    @SuppressWarnings({"PMD.DataflowAnomalyAnalysis", "PMD.AvoidThrowingRawExceptionTypes"})
+    @SuppressWarnings("PMD.DataflowAnomalyAnalysis")
     public static BlobClient createTestBlob(BlobServiceClient blobServiceClient, String blobName) throws InterruptedException {
         long startTime = System.currentTimeMillis();
 
@@ -77,6 +77,7 @@ public final class TestUtils {
         return blobClient;
     }
 
+    @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
     private static void checkTimeout(long startTime) {
         if ((System.currentTimeMillis() - startTime) > timeout) {
             throw new RuntimeException("Timed out trying to create test container.");
