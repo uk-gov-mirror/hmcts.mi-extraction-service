@@ -15,6 +15,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import uk.gov.hmcts.reform.mi.micore.component.BlobDownloadComponent;
 import uk.gov.hmcts.reform.mi.micore.model.CoreCaseData;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.CheckWhitelistComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CoreCaseDataFormatterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CsvWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.DataParserComponent;
@@ -32,6 +33,7 @@ import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -63,6 +65,9 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
     private static final String CCD_WORKING_ARCHIVE = "CCD_EXTRACT.zip";
 
     private static final String TEST_SAS_URL = "testSasUrl";
+
+    @Mock
+    private CheckWhitelistComponent checkWhitelistComponent;
 
     @Mock
     private BlobDownloadComponent<byte[]> blobDownloadComponent;
@@ -98,6 +103,8 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
     public void setUp() {
         sourceBlobServiceClient = mock(BlobServiceClient.class);
         targetBlobServiceClient = mock(BlobServiceClient.class);
+
+        when(checkWhitelistComponent.isContainerWhitelisted(anyString())).thenReturn(true);
     }
 
     @Test
@@ -316,6 +323,24 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         verify(encryptArchiveComponent)
             .createEncryptedArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
         verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
+    }
+
+    @Test
+    public void givenNotWhitelistedContainer_whenExportData_thenThrowExportException() {
+        BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
+
+        when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
+
+        when(blobContainerItem.getName()).thenReturn(TEST_CONTAINER_NAME);
+
+        BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
+
+        when(sourceBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)).thenReturn(blobContainerClient);
+
+        when(checkWhitelistComponent.isContainerWhitelisted(TEST_CONTAINER_NAME)).thenReturn(false);
+
+        assertThrows(ExportException.class,
+            () -> underTest.exportBlobsAndReturnUrl(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME));
     }
 
     @Test

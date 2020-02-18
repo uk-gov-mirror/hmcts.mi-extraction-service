@@ -12,35 +12,52 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST
 @Slf4j
 public final class TestUtils {
 
-    public static void cleanUpTestFiles(BlobServiceClient blobServiceClient, String containerName) {
+    private static long timeout = 120_000L;
+
+    public static void cleanUpTestFiles(BlobServiceClient blobServiceClient, String containerName) throws InterruptedException {
+        long startTime = System.currentTimeMillis();
+
         BlobContainerClient blobContainerClient = blobServiceClient.getBlobContainerClient(containerName);
 
         // Delete test container if it exists
         if (blobContainerClient.exists()) {
             blobContainerClient.delete();
         }
+
+        while (blobContainerClient.exists()) {
+            checkTimeout(startTime);
+
+            log.info("Waiting 5 seconds for container deletion");
+            Thread.sleep(5_000);
+        }
     }
 
-    public static void cleanUpSingleBlob(BlobServiceClient blobServiceClient, String containerName, String blobName) {
+    public static void cleanUpSingleBlob(BlobServiceClient blobServiceClient, String containerName, String blobName) throws InterruptedException {
+        long startTime = System.currentTimeMillis();
+
         BlobClient blobClient = blobServiceClient.getBlobContainerClient(containerName).getBlobClient(blobName);
 
         // Delete test container if it exists
         if (blobClient.exists()) {
             blobClient.delete();
         }
+
+        while (blobClient.exists()) {
+            checkTimeout(startTime);
+
+            log.info("Waiting 5 seconds for container deletion");
+            Thread.sleep(5_000);
+        }
     }
 
-    @SuppressWarnings({"PMD.DataflowAnomalyAnalysis", "PMD.AvoidThrowingRawExceptionTypes"})
+    @SuppressWarnings("PMD.DataflowAnomalyAnalysis")
     public static BlobClient createTestBlob(BlobServiceClient blobServiceClient, String blobName) throws InterruptedException {
-        long timeout = 120_000;
         long startTime = System.currentTimeMillis();
 
         BlobClient blobClient = null;
 
         do {
-            if ((System.currentTimeMillis() - startTime) > timeout) {
-                throw new RuntimeException("Timed out trying to create test container.");
-            }
+            checkTimeout(startTime);
 
             try {
                 BlobContainerClient blobContainerClient = blobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME);
@@ -58,6 +75,13 @@ public final class TestUtils {
         } while (Objects.isNull(blobClient));
 
         return blobClient;
+    }
+
+    @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
+    private static void checkTimeout(long startTime) {
+        if ((System.currentTimeMillis() - startTime) > timeout) {
+            throw new RuntimeException("Timed out trying to create test container.");
+        }
     }
 
     private TestUtils() {

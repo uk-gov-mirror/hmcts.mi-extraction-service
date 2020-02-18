@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import uk.gov.hmcts.reform.mi.micore.component.BlobDownloadComponent;
 import uk.gov.hmcts.reform.mi.micore.model.CoreCaseData;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.CheckWhitelistComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CoreCaseDataFormatterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CsvWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.DataParserComponent;
@@ -36,6 +37,9 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServ
 
 @Component
 public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataComponent {
+
+    @Autowired
+    private CheckWhitelistComponent checkWhitelistComponent;
 
     @Autowired
     private BlobDownloadComponent<byte[]> blobDownloadComponent;
@@ -73,7 +77,9 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
         List<String> blobNameIndexes = dateTimeUtil.getListOfYearsAndMonthsBetweenDates(fromDate, toDate);
 
         for (BlobContainerItem blobContainerItem : sourceBlobServiceClient.listBlobContainers()) {
-            if (blobContainerItem.getName().startsWith(CCD_DATA_CONTAINER_PREFIX)) {
+            if (checkWhitelistComponent.isContainerWhitelisted(blobContainerItem.getName())
+                && blobContainerItem.getName().startsWith(CCD_DATA_CONTAINER_PREFIX)) {
+
                 for (BlobItem blobItem : sourceBlobServiceClient.getBlobContainerClient(blobContainerItem.getName()).listBlobs()) {
                     if (blobNameIndexes.parallelStream().anyMatch(blobItem.getName()::contains)) {
 

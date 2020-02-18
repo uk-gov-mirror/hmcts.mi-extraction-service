@@ -50,6 +50,7 @@ stages:
       applicationName: $(application.name)
       product: $(product)
       chartEnv: $(environment)
+      preIntegrationTest: true
       functionalTest: true
       mutationTest: true
       azureVault: $(vault)
