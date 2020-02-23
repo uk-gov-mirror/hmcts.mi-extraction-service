@@ -1,6 +1,7 @@
 package uk.gov.hmcts.reform.mi.miextractionservice.service.impl;
 
 import com.azure.storage.blob.BlobServiceClient;
+import com.azure.storage.blob.models.BlobContainerItem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,6 +13,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.EmailBlobUrlToTargetsComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.factory.ExtractionBlobServiceClientFactory;
+import uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.PagedIterableStub;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
 
 import java.time.OffsetDateTime;
@@ -20,6 +22,7 @@ import java.time.ZoneOffset;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -40,6 +43,9 @@ public class BlobExportServiceImplTest {
 
     @Mock
     private DateTimeUtil dateTimeUtil;
+
+    @Mock
+    private BlobContainerItem blobContainerItem;
 
     @InjectMocks
     private BlobExportServiceImpl underTest;
@@ -88,5 +94,17 @@ public class BlobExportServiceImplTest {
         underTest.exportBlobs();
 
         verify(emailBlobUrlToTargetsComponent).sendBlobUrl(TEST_BLOB_URL);
+    }
+
+    @Test
+    public void testAllStorageAccountsConnection() {
+        when(stagingClient.listBlobContainers())
+            .thenReturn(new PagedIterableStub<>(blobContainerItem));
+        when(exportClient.listBlobContainers())
+            .thenReturn(new PagedIterableStub<>(blobContainerItem));
+
+        underTest.checkStorageConnection();
+        verify(stagingClient, times(1)).listBlobContainers();
+        verify(exportClient, times(1)).listBlobContainers();
     }
 }
