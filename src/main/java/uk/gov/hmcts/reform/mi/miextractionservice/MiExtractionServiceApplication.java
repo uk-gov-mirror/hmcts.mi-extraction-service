@@ -3,12 +3,14 @@ package uk.gov.hmcts.reform.mi.miextractionservice;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
+import uk.gov.hmcts.reform.mi.micore.component.HealthCheck;
 import uk.gov.hmcts.reform.mi.miextractionservice.service.BlobExportService;
 
 import java.time.Clock;
@@ -20,6 +22,10 @@ public class MiExtractionServiceApplication implements ApplicationRunner {
 
     @Autowired
     private BlobExportService blobExportService;
+    @Autowired
+    private HealthCheck healthCheck;
+    @Value("${smoke.test.enabled:false}")
+    private boolean smokeTest;
 
     @Bean
     public Clock clock() {
@@ -37,10 +43,14 @@ public class MiExtractionServiceApplication implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        log.info("Starting application runner.");
+        if (smokeTest) {
+            healthCheck.check();
+        } else {
+            log.info("Starting application runner.");
 
-        blobExportService.exportBlobs();
+            blobExportService.exportBlobs();
 
-        log.info("Finished application runner.");
+            log.info("Finished application runner.");
+        }
     }
 }

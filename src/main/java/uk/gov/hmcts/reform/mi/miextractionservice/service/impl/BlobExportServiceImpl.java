@@ -51,6 +51,21 @@ public class BlobExportServiceImpl implements BlobExportService {
         sendBlobUrlToTargetsComponent.sendBlobUrl(url);
     }
 
+    @Override
+    public void checkStorageConnection() {
+        extractionBlobServiceClientFactory
+            .getStagingClient()
+            .listBlobContainers()
+            .iterator()
+            .hasNext();
+
+        extractionBlobServiceClientFactory
+            .getExportClient()
+            .listBlobContainers()
+            .iterator()
+            .hasNext();
+    }
+
     private OffsetDateTime getStartOfDay(OffsetDateTime offsetDateTime) {
         return offsetDateTime.withHour(0).withMinute(0).withSecond(0).withNano(0);
     }
