@@ -23,10 +23,10 @@ pr:
 
 variables:
   #  group: pipeline-env-variables
-  ${{ if startsWith( variables['Build.Reason'], 'refs/pull/') }}:
+  ${{ if startsWith( variables['Build.SourceBranch'], 'refs/pull/') }}:
     environment: 'test'
     env.upper: 'TEST'
-  ${{ if not(startsWith(variables['Build.Reason'], 'refs/pull/')) }}:
+  ${{ if not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')) }}:
     environment: 'stg' #Use test and promoting to stg until prod is ready
     env.upper: 'STG'
   env.prom: 'prod'
