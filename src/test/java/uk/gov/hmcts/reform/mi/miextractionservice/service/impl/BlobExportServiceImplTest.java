@@ -71,7 +71,7 @@ public class BlobExportServiceImplTest {
             eq(stagingClient),
             eq(exportClient),
             eq(FIXED_DATETIME.minusDays(7L)),
-            eq(FIXED_DATETIME)
+            eq(FIXED_DATETIME.minusDays(1L).plusHours(23L).plusMinutes(59L).plusSeconds(59L).plusNanos(999L))
         )).thenReturn(TEST_BLOB_URL);
 
         underTest.exportBlobs();

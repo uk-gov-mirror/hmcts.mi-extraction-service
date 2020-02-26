@@ -40,7 +40,7 @@ public class BlobExportServiceImpl implements BlobExportService {
             ? getStartOfDay(dateTimeUtil.getCurrentDateTime().minusDays(7L)) : dateTimeUtil.parseDateString(retrieveFromDate);
 
         OffsetDateTime toDate  = StringUtils.isEmpty(retrieveToDate)
-            ? dateTimeUtil.getCurrentDateTime() : getEndOfDay(dateTimeUtil.parseDateString(retrieveToDate));
+            ? getEndOfDay(dateTimeUtil.getCurrentDateTime().minusDays(1L)) : getEndOfDay(dateTimeUtil.parseDateString(retrieveToDate));
 
         String url = exportBlobDataComponent.exportBlobsAndReturnUrl(
             extractionBlobServiceClientFactory.getStagingClient(),
