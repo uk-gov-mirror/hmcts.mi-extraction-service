@@ -23,14 +23,14 @@ pr:
 
 variables:
   #  group: pipeline-env-variables
-  ${{ if eq( variables['Build.Reason'], 'PullRequest') }}:
+  ${{ if startsWith( variables['Build.SourceBranch'], 'refs/pull/') }}:
     environment: 'test'
     env.upper: 'TEST'
-  ${{ if ne( variables['Build.Reason'], 'PullRequest') }}:
-    environment: 'test' #Use test and promoting to stg until prod is ready
-    env.upper: 'TEST'
-  env.prom: 'stg'
-  env.prom.upper: 'STG'
+  ${{ if not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')) }}:
+    environment: 'stg' #Use test and promoting to stg until prod is ready
+    env.upper: 'STG'
+  env.prom: 'prod'
+  env.prom.upper: 'PROD'
   application.name: 'mi-extraction-service'
   azure.container.registry: 'ssprivate$(env).azurecr.io'
   azure.subscription.endpoint: 'DTS-SHAREDSERVICES-$(env.upper)'
