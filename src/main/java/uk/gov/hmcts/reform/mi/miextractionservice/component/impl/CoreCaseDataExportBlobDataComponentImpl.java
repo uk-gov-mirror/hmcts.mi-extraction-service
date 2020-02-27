@@ -4,11 +4,13 @@ import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.models.BlobContainerItem;
 import com.azure.storage.blob.models.BlobItem;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import uk.gov.hmcts.reform.mi.micore.component.BlobDownloadComponent;
 import uk.gov.hmcts.reform.mi.micore.model.CoreCaseData;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobDownloadComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CheckWhitelistComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CoreCaseDataFormatterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CsvWriterComponent;
@@ -18,9 +20,16 @@ import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataCompon
 import uk.gov.hmcts.reform.mi.miextractionservice.component.GenerateBlobUrlComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ExportException;
+import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
-import uk.gov.hmcts.reform.mi.miextractionservice.util.ReaderUtil;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -35,14 +44,18 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServ
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_WORKING_FILE_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NAME_DELIMITER;
 
+@Slf4j
 @Component
 public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataComponent {
+
+    @Value("${max-lines-buffer}")
+    private String maxLines;
 
     @Autowired
     private CheckWhitelistComponent checkWhitelistComponent;
 
     @Autowired
-    private BlobDownloadComponent<byte[]> blobDownloadComponent;
+    private BlobDownloadComponent blobDownloadComponent;
 
     @Autowired
     private DataParserComponent<CoreCaseData> dataParserComponent;
@@ -54,13 +67,10 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
     private CsvWriterComponent<OutputCoreCaseData> csvWriterComponent;
 
     @Autowired
-    private  EncryptArchiveComponent encryptArchiveComponent;
+    private EncryptArchiveComponent encryptArchiveComponent;
 
     @Autowired
     private GenerateBlobUrlComponent generateBlobUrlComponent;
-
-    @Autowired
-    private ReaderUtil readerUtil;
 
     @Autowired
     private DateTimeUtil dateTimeUtil;
@@ -72,38 +82,11 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
                                           OffsetDateTime fromDate,
                                           OffsetDateTime toDate) {
 
-        List<OutputCoreCaseData> outputData = new ArrayList<>();
+        boolean dataFound = readAndWriteDataAsCsv(sourceBlobServiceClient, fromDate, toDate);
 
-        List<String> blobNameIndexes = dateTimeUtil.getListOfYearsAndMonthsBetweenDates(fromDate, toDate);
-
-        for (BlobContainerItem blobContainerItem : sourceBlobServiceClient.listBlobContainers()) {
-            if (checkWhitelistComponent.isContainerWhitelisted(blobContainerItem.getName())
-                && blobContainerItem.getName().startsWith(CCD_DATA_CONTAINER_PREFIX)) {
-
-                for (BlobItem blobItem : sourceBlobServiceClient.getBlobContainerClient(blobContainerItem.getName()).listBlobs()) {
-                    if (blobNameIndexes.parallelStream().anyMatch(blobItem.getName()::contains)) {
-
-                        byte[] blobData = blobDownloadComponent
-                            .downloadBlob(sourceBlobServiceClient, blobContainerItem.getName(), blobItem.getName());
-
-                        List<String> stringData = readerUtil.readBytesAsStrings(blobData);
-
-                        List<CoreCaseData> filteredData = filterDataInDateRange(stringData, fromDate, toDate);
-                        List<OutputCoreCaseData> formattedData = filteredData.stream()
-                            .map(coreCaseDataFormatterComponent::formatData)
-                            .collect(Collectors.toList());
-
-                        outputData.addAll(formattedData);
-                    }
-                }
-            }
-        }
-
-        if (Boolean.TRUE.equals(outputData.isEmpty())) {
+        if (Boolean.FALSE.equals(dataFound)) {
             throw new ExportException("No data to output.");
         }
-
-        csvWriterComponent.writeBeansAsCsvFile(CCD_WORKING_FILE_NAME, outputData);
 
         encryptArchiveComponent.createEncryptedArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
 
@@ -122,6 +105,99 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
         blobContainerClient.getBlobClient(outputBlobName).uploadFromFile(CCD_WORKING_ARCHIVE, true);
 
         return generateBlobUrlComponent.generateUrlForBlob(targetBlobServiceClient, CCD_OUTPUT_CONTAINER_NAME, outputBlobName);
+    }
+
+    private boolean readAndWriteDataAsCsv(BlobServiceClient sourceBlobServiceClient,
+                                          OffsetDateTime fromDate,
+                                          OffsetDateTime toDate) {
+        boolean dataFound = false;
+
+        List<String> blobNameIndexes = dateTimeUtil.getListOfYearsAndMonthsBetweenDates(fromDate, toDate);
+
+        try (BufferedWriter bufferedWriter = Files.newBufferedWriter(Paths.get(CCD_WORKING_FILE_NAME))) {
+
+            csvWriterComponent.writeHeadersToCsvFile(bufferedWriter);
+
+            for (BlobContainerItem blobContainerItem : sourceBlobServiceClient.listBlobContainers()) {
+
+                if (checkWhitelistComponent.isContainerWhitelisted(blobContainerItem.getName())
+                    && blobContainerItem.getName().startsWith(CCD_DATA_CONTAINER_PREFIX)) {
+
+                    BlobContainerClient blobContainerClient = sourceBlobServiceClient.getBlobContainerClient(blobContainerItem.getName());
+
+                    for (BlobItem blobItem : blobContainerClient.listBlobs()) {
+                        if (blobNameIndexes.parallelStream().anyMatch(blobItem.getName()::contains)) {
+
+                            // Once dataFound is true, stays true for the rest of the run.
+                            dataFound = parseAndWriteData(
+                                bufferedWriter,
+                                sourceBlobServiceClient,
+                                blobContainerItem.getName(),
+                                blobItem.getName(),
+                                fromDate,
+                                toDate
+                            ) || dataFound;
+                        }
+                    }
+                }
+            }
+        } catch (IOException exception) {
+            log.error("Exception occurred initialising file for writing.");
+            throw new ParserException("Unable create file for writing.", exception);
+        }
+
+        return dataFound;
+    }
+
+    @SuppressWarnings("PMD.LawOfDemeter")
+    private boolean parseAndWriteData(BufferedWriter bufferedWriter,
+                                      BlobServiceClient sourceBlobServiceClient,
+                                      String blobContainerName,
+                                      String blobName,
+                                      OffsetDateTime fromDate,
+                                      OffsetDateTime toDate) {
+
+        boolean dataFound = false;
+
+        try (InputStream inputStream = blobDownloadComponent
+            .openBlobInputStream(sourceBlobServiceClient, blobContainerName, blobName);
+             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
+
+            String line = bufferedReader.readLine();
+
+            List<String> outputLines = new ArrayList<>();
+
+            while (line != null) {
+                outputLines.add(line);
+                dataFound = true;
+
+                // Reached max buffer, so write to file chunk and clear
+                if (outputLines.size() >= Integer.parseInt(maxLines)) {
+                    writeDataToCsv(bufferedWriter, outputLines, fromDate, toDate);
+                    outputLines.clear();
+                }
+
+                line = bufferedReader.readLine();
+            }
+
+            if (Boolean.FALSE.equals(outputLines.isEmpty())) {
+                writeDataToCsv(bufferedWriter, outputLines, fromDate, toDate);
+            }
+        } catch (IOException exception) {
+            log.error("Exception occurred writing data from blob to file.");
+            throw new ParserException("Unable to parse or write data to file.", exception);
+        }
+
+        return dataFound;
+    }
+
+    private void writeDataToCsv(BufferedWriter writer, List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate) {
+        List<CoreCaseData> filteredData = filterDataInDateRange(data, fromDate, toDate);
+        List<OutputCoreCaseData> formattedData = filteredData.stream()
+            .map(coreCaseDataFormatterComponent::formatData)
+            .collect(Collectors.toList());
+
+        csvWriterComponent.writeBeansWithWriter(writer, formattedData);
     }
 
     private List<CoreCaseData> filterDataInDateRange(List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate) {

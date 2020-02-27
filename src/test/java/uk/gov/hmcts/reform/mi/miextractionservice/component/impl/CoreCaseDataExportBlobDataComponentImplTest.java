@@ -12,9 +12,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import uk.gov.hmcts.reform.mi.micore.component.BlobDownloadComponent;
 import uk.gov.hmcts.reform.mi.micore.model.CoreCaseData;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobDownloadComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CheckWhitelistComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CoreCaseDataFormatterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CsvWriterComponent;
@@ -27,13 +28,17 @@ import uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.PagedIterableStub
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.ReaderUtil;
 
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -54,6 +59,8 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
     private static final OffsetDateTime TEST_FROM_DATE_TIME = OffsetDateTime.of(1999, 12, 1, 0, 0, 0, 0, ZoneOffset.UTC);
     private static final OffsetDateTime TEST_TO_DATE_TIME = OffsetDateTime.of(2001, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
 
+    private static final String MAX_LINES_FIELD_PROPERTY = "maxLines";
+
     private static final String TEST_CONTAINER_NAME = "ccd-data-test";
     private static final String TEST_BLOB_NAME_ONE = "data-test-2000-01";
     private static final String TEST_BLOB_NAME_TWO = "data-test-2000-02";
@@ -70,7 +77,7 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
     private CheckWhitelistComponent checkWhitelistComponent;
 
     @Mock
-    private BlobDownloadComponent<byte[]> blobDownloadComponent;
+    private BlobDownloadComponent blobDownloadComponent;
 
     @Mock
     private DataParserComponent<CoreCaseData> dataParserComponent;
@@ -104,6 +111,8 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         sourceBlobServiceClient = mock(BlobServiceClient.class);
         targetBlobServiceClient = mock(BlobServiceClient.class);
 
+        ReflectionTestUtils.setField(underTest, MAX_LINES_FIELD_PROPERTY, "3000");
+
         when(checkWhitelistComponent.isContainerWhitelisted(anyString())).thenReturn(true);
     }
 
@@ -133,10 +142,10 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         String dataInPresentAndFuture = TEST_CCD_JSONL + "\n" + TEST_CCD_JSONL_OUTDATED_FUTURE;
 
-        when(blobDownloadComponent.downloadBlob(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
-            .thenReturn(dataInPresentAndFuture.getBytes());
-        when(blobDownloadComponent.downloadBlob(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_TWO))
-            .thenReturn(TEST_CCD_JSONL_OUTDATED_PAST.getBytes());
+        when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
+            .thenReturn(new ByteArrayInputStream(dataInPresentAndFuture.getBytes()));
+        when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_TWO))
+            .thenReturn(new ByteArrayInputStream(TEST_CCD_JSONL_OUTDATED_PAST.getBytes()));
 
         when(dataParserComponent.parse(TEST_CCD_JSONL)).thenReturn(TEST_CCD_JSONL_AS_CORE_CASE_DATA);
         when(dataParserComponent.parse(TEST_CCD_JSONL_OUTDATED_FUTURE))
@@ -164,7 +173,7 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         verify(targetBlobContainerClient, never()).create();
         verify(csvWriterComponent)
-            .writeBeansAsCsvFile(CCD_WORKING_FILE_NAME, Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA));
+            .writeBeansWithWriter(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
         verify(encryptArchiveComponent)
             .createEncryptedArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
         verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
@@ -188,8 +197,8 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         when(blobItem.getName()).thenReturn(TEST_BLOB_NAME_ONE);
 
-        when(blobDownloadComponent.downloadBlob(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
-            .thenReturn(TEST_CCD_JSONL.getBytes());
+        when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
+            .thenReturn(new ByteArrayInputStream(TEST_CCD_JSONL.getBytes()));
 
         when(dataParserComponent.parse(TEST_CCD_JSONL)).thenReturn(TEST_CCD_JSONL_AS_CORE_CASE_DATA);
 
@@ -213,7 +222,7 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         verify(targetBlobContainerClient, times(1)).create();
         verify(csvWriterComponent)
-            .writeBeansAsCsvFile(CCD_WORKING_FILE_NAME, Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA));
+            .writeBeansWithWriter(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
         verify(encryptArchiveComponent)
             .createEncryptedArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
         verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
@@ -240,8 +249,8 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         when(blobItem.getName()).thenReturn(TEST_BLOB_NAME_ONE);
 
-        when(blobDownloadComponent.downloadBlob(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
-            .thenReturn(TEST_CCD_JSONL.getBytes());
+        when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
+            .thenReturn(new ByteArrayInputStream(TEST_CCD_JSONL.getBytes()));
 
         when(dataParserComponent.parse(TEST_CCD_JSONL)).thenReturn(TEST_CCD_JSONL_AS_CORE_CASE_DATA);
 
@@ -266,7 +275,7 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         verify(targetBlobContainerClient, times(1)).create();
         verify(csvWriterComponent)
-            .writeBeansAsCsvFile(CCD_WORKING_FILE_NAME, Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA));
+            .writeBeansWithWriter(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
         verify(encryptArchiveComponent)
             .createEncryptedArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
         verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
@@ -293,8 +302,8 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         when(blobItem.getName()).thenReturn(TEST_BLOB_NAME_ONE);
 
-        when(blobDownloadComponent.downloadBlob(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
-            .thenReturn(TEST_CCD_JSONL.getBytes());
+        when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
+            .thenReturn(new ByteArrayInputStream(TEST_CCD_JSONL.getBytes()));
 
         when(dataParserComponent.parse(TEST_CCD_JSONL)).thenReturn(TEST_CCD_JSONL_AS_CORE_CASE_DATA);
 
@@ -319,7 +328,7 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         verify(targetBlobContainerClient, times(1)).create();
         verify(csvWriterComponent)
-            .writeBeansAsCsvFile(CCD_WORKING_FILE_NAME, Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA));
+            .writeBeansWithWriter(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
         verify(encryptArchiveComponent)
             .createEncryptedArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
         verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);

@@ -1,6 +1,5 @@
 package uk.gov.hmcts.reform.mi.miextractionservice.component.impl;
 
-import com.opencsv.CSVWriter;
 import com.opencsv.bean.StatefulBeanToCsv;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvDataTypeMismatchException;
@@ -11,8 +10,11 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CsvWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
+import uk.gov.hmcts.reform.mi.miextractionservice.lib.CSVWriterKeepAlive;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -22,18 +24,33 @@ import java.util.List;
 @Component
 public class CsvWriterComponentImpl implements CsvWriterComponent<OutputCoreCaseData> {
 
-    @SuppressWarnings("unchecked")
     @Override
-    public void writeBeansAsCsvFile(String filePath, List<OutputCoreCaseData> outputBeans) {
-        try (CSVWriter writer = new CSVWriter(Files.newBufferedWriter(Paths.get(filePath)))) {
-
+    public void writeHeadersToCsvFile(Writer writer) {
+        try (CSVWriterKeepAlive csvWriter = new CSVWriterKeepAlive(writer)) {
             // Note: order of column headers is determined by order of declaration in the class model.
             String[] columnHeaders = getHeaders();
 
-            writer.writeNext(columnHeaders);
+            csvWriter.writeNext(columnHeaders);
+        } catch (IOException e) {
+            throw new ParserException("Unable to write column headers to csv.", e);
+        }
+    }
 
-            StatefulBeanToCsv beanToCsv = new StatefulBeanToCsvBuilder(writer)
-                .build();
+    @Override
+    public void writeBeansAsCsvFile(String filePath, List<OutputCoreCaseData> outputBeans) {
+        try (BufferedWriter bufferedWriter = Files.newBufferedWriter(Paths.get(filePath))) {
+            writeHeadersToCsvFile(bufferedWriter);
+            writeBeansWithWriter(bufferedWriter, outputBeans);
+        } catch (IOException e) {
+            throw new ParserException("Unable to initialise file writer.", e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void writeBeansWithWriter(Writer writer, List<OutputCoreCaseData> outputBeans) {
+        try (CSVWriterKeepAlive csvWriter = new CSVWriterKeepAlive(writer)) {
+            StatefulBeanToCsv beanToCsv = new StatefulBeanToCsvBuilder(csvWriter).build();
 
             beanToCsv.write(outputBeans);
         } catch (IOException | CsvDataTypeMismatchException | CsvRequiredFieldEmptyException e) {
