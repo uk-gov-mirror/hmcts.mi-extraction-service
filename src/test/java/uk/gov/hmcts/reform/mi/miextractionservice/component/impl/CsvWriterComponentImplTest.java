@@ -4,12 +4,18 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
+import uk.gov.hmcts.reform.mi.miextractionservice.lib.CSVWriterKeepAlive;
+import uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.CSVWriterThrowExceptionStub;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.ReaderUtil;
+import uk.gov.hmcts.reform.mi.miextractionservice.wrapper.WriterWrapper;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,10 +28,15 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_DATA_ID;
 import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_METADATA_EVENT_ID;
 import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_STATE_ID;
@@ -35,10 +46,11 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConsta
 import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_DATA_JSON_STRING;
 import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_EXTRACTION_DATE;
 
+@SuppressWarnings({"PMD.TooManyMethods"})
 @ExtendWith(SpringExtension.class)
 public class CsvWriterComponentImplTest {
 
-    private static final String TEST_FILE_NAME = "test";
+    private static final String TEST_FILE_NAME = "unit-test";
     private static final String EXPECTED_HEADER_ROW = "\"extraction_date\",\"case_metadata_event_id\",\"ce_case_data_id\","
         + "\"ce_created_date\",\"ce_case_type_id\",\"ce_case_type_version\",\"ce_state_id\",\"data\"";
 
@@ -56,55 +68,123 @@ public class CsvWriterComponentImplTest {
 
     private String uniqueFileName;
 
+    @Mock
+    private WriterWrapper writerWrapper;
+
+    @InjectMocks
     private CsvWriterComponentImpl underTest;
 
-    @BeforeEach
-    public void setUp() {
-        uniqueFileName = TEST_FILE_NAME + UUID.randomUUID().toString();
+    private CSVWriterKeepAlive csvWriter;
+    private BufferedWriter bufferedWriter;
+    private Writer writer;
 
-        underTest = new CsvWriterComponentImpl();
+    @BeforeEach
+    public void setUp() throws IOException {
+        uniqueFileName = TEST_FILE_NAME + "-" + UUID.randomUUID().toString();
+
+        writer = mock(Writer.class);
+        csvWriter = spy(new CSVWriterKeepAlive(writer));
+        bufferedWriter = spy(new BufferedWriter(writer));
+
+        when(writerWrapper.getCsvWriter(any())).thenReturn(csvWriter);
+        when(writerWrapper.getBufferedWriter(any())).thenReturn(bufferedWriter);
     }
 
     @AfterEach
-    public void tearDown() {
+    public void tearDown() throws Exception {
         File testFile = new File(uniqueFileName);
 
         if (testFile.exists()) {
             new File(uniqueFileName).delete();
         }
+
+        writer.close();
     }
 
     @Test
     public void givenValidWriter_whenWriteHeaders_thenWriterWritesHeaders() throws Exception {
-        try (Writer writer = mock(Writer.class)) {
+        underTest.writeHeadersToCsvFile(writer);
 
-            underTest.writeHeadersToCsvFile(writer);
-
-            verify(writer).write(contains(EXPECTED_HEADER_ROW + "\n"));
-        }
+        verify(writer).write(contains(EXPECTED_HEADER_ROW + "\n"));
+        verify(writer, times(1)).flush();
+        verify(csvWriter, times(1)).close();
     }
 
     @Test
     public void givenValidWriter_whenWriteBeans_thenCsvFileIsCreated() throws Exception {
-        try (Writer writer = mock(Writer.class)) {
+        underTest.writeBeansWithWriter(writer, Collections.singletonList(TEST_OUTPUT_DATA));
 
-            underTest.writeBeansWithWriter(writer, Collections.singletonList(TEST_OUTPUT_DATA));
+        verify(writer).write(getExpectedDataString() + "\n");
+        verify(writer, times(1)).flush();
+        verify(csvWriter, times(1)).close();
+    }
 
-            verify(writer).write(getExpectedDataString() + "\n");
+    @Test
+    public void givenExceptionOnClose_whenWriteHeaders_thenThrowParserException() throws Exception {
+        doThrow(new IOException("Broken close")).when(csvWriter).close();
+
+        assertThrows(ParserException.class, () -> underTest.writeHeadersToCsvFile(writer));
+
+        verify(writer, never()).flush();
+    }
+
+    @Test
+    public void givenExceptionOnClose_whenWriteBeans_thenThrowParserException() throws Exception {
+        doThrow(new IOException("Broken close")).when(csvWriter).close();
+
+        assertThrows(ParserException.class, () -> underTest.writeBeansWithWriter(writer, Collections.singletonList(TEST_OUTPUT_DATA)));
+
+        verify(writer, never()).flush();
+    }
+
+    @Test
+    public void givenExceptionOnClose_whenWriteBeanToCsv_thenThrowParserException() throws Exception {
+        doThrow(new IOException("Broken close")).when(bufferedWriter).close();
+
+        assertThrows(ParserException.class, () -> underTest.writeBeansAsCsvFile(uniqueFileName, Collections.singletonList(TEST_OUTPUT_DATA)));
+
+        // One flush for write header and one flush for write line. Final flush for writer close not called due to exception.
+        verify(writer, times(2)).flush();
+    }
+
+    @Test
+    public void givenExceptionOnWrite_whenWriteHeaders_thenExceptionCaughtAndWriterIsClosed() throws Exception {
+        try (CSVWriterThrowExceptionStub csvWriterThrowsException = spy(new CSVWriterThrowExceptionStub(writer))) {
+            when(writerWrapper.getCsvWriter(any())).thenReturn(csvWriterThrowsException);
+
+            assertThrows(RuntimeException.class, () -> underTest.writeHeadersToCsvFile(writer));
+
+            verify(csvWriterThrowsException, times(1)).close();
         }
     }
 
     @Test
-    public void givenExceptionOnFlush_whenWriteBeans_thenThrowParserException() throws Exception {
-        try (Writer writer = mock(Writer.class)) {
-            doThrow(new IOException("Broken on write.")).when(writer).flush();
+    public void givenExceptionOnWrite_whenWriteBeans_thenExceptionCaughtAndWriterIsClosed() throws Exception {
+        try (CSVWriterThrowExceptionStub csvWriterThrowsException = spy(new CSVWriterThrowExceptionStub(writer))) {
+            when(writerWrapper.getCsvWriter(any())).thenReturn(csvWriterThrowsException);
 
-            assertThrows(ParserException.class, () -> underTest.writeBeansWithWriter(writer, Collections.singletonList(TEST_OUTPUT_DATA)));
+            assertThrows(RuntimeException.class, () -> underTest.writeBeansWithWriter(writer, Collections.singletonList(TEST_OUTPUT_DATA)));
+
+            verify(csvWriterThrowsException, times(1)).close();
+        }
+    }
+
+    @Test
+    public void givenExceptionOnWrite_whenWriteBeanToCsv_thenExceptionCaughtAndWriterIsClosed() throws Exception {
+        try (CSVWriterThrowExceptionStub csvWriterThrowsException = spy(new CSVWriterThrowExceptionStub(writer))) {
+            when(writerWrapper.getCsvWriter(any())).thenReturn(csvWriterThrowsException);
+
+            assertThrows(RuntimeException.class, () -> underTest.writeBeansAsCsvFile(uniqueFileName, Collections.singletonList(TEST_OUTPUT_DATA)));
+
+            verify(csvWriterThrowsException, times(1)).close();
         }
     }
 
     @Test
     public void givenValidFilePathAndBeans_whenWriteBeanToCsv_thenCsvFileIsCreated() throws Exception {
+        when(writerWrapper.getCsvWriter(any())).thenCallRealMethod();
+        when(writerWrapper.getBufferedWriter(any())).thenCallRealMethod();
+
         underTest.writeBeansAsCsvFile(uniqueFileName, Collections.singletonList(TEST_OUTPUT_DATA));
 
         try (InputStream fileInputStream = Files.newInputStream(Paths.get(uniqueFileName))) {
@@ -122,7 +202,10 @@ public class CsvWriterComponentImplTest {
     }
 
     @Test
-    public void givenInvalidFilePath_whenWriteBeanToCsv_thenParserExceptionIsThrown() {
+    public void givenInvalidFilePath_whenWriteBeanToCsv_thenParserExceptionIsThrown() throws Exception {
+        when(writerWrapper.getCsvWriter(any())).thenCallRealMethod();
+        when(writerWrapper.getBufferedWriter(any())).thenCallRealMethod();
+
         assertThrows(ParserException.class, () -> underTest.writeBeansAsCsvFile("/", Collections.emptyList()));
     }
 

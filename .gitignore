@@ -24,3 +24,4 @@ bin/main/application.yaml
 ### Generated Files
 CCD_EXTRACT.csv
 CCD_EXTRACT.zip
+unit-test-*
