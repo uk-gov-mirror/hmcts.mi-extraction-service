@@ -1,5 +1,6 @@
 package uk.gov.hmcts.reform.mi.miextractionservice;
 
+import com.microsoft.applicationinsights.TelemetryClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -19,18 +20,22 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 public class MiExtractionServiceApplicationTest {
+
     @InjectMocks
     private MiExtractionServiceApplication classToTest;
     @Mock
     private BlobExportService blobExportService;
     @Mock
     private HealthCheck healthCheck;
+    @Mock
+    private TelemetryClient client;
 
     @Test
     public void testApplicationExecuted() throws Exception {
         classToTest.run(null);
         verify(blobExportService, times(1)).exportBlobs();
         verify(healthCheck, never()).check();
+        verify(client, times(1)).flush();
     }
 
     @Test
@@ -39,6 +44,7 @@ public class MiExtractionServiceApplicationTest {
         classToTest.run(null);
         verify(healthCheck, times(1)).check();
         verify(blobExportService, never()).exportBlobs();
+        verify(client, times(1)).flush();
     }
 
     @Test
@@ -48,5 +54,6 @@ public class MiExtractionServiceApplicationTest {
         assertThrows(ServiceNotAvailableException.class, () -> classToTest.run(null));
         verify(healthCheck, times(1)).check();
         verify(blobExportService, never()).exportBlobs();
+        verify(client, times(1)).flush();
     }
 }

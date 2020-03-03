@@ -1,6 +1,7 @@
 package uk.gov.hmcts.reform.mi.miextractionservice;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.microsoft.applicationinsights.TelemetryClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,8 +25,14 @@ public class MiExtractionServiceApplication implements ApplicationRunner {
     private BlobExportService blobExportService;
     @Autowired
     private HealthCheck healthCheck;
+    @Autowired
+    private TelemetryClient client;
+
     @Value("${smoke.test.enabled:false}")
     private boolean smokeTest;
+
+    @Value("${telemetry.wait.period:10000}")
+    private int waitPeriod;
 
     @Bean
     public Clock clock() {
@@ -43,14 +50,26 @@ public class MiExtractionServiceApplication implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        if (smokeTest) {
-            healthCheck.check();
-        } else {
-            log.info("Starting application runner.");
+        try {
+            if (smokeTest) {
+                healthCheck.check();
+            } else {
+                log.info("Starting application runner.");
 
-            blobExportService.exportBlobs();
+                blobExportService.exportBlobs();
 
-            log.info("Finished application runner.");
+                log.info("Finished application runner.");
+            }
+        } catch (Exception e) {
+            log.error("Error executing extraction service", e);
+            throw e;
+        } finally {
+            client.flush();
+            waitTelemetryGracefulPeriod();
         }
+    }
+
+    private void waitTelemetryGracefulPeriod() throws InterruptedException {
+        Thread.sleep(waitPeriod);
     }
 }

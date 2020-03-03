@@ -5,6 +5,7 @@ import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.models.BlobContainerItem;
 import com.azure.storage.blob.models.BlobItem;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -22,13 +23,13 @@ import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ExportException;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
+import uk.gov.hmcts.reform.mi.miextractionservice.wrapper.WriterWrapper;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -50,6 +51,9 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
 
     @Value("${max-lines-buffer}")
     private String maxLines;
+
+    @Autowired
+    private WriterWrapper writerWrapper;
 
     @Autowired
     private CheckWhitelistComponent checkWhitelistComponent;
@@ -114,7 +118,7 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
 
         List<String> blobNameIndexes = dateTimeUtil.getListOfYearsAndMonthsBetweenDates(fromDate, toDate);
 
-        try (BufferedWriter bufferedWriter = Files.newBufferedWriter(Paths.get(CCD_WORKING_FILE_NAME))) {
+        try (BufferedWriter bufferedWriter = writerWrapper.getBufferedWriter(Paths.get(CCD_WORKING_FILE_NAME))) {
 
             csvWriterComponent.writeHeadersToCsvFile(bufferedWriter);
 
@@ -159,8 +163,7 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
 
         boolean dataFound = false;
 
-        try (InputStream inputStream = blobDownloadComponent
-            .openBlobInputStream(sourceBlobServiceClient, blobContainerName, blobName);
+        try (InputStream inputStream = blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, blobContainerName, blobName);
              BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
 
             String line = bufferedReader.readLine();
@@ -168,13 +171,15 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
             List<String> outputLines = new ArrayList<>();
 
             while (line != null) {
-                outputLines.add(line);
-                dataFound = true;
+                if (StringUtils.isNotBlank(line)) {
+                    outputLines.add(line);
+                    dataFound = true;
 
-                // Reached max buffer, so write to file chunk and clear
-                if (outputLines.size() >= Integer.parseInt(maxLines)) {
-                    writeDataToCsv(bufferedWriter, outputLines, fromDate, toDate);
-                    outputLines.clear();
+                    // Reached max buffer, so write to file chunk and clear
+                    if (outputLines.size() >= Integer.parseInt(maxLines)) {
+                        writeDataToCsv(bufferedWriter, outputLines, fromDate, toDate);
+                        outputLines.clear();
+                    }
                 }
 
                 line = bufferedReader.readLine();

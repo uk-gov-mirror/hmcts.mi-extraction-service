@@ -114,7 +114,8 @@ project.tasks['sonarqube'].dependsOn test, jacocoTestReport
 
 def sonarExclusions = [
     '**uk/gov/hmcts/reform/mi/miextractionservice/MiExtractionServiceApplication.java',
-    '**uk/gov/hmcts/reform/mi/miextractionservice/domain/**'
+    '**uk/gov/hmcts/reform/mi/miextractionservice/domain/**',
+    '**uk/gov/hmcts/reform/mi/miextractionservice/wrapper/**'
 ]
 
 sonarqube {
@@ -176,7 +177,7 @@ def versions = [
   miCoreLib        : '3.0.8',
   reformLogging    : '5.1.1',
   openCsv          : '5.1',
-  piTest           : '1.4.10',
+  piTest           : '1.5.0',
   piTestGradle     : '1.4.5',
   piTestSonar      : '0.5',
   springBootMail   : '2.2.2.RELEASE',
@@ -220,13 +221,18 @@ dependencies {
     exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
   }
 
+  functionalTestImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-mail', version: versions.springBootMail
+
   functionalTestImplementation group: 'uk.gov.hmcts.reform.mi', name: 'mi-core-lib', version: versions.miCoreLib
+
+  functionalTestImplementation group: 'uk.gov.service.notify', name: 'notifications-java-client', version: versions.hmctsNotify
 
   functionalTestImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: versions.junit
   functionalTestImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: versions.junit
   functionalTestRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: versions.junit
 
   functionalTestImplementation group: 'org.testcontainers', name: 'junit-jupiter', version: versions.testContainers
+  functionalTestImplementation group: 'com.opencsv', name: 'opencsv', version: versions.openCsv
   functionalTestImplementation group: 'net.lingala.zip4j', name: 'zip4j', version: versions.zip4j
   functionalTestImplementation group: 'com.github.kirviq', name: 'dumbster', version: versions.dumbster
 
@@ -265,9 +271,11 @@ integrationPostTest {
 }
 
 pitest {
+  pitestVersion = '1.5.0'
   targetClasses = ['uk.gov.hmcts.reform.mi.miextractionservice.*']
   excludedClasses = ['uk.gov.hmcts.reform.mi.miextractionservice.MiExtractionServiceApplication*',
-                     'uk.gov.hmcts.reform.mi.miextractionservice.domain.*']
+                     'uk.gov.hmcts.reform.mi.miextractionservice.domain.*',
+                     'uk.gov.hmcts.reform.mi.miextractionservice.wrapper.*']
   testSourceSets = [sourceSets.test]
   threads = 10
   outputFormats = ['XML', 'HTML']
