@@ -24,12 +24,12 @@ public final class TestUtils {
             blobContainerClient.delete();
         }
 
-        while (blobContainerClient.exists()) {
+        do {
             checkTimeout(startTime);
 
             log.info("Waiting 5 seconds for container deletion");
             Thread.sleep(5_000);
-        }
+        } while (blobContainerClient.exists());
     }
 
     public static void cleanUpSingleBlob(BlobServiceClient blobServiceClient, String containerName, String blobName) throws InterruptedException {
@@ -42,12 +42,12 @@ public final class TestUtils {
             blobClient.delete();
         }
 
-        while (blobClient.exists()) {
+        do {
             checkTimeout(startTime);
 
             log.info("Waiting 5 seconds for container deletion");
             Thread.sleep(5_000);
-        }
+        } while (blobClient.exists());
     }
 
     @SuppressWarnings("PMD.DataflowAnomalyAnalysis")
