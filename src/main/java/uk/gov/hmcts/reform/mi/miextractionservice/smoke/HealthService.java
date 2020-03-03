@@ -1,4 +1,4 @@
-package uk.gov.hmcts.reform.mi.miextractionservice.smote;
+package uk.gov.hmcts.reform.mi.miextractionservice.smoke;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

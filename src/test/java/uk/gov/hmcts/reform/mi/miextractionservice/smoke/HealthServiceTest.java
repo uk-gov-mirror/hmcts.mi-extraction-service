@@ -8,7 +8,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import uk.gov.hmcts.reform.mi.micore.exception.ServiceNotAvailableException;
 import uk.gov.hmcts.reform.mi.miextractionservice.service.BlobExportService;
-import uk.gov.hmcts.reform.mi.miextractionservice.smote.HealthService;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
