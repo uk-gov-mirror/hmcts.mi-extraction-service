@@ -71,6 +71,8 @@ public class BlobExportServiceImpl implements BlobExportService {
         if (sasIpWhitelist.getRange().isEmpty()) {
             message = generateBlobUrlComponent.generateUrlForBlob(exportClient, CCD_OUTPUT_CONTAINER_NAME, outputBlobName);
         } else {
+            message = "Each link is restricted by IP address for security. Please check you use the correct one." + MESSAGE_NEWLINE_DELIMITER;
+
             for (String key : sasIpWhitelist.getRange().keySet()) {
                 String locationName = key.replaceAll(LOCATION_DELIMITER, SPACE_DELIMITER);
 

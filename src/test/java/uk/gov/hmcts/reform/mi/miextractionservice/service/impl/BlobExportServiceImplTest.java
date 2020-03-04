@@ -144,7 +144,9 @@ public class BlobExportServiceImplTest {
 
         underTest.exportBlobs();
 
-        String expectedMessage = homeOffice.replaceAll("-", " ") + " : " + TEST_BLOB_URL
+        String expectedMessage = "Each link is restricted by IP address for security. Please check you use the correct one."
+            + "\n\n"
+            + homeOffice.replaceAll("-", " ") + " : " + TEST_BLOB_URL
             + "\n\n"
             + workOffice.replaceAll("-", " ") + " : " + workBlobUrl
             + "\n\n";
