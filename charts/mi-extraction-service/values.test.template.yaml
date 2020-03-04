@@ -6,6 +6,7 @@ mi-job:
     MI_CLIENT_ID: 58ed3fc0-18be-4a6f-8ceb-14768c8e796a
     RETRIEVE_FROM_DATE: 1970-01-01
     RETRIEVE_TO_DATE: 1970-01-02
+    SAS-IP-WHITELIST_RANGE_PETTY-FRANCE: 213.121.161.0-213.121.161.255
 global:
   subscriptionId: "3eec5bde-7feb-4566-bfb6-805df6e10b90"
   environment: test
