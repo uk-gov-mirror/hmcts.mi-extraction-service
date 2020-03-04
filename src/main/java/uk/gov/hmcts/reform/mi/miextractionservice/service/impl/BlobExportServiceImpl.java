@@ -1,5 +1,6 @@
 package uk.gov.hmcts.reform.mi.miextractionservice.service.impl;
 
+import com.azure.storage.blob.BlobServiceClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -7,14 +8,23 @@ import org.springframework.util.StringUtils;
 
 import uk.gov.hmcts.reform.mi.miextractionservice.component.EmailBlobUrlToTargetsComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.GenerateBlobUrlComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.domain.SasIpWhitelist;
 import uk.gov.hmcts.reform.mi.miextractionservice.factory.ExtractionBlobServiceClientFactory;
 import uk.gov.hmcts.reform.mi.miextractionservice.service.BlobExportService;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
 
 import java.time.OffsetDateTime;
 
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_OUTPUT_CONTAINER_NAME;
+
 @Service
 public class BlobExportServiceImpl implements BlobExportService {
+
+    private static final String MESSAGE_DELIMITER = " : ";
+    private static final String MESSAGE_NEWLINE_DELIMITER = "\n\n";
+    private static final String LOCATION_DELIMITER = "-";
+    private static final String SPACE_DELIMITER = " ";
 
     @Value("${retrieve-from-date}")
     private String retrieveFromDate;
@@ -23,10 +33,16 @@ public class BlobExportServiceImpl implements BlobExportService {
     private String retrieveToDate;
 
     @Autowired
+    private SasIpWhitelist sasIpWhitelist;
+
+    @Autowired
     private ExtractionBlobServiceClientFactory extractionBlobServiceClientFactory;
 
     @Autowired
     private ExportBlobDataComponent exportBlobDataComponent;
+
+    @Autowired
+    private GenerateBlobUrlComponent generateBlobUrlComponent;
 
     @Autowired
     private EmailBlobUrlToTargetsComponent sendBlobUrlToTargetsComponent;
@@ -42,13 +58,30 @@ public class BlobExportServiceImpl implements BlobExportService {
         OffsetDateTime toDate  = StringUtils.isEmpty(retrieveToDate)
             ? getEndOfDay(dateTimeUtil.getCurrentDateTime().minusDays(1L)) : getEndOfDay(dateTimeUtil.parseDateString(retrieveToDate));
 
-        String url = exportBlobDataComponent.exportBlobsAndReturnUrl(
+        BlobServiceClient exportClient = extractionBlobServiceClientFactory.getExportClient();
+
+        String outputBlobName = exportBlobDataComponent.exportBlobsAndGetOutputName(
             extractionBlobServiceClientFactory.getStagingClient(),
-            extractionBlobServiceClientFactory.getExportClient(),
+            exportClient,
             fromDate,
             toDate);
 
-        sendBlobUrlToTargetsComponent.sendBlobUrl(url);
+        String message = "";
+
+        if (sasIpWhitelist.getRange().isEmpty()) {
+            message = generateBlobUrlComponent.generateUrlForBlob(exportClient, CCD_OUTPUT_CONTAINER_NAME, outputBlobName);
+        } else {
+            for (String key : sasIpWhitelist.getRange().keySet()) {
+                String locationName = key.replaceAll(LOCATION_DELIMITER, SPACE_DELIMITER);
+
+                message = message.concat(locationName + MESSAGE_DELIMITER + generateBlobUrlComponent
+                    .generateUrlForBlobWithIpRange(exportClient, CCD_OUTPUT_CONTAINER_NAME, outputBlobName, sasIpWhitelist.getRange().get(key)));
+
+                message = message.concat(MESSAGE_NEWLINE_DELIMITER);
+            }
+        }
+
+        sendBlobUrlToTargetsComponent.sendBlobUrl(message);
     }
 
     @Override

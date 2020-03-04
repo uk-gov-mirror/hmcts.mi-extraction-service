@@ -5,4 +5,6 @@ import com.azure.storage.blob.BlobServiceClient;
 public interface GenerateBlobUrlComponent {
 
     String generateUrlForBlob(BlobServiceClient blobServiceClient, String containerName, String blobName);
+
+    String generateUrlForBlobWithIpRange(BlobServiceClient blobServiceClient, String containerName, String blobName, String ipRange);
 }

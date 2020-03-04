@@ -18,7 +18,6 @@ import uk.gov.hmcts.reform.mi.miextractionservice.component.CsvWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.DataParserComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.EncryptArchiveComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.component.GenerateBlobUrlComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ExportException;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
@@ -74,17 +73,23 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
     private EncryptArchiveComponent encryptArchiveComponent;
 
     @Autowired
-    private GenerateBlobUrlComponent generateBlobUrlComponent;
-
-    @Autowired
     private DateTimeUtil dateTimeUtil;
 
+    /**
+     * Exports data matching date range provided as a CSV, compressed in an encrypted archive for ease of upload and download and security.
+     *
+     * @param sourceBlobServiceClient the blob service client of the source storage account.
+     * @param targetBlobServiceClient the blob service client of the target storage account.
+     * @param fromDate the first date in yyyy-MM-dd format to pull data for.
+     * @param toDate the last date in yyyy-MM-dd format to pull data for.
+     * @return String name of the generated archive stored as a blob on the storage account.
+     */
     @SuppressWarnings("PMD.LawOfDemeter")
     @Override
-    public String exportBlobsAndReturnUrl(BlobServiceClient sourceBlobServiceClient,
-                                          BlobServiceClient targetBlobServiceClient,
-                                          OffsetDateTime fromDate,
-                                          OffsetDateTime toDate) {
+    public String exportBlobsAndGetOutputName(BlobServiceClient sourceBlobServiceClient,
+                                              BlobServiceClient targetBlobServiceClient,
+                                              OffsetDateTime fromDate,
+                                              OffsetDateTime toDate) {
 
         boolean dataFound = readAndWriteDataAsCsv(sourceBlobServiceClient, fromDate, toDate);
 
@@ -108,7 +113,7 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
 
         blobContainerClient.getBlobClient(outputBlobName).uploadFromFile(CCD_WORKING_ARCHIVE, true);
 
-        return generateBlobUrlComponent.generateUrlForBlob(targetBlobServiceClient, CCD_OUTPUT_CONTAINER_NAME, outputBlobName);
+        return outputBlobName;
     }
 
     private boolean readAndWriteDataAsCsv(BlobServiceClient sourceBlobServiceClient,

@@ -6,8 +6,8 @@ import java.time.OffsetDateTime;
 
 public interface ExportBlobDataComponent {
 
-    String exportBlobsAndReturnUrl(BlobServiceClient sourceBlobServiceClient,
-                                   BlobServiceClient targetBlobServiceClient,
-                                   OffsetDateTime fromDate,
-                                   OffsetDateTime toDate);
+    String exportBlobsAndGetOutputName(BlobServiceClient sourceBlobServiceClient,
+                                       BlobServiceClient targetBlobServiceClient,
+                                       OffsetDateTime fromDate,
+                                       OffsetDateTime toDate);
 }
