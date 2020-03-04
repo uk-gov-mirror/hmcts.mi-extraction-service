@@ -9,15 +9,18 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
 import uk.gov.hmcts.reform.mi.micore.component.HealthCheck;
+import uk.gov.hmcts.reform.mi.miextractionservice.domain.SasIpWhitelist;
 import uk.gov.hmcts.reform.mi.miextractionservice.service.BlobExportService;
 
 import java.time.Clock;
 
 @Slf4j
 @SpringBootApplication(scanBasePackages = "uk.gov.hmcts.reform")
+@EnableConfigurationProperties(SasIpWhitelist.class)
 @SuppressWarnings("HideUtilityClassConstructor") // Spring needs a constructor, its not a utility class
 public class MiExtractionServiceApplication implements ApplicationRunner {
 

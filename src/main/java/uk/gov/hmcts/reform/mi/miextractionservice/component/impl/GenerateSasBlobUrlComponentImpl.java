@@ -4,6 +4,7 @@ import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
+import com.azure.storage.common.sas.SasIpRange;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -21,14 +22,23 @@ public class GenerateSasBlobUrlComponentImpl implements GenerateBlobUrlComponent
     private DateTimeUtil dateTimeUtil;
 
     @Autowired
-    BlobClientGenerateSasUrlFactory blobClientGenerateSasUrlFactory;
+    private BlobClientGenerateSasUrlFactory blobClientGenerateSasUrlFactory;
 
     @Override
     public String generateUrlForBlob(BlobServiceClient blobServiceClient, String containerName, String blobName) {
+        return generateUrlForBlobWithIpRange(blobServiceClient, containerName, blobName, null);
+    }
+
+    @Override
+    public String generateUrlForBlobWithIpRange(BlobServiceClient blobServiceClient, String containerName, String blobName, String ipRange) {
         BlobSasPermission blobSasPermission = new BlobSasPermission().setReadPermission(true);
 
         BlobServiceSasSignatureValues blobServiceSasSignatureValues =
             new BlobServiceSasSignatureValues(dateTimeUtil.getCurrentDateTime().plusHours(TIME_TO_EXPIRY), blobSasPermission);
+
+        if (ipRange != null) {
+            blobServiceSasSignatureValues.setSasIpRange(SasIpRange.parse(ipRange));
+        }
 
         BlobClient blobClient = blobServiceClient
             .getBlobContainerClient(containerName)

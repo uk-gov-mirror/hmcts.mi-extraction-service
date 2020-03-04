@@ -22,7 +22,6 @@ import uk.gov.hmcts.reform.mi.miextractionservice.component.CoreCaseDataFormatte
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CsvWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.DataParserComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.EncryptArchiveComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.component.GenerateBlobUrlComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ExportException;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
@@ -67,6 +66,8 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConsta
 @ExtendWith(SpringExtension.class)
 public class CoreCaseDataExportBlobDataComponentImplTest {
 
+    private static final String OUTPUT_ASSERTION_MATCHING_ERROR = "Returned blob name does not match the expected.";
+
     private static final OffsetDateTime TEST_FROM_DATE_TIME = OffsetDateTime.of(1999, 12, 1, 0, 0, 0, 0, ZoneOffset.UTC);
     private static final OffsetDateTime TEST_TO_DATE_TIME = OffsetDateTime.of(2001, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
 
@@ -81,8 +82,6 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
     private static final String CCD_WORKING_FILE_NAME = "CCD_EXTRACT.csv";
     private static final String CCD_WORKING_ARCHIVE = "CCD_EXTRACT.zip";
-
-    private static final String TEST_SAS_URL = "testSasUrl";
 
     @Mock
     private WriterWrapper writerWrapper;
@@ -104,9 +103,6 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
     @Mock
     private EncryptArchiveComponent encryptArchiveComponent;
-
-    @Mock
-    private GenerateBlobUrlComponent generateBlobUrlComponent;
 
     @Spy
     private ReaderUtil readerUtil;
@@ -182,12 +178,11 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         when(targetBlobContainerClient.getBlobClient(TEST_OUTPUT_BLOB_NAME)).thenReturn(targetBlobClient);
 
-        when(generateBlobUrlComponent.generateUrlForBlob(targetBlobServiceClient, TEST_OUTPUT_CONTAINER_NAME, TEST_OUTPUT_BLOB_NAME))
-            .thenReturn(TEST_SAS_URL);
+        String result = underTest.exportBlobsAndGetOutputName(
+            sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME
+        );
 
-        String result = underTest.exportBlobsAndReturnUrl(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME);
-
-        assertEquals(TEST_SAS_URL, result, "Returned url does not match expected.");
+        assertEquals(TEST_OUTPUT_BLOB_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, never()).create();
         verify(csvWriterComponent, times(1))
@@ -236,12 +231,11 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         when(targetBlobContainerClient.getBlobClient(TEST_OUTPUT_BLOB_NAME)).thenReturn(targetBlobClient);
 
-        when(generateBlobUrlComponent.generateUrlForBlob(targetBlobServiceClient, TEST_OUTPUT_CONTAINER_NAME, TEST_OUTPUT_BLOB_NAME))
-            .thenReturn(TEST_SAS_URL);
+        String result = underTest.exportBlobsAndGetOutputName(
+            sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME
+        );
 
-        String result = underTest.exportBlobsAndReturnUrl(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME);
-
-        assertEquals(TEST_SAS_URL, result, "Returned url does not match expected.");
+        assertEquals(TEST_OUTPUT_BLOB_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, never()).create();
         verify(csvWriterComponent, times(3))
@@ -294,12 +288,11 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         when(targetBlobContainerClient.getBlobClient(TEST_OUTPUT_BLOB_NAME)).thenReturn(targetBlobClient);
 
-        when(generateBlobUrlComponent.generateUrlForBlob(targetBlobServiceClient, TEST_OUTPUT_CONTAINER_NAME, TEST_OUTPUT_BLOB_NAME))
-            .thenReturn(TEST_SAS_URL);
+        String result = underTest.exportBlobsAndGetOutputName(
+            sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME
+        );
 
-        String result = underTest.exportBlobsAndReturnUrl(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME);
-
-        assertEquals(TEST_SAS_URL, result, "Returned url does not match expected.");
+        assertEquals(TEST_OUTPUT_BLOB_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, never()).create();
         verify(csvWriterComponent)
@@ -346,12 +339,11 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         when(targetBlobContainerClient.getBlobClient(TEST_OUTPUT_BLOB_NAME)).thenReturn(targetBlobClient);
 
-        when(generateBlobUrlComponent.generateUrlForBlob(targetBlobServiceClient, TEST_OUTPUT_CONTAINER_NAME, TEST_OUTPUT_BLOB_NAME))
-            .thenReturn(TEST_SAS_URL);
+        String result = underTest.exportBlobsAndGetOutputName(
+            sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME
+        );
 
-        String result = underTest.exportBlobsAndReturnUrl(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME);
-
-        assertEquals(TEST_SAS_URL, result, "Returned url does not match the expected url.");
+        assertEquals(TEST_OUTPUT_BLOB_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, times(1)).create();
         verify(csvWriterComponent)
@@ -399,13 +391,10 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         when(targetBlobContainerClient.getBlobClient(testOutputBlobName)).thenReturn(targetBlobClient);
 
-        when(generateBlobUrlComponent.generateUrlForBlob(targetBlobServiceClient, TEST_OUTPUT_CONTAINER_NAME, testOutputBlobName))
-            .thenReturn(TEST_SAS_URL);
-
         String result = underTest
-            .exportBlobsAndReturnUrl(sourceBlobServiceClient, targetBlobServiceClient, fromDateSameAsEventDate, TEST_TO_DATE_TIME);
+            .exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, fromDateSameAsEventDate, TEST_TO_DATE_TIME);
 
-        assertEquals(TEST_SAS_URL, result, "Returned url does not match the expected url.");
+        assertEquals(testOutputBlobName, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, times(1)).create();
         verify(csvWriterComponent)
@@ -453,13 +442,10 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         when(targetBlobContainerClient.getBlobClient(testOutputBlobName)).thenReturn(targetBlobClient);
 
-        when(generateBlobUrlComponent.generateUrlForBlob(targetBlobServiceClient, TEST_OUTPUT_CONTAINER_NAME, testOutputBlobName))
-            .thenReturn(TEST_SAS_URL);
-
         String result = underTest
-            .exportBlobsAndReturnUrl(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, toDateSameAsEventDate);
+            .exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, toDateSameAsEventDate);
 
-        assertEquals(TEST_SAS_URL, result, "Returned url does not match the expected url.");
+        assertEquals(testOutputBlobName, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, times(1)).create();
         verify(csvWriterComponent)
@@ -485,7 +471,7 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         when(checkWhitelistComponent.isContainerWhitelisted(TEST_CONTAINER_NAME)).thenReturn(false);
 
         assertThrows(ExportException.class,
-            () -> underTest.exportBlobsAndReturnUrl(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME));
+            () -> underTest.exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME));
     }
 
     @Test
@@ -493,7 +479,7 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>());
 
         assertThrows(ExportException.class,
-            () -> underTest.exportBlobsAndReturnUrl(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME));
+            () -> underTest.exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME));
     }
 
     @Test
@@ -518,7 +504,7 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
             .thenReturn(new ByteArrayInputStream(" ".getBytes()));
 
         assertThrows(ExportException.class,
-            () -> underTest.exportBlobsAndReturnUrl(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME));
+            () -> underTest.exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME));
 
         verify(bufferedWriter, times(1)).close();
     }
@@ -534,7 +520,7 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         }).when(csvWriterComponent).writeHeadersToCsvFile(any());
 
         assertThrows(ParserException.class, () ->
-            underTest.exportBlobsAndReturnUrl(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME));
+            underTest.exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME));
 
         verify(bufferedWriter, times(1)).close();
     }
@@ -566,7 +552,7 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
                 .thenReturn(inputStream);
 
             assertThrows(ParserException.class, () ->
-                underTest.exportBlobsAndReturnUrl(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME));
+                underTest.exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME));
 
             // One close each for Buffered Reader and InputStreamReader in try-with-resource
             verify(inputStream, times(2)).close();
