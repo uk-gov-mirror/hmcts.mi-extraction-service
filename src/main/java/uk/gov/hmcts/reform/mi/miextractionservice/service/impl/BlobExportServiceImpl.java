@@ -6,10 +6,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobSasMessageBuilderComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.EmailBlobUrlToTargetsComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.component.GenerateBlobUrlComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.domain.SasIpWhitelist;
 import uk.gov.hmcts.reform.mi.miextractionservice.factory.ExtractionBlobServiceClientFactory;
 import uk.gov.hmcts.reform.mi.miextractionservice.service.BlobExportService;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
@@ -21,19 +20,11 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServ
 @Service
 public class BlobExportServiceImpl implements BlobExportService {
 
-    private static final String MESSAGE_DELIMITER = " : ";
-    private static final String MESSAGE_NEWLINE_DELIMITER = "\n\n";
-    private static final String LOCATION_DELIMITER = "-";
-    private static final String SPACE_DELIMITER = " ";
-
     @Value("${retrieve-from-date}")
     private String retrieveFromDate;
 
     @Value("${retrieve-to-date}")
     private String retrieveToDate;
-
-    @Autowired
-    private SasIpWhitelist sasIpWhitelist;
 
     @Autowired
     private ExtractionBlobServiceClientFactory extractionBlobServiceClientFactory;
@@ -42,7 +33,7 @@ public class BlobExportServiceImpl implements BlobExportService {
     private ExportBlobDataComponent exportBlobDataComponent;
 
     @Autowired
-    private GenerateBlobUrlComponent generateBlobUrlComponent;
+    private BlobSasMessageBuilderComponent blobSasMessageBuilderComponent;
 
     @Autowired
     private EmailBlobUrlToTargetsComponent sendBlobUrlToTargetsComponent;
@@ -66,22 +57,7 @@ public class BlobExportServiceImpl implements BlobExportService {
             fromDate,
             toDate);
 
-        String message = "";
-
-        if (sasIpWhitelist.getRange().isEmpty()) {
-            message = generateBlobUrlComponent.generateUrlForBlob(exportClient, CCD_OUTPUT_CONTAINER_NAME, outputBlobName);
-        } else {
-            message = "Each link is restricted by IP address for security. Please check you use the correct one." + MESSAGE_NEWLINE_DELIMITER;
-
-            for (String key : sasIpWhitelist.getRange().keySet()) {
-                String locationName = key.replaceAll(LOCATION_DELIMITER, SPACE_DELIMITER);
-
-                message = message.concat(locationName + MESSAGE_DELIMITER + generateBlobUrlComponent
-                    .generateUrlForBlobWithIpRange(exportClient, CCD_OUTPUT_CONTAINER_NAME, outputBlobName, sasIpWhitelist.getRange().get(key)));
-
-                message = message.concat(MESSAGE_NEWLINE_DELIMITER);
-            }
-        }
+        String message = blobSasMessageBuilderComponent.buildMessage(exportClient, CCD_OUTPUT_CONTAINER_NAME, outputBlobName);
 
         sendBlobUrlToTargetsComponent.sendBlobUrl(message);
     }
