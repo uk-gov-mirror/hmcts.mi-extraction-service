@@ -23,7 +23,6 @@ import uk.gov.hmcts.reform.mi.miextractionservice.component.CsvWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.DataParserComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.EncryptArchiveComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
-import uk.gov.hmcts.reform.mi.miextractionservice.exception.ExportException;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
 import uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.PagedIterableStub;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
@@ -457,7 +456,7 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
     }
 
     @Test
-    public void givenNoWhitelistedContainers_whenExportData_thenThrowExportException() {
+    public void givenNoWhitelistedContainers_whenExportData_thenReturnNullForBlobName() {
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
 
         when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
@@ -470,20 +469,24 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         when(checkWhitelistComponent.isContainerWhitelisted(TEST_CONTAINER_NAME)).thenReturn(false);
 
-        assertThrows(ExportException.class,
-            () -> underTest.exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME));
+        assertEquals(
+            null,
+            underTest.exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME),
+            "Expected null output when no containers match whitelist.");
     }
 
     @Test
-    public void givenNoDataToOutput_whenExportBlobData_thenThrowExportException() {
+    public void givenNoDataToOutput_whenExportBlobData_thenReturnNullForBlobName() {
         when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>());
 
-        assertThrows(ExportException.class,
-            () -> underTest.exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME));
+        assertEquals(
+            null,
+            underTest.exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME),
+            "Expected null output when no containers exist.");
     }
 
     @Test
-    public void givenNoDataAtAllInRetrievedBlobs_whenExportBlobDataAndGetUrl_thenReturnUrlOfUploadedExtractedDataBlob() throws Exception {
+    public void givenNoDataAtAllInRetrievedBlobs_whenExportBlobDataAndGetUrl_thenReturnNullForBlobName() throws Exception {
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
 
         when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
@@ -503,8 +506,10 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
             .thenReturn(new ByteArrayInputStream(" ".getBytes()));
 
-        assertThrows(ExportException.class,
-            () -> underTest.exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME));
+        assertEquals(
+            null,
+            underTest.exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME),
+            "Expected null output when no query matching data found.");
 
         verify(bufferedWriter, times(1)).close();
     }
