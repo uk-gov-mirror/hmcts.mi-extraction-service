@@ -112,7 +112,7 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
             return outputBlobName;
         }
 
-        log.info("No data found to output.");
+        log.warn("No data found to output.");
         return null;
     }
 
