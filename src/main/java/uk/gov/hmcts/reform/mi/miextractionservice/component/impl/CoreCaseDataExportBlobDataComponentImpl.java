@@ -19,7 +19,6 @@ import uk.gov.hmcts.reform.mi.miextractionservice.component.DataParserComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.EncryptArchiveComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
-import uk.gov.hmcts.reform.mi.miextractionservice.exception.ExportException;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
 import uk.gov.hmcts.reform.mi.miextractionservice.wrapper.WriterWrapper;
@@ -93,27 +92,28 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
 
         boolean dataFound = readAndWriteDataAsCsv(sourceBlobServiceClient, fromDate, toDate);
 
-        if (Boolean.FALSE.equals(dataFound)) {
-            throw new ExportException("No data to output.");
+        if (dataFound) {
+            encryptArchiveComponent.createEncryptedArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
+
+            BlobContainerClient blobContainerClient = targetBlobServiceClient.getBlobContainerClient(CCD_OUTPUT_CONTAINER_NAME);
+
+            if (!blobContainerClient.exists()) {
+                blobContainerClient.create();
+            }
+
+            String outputBlobName = fromDate.format(dateTimeUtil.getDateFormat())
+                + NAME_DELIMITER
+                + toDate.format(dateTimeUtil.getDateFormat())
+                + NAME_DELIMITER
+                + CCD_WORKING_ARCHIVE;
+
+            blobContainerClient.getBlobClient(outputBlobName).uploadFromFile(CCD_WORKING_ARCHIVE, true);
+
+            return outputBlobName;
         }
 
-        encryptArchiveComponent.createEncryptedArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
-
-        BlobContainerClient blobContainerClient = targetBlobServiceClient.getBlobContainerClient(CCD_OUTPUT_CONTAINER_NAME);
-
-        if (!blobContainerClient.exists()) {
-            blobContainerClient.create();
-        }
-
-        String outputBlobName = fromDate.format(dateTimeUtil.getDateFormat())
-            + NAME_DELIMITER
-            + toDate.format(dateTimeUtil.getDateFormat())
-            + NAME_DELIMITER
-            + CCD_WORKING_ARCHIVE;
-
-        blobContainerClient.getBlobClient(outputBlobName).uploadFromFile(CCD_WORKING_ARCHIVE, true);
-
-        return outputBlobName;
+        log.info("No data found to output.");
+        return null;
     }
 
     private boolean readAndWriteDataAsCsv(BlobServiceClient sourceBlobServiceClient,
