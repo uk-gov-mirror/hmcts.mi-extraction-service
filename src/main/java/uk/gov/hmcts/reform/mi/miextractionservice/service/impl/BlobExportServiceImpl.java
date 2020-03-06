@@ -57,9 +57,11 @@ public class BlobExportServiceImpl implements BlobExportService {
             fromDate,
             toDate);
 
-        String message = blobSasMessageBuilderComponent.buildMessage(exportClient, CCD_OUTPUT_CONTAINER_NAME, outputBlobName);
+        if (outputBlobName != null) {
+            String message = blobSasMessageBuilderComponent.buildMessage(exportClient, CCD_OUTPUT_CONTAINER_NAME, outputBlobName);
 
-        sendBlobUrlToTargetsComponent.sendBlobUrl(message);
+            sendBlobUrlToTargetsComponent.sendBlobUrl(message);
+        }
     }
 
     @Override

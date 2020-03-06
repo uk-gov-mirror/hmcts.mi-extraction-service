@@ -20,9 +20,11 @@ import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -104,6 +106,21 @@ public class BlobExportServiceImplTest {
         underTest.exportBlobs();
 
         verify(emailBlobUrlToTargetsComponent).sendBlobUrl(TEST_BLOB_URL);
+    }
+
+    @Test
+    public void givenNoOutputBlob_whenExportData_thenDoNotSendEmail() {
+        when(exportBlobDataComponent.exportBlobsAndGetOutputName(
+            any(),
+            any(),
+            any(),
+            any()
+        )).thenReturn(null);
+
+        underTest.exportBlobs();
+
+        verify(blobSasMessageBuilderComponent, never()).buildMessage(any(), any(), any());
+        verify(emailBlobUrlToTargetsComponent, never()).sendBlobUrl(any());
     }
 
     @Test
