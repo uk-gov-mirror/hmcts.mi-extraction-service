@@ -64,6 +64,7 @@ public class BlobExportServiceImpl implements BlobExportService {
         }
     }
 
+    @SuppressWarnings("squid:S899")
     @Override
     public void checkStorageConnection() {
         extractionBlobServiceClientFactory
