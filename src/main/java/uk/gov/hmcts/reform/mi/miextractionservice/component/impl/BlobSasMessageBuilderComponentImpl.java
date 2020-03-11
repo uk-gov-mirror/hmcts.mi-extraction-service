@@ -15,7 +15,7 @@ public class BlobSasMessageBuilderComponentImpl implements BlobSasMessageBuilder
     private static final String MESSAGE_DELIMITER = " : ";
     private static final String MESSAGE_NEWLINE_DELIMITER = "\n\n";
     private static final String LOCATION_DELIMITER = "-";
-    private static final String DOT_DELIMITER = "\\.";
+    private static final String DOT_DELIMITER = ".";
     private static final String SPACE_DELIMITER = " ";
 
     @Autowired
@@ -35,8 +35,8 @@ public class BlobSasMessageBuilderComponentImpl implements BlobSasMessageBuilder
 
             for (String key : sasIpWhitelist.getRange().keySet()) {
                 String locationName = key
-                    .replaceAll(LOCATION_DELIMITER, SPACE_DELIMITER)
-                    .replaceAll(DOT_DELIMITER, SPACE_DELIMITER);
+                    .replace(LOCATION_DELIMITER, SPACE_DELIMITER)
+                    .replace(DOT_DELIMITER, SPACE_DELIMITER);
 
                 locationName = WordUtils.capitalizeFully(locationName);
 
