@@ -21,7 +21,7 @@ import java.util.List;
 @ConditionalOnProperty(prefix = "archive.encryption", name = "enabled", havingValue = "true")
 public class EncryptArchiveComponentImpl implements ArchiveComponent {
 
-    @Value("${archive.password}")
+    @Value("${archive.encryption.password}")
     private String archivePassword;
 
     @Override

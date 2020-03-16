@@ -10,4 +10,4 @@ spring:
         mi-export-storage-connection-string: azure.storage-account.export.connection-string
         gov-uk-notify-api-key: mail.gov-uk.api-key
         mailing-targets: mail.targets
-        archive-password: archive.password
+        archive-password: archive.encryption.password
