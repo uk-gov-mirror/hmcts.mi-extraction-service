@@ -38,7 +38,7 @@ public class BlobExportServiceImpl implements BlobExportService {
     @Override
     public void exportBlobs() {
         OffsetDateTime fromDate = StringUtils.isEmpty(retrieveFromDate)
-            ? getStartOfDay(dateTimeUtil.getCurrentDateTime().minusDays(7L)) : dateTimeUtil.parseDateString(retrieveFromDate);
+            ? getStartOfDay(dateTimeUtil.getCurrentDateTime().minusDays(1L)) : dateTimeUtil.parseDateString(retrieveFromDate);
 
         OffsetDateTime toDate  = StringUtils.isEmpty(retrieveToDate)
             ? getEndOfDay(dateTimeUtil.getCurrentDateTime().minusDays(1L)) : getEndOfDay(dateTimeUtil.parseDateString(retrieveToDate));
