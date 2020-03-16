@@ -2,6 +2,7 @@ package uk.gov.hmcts.reform.mi.miextractionservice.component.impl;
 
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ArchiveComponent;
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@ConditionalOnProperty(prefix = "archive.encryption", name = "enabled", havingValue = "false")
 public class ArchiveComponentImpl implements ArchiveComponent {
 
     @Override

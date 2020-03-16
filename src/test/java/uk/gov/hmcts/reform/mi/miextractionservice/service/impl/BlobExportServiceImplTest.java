@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobMessageBuilderComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.EmailBlobUrlToTargetsComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.factory.ExtractionBlobServiceClientFactory;
@@ -27,11 +28,13 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_OUTPUT_CONTAINER_NAME;
 
 @ExtendWith(SpringExtension.class)
 public class BlobExportServiceImplTest {
 
     private static final String TEST_BLOB_NAME = "testBlobName";
+    private static final String TEST_BLOB_URL = "testBlobUrl";
     private static final OffsetDateTime FIXED_DATETIME = OffsetDateTime.of(2000, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
 
     @Mock
@@ -39,6 +42,9 @@ public class BlobExportServiceImplTest {
 
     @Mock
     private ExportBlobDataComponent exportBlobDataComponent;
+
+    @Mock
+    private BlobMessageBuilderComponent blobMessageBuilderComponent;
 
     @Mock
     private EmailBlobUrlToTargetsComponent emailBlobUrlToTargetsComponent;
@@ -76,9 +82,11 @@ public class BlobExportServiceImplTest {
             eq(FIXED_DATETIME.minusDays(1L).plusHours(23L).plusMinutes(59L).plusSeconds(59L).plusNanos(999L))
         )).thenReturn(TEST_BLOB_NAME);
 
+        when(blobMessageBuilderComponent.buildMessage(exportClient, CCD_OUTPUT_CONTAINER_NAME, TEST_BLOB_NAME)).thenReturn(TEST_BLOB_URL);
+
         underTest.exportBlobs();
 
-        verify(emailBlobUrlToTargetsComponent).sendBlobUrl(TEST_BLOB_NAME);
+        verify(emailBlobUrlToTargetsComponent).sendBlobUrl(TEST_BLOB_URL);
     }
 
     @Test
@@ -93,9 +101,11 @@ public class BlobExportServiceImplTest {
             eq(OffsetDateTime.of(2000, 1, 20, 23, 59, 59, 999, ZoneOffset.UTC))
         )).thenReturn(TEST_BLOB_NAME);
 
+        when(blobMessageBuilderComponent.buildMessage(exportClient, CCD_OUTPUT_CONTAINER_NAME, TEST_BLOB_NAME)).thenReturn(TEST_BLOB_URL);
+
         underTest.exportBlobs();
 
-        verify(emailBlobUrlToTargetsComponent).sendBlobUrl(TEST_BLOB_NAME);
+        verify(emailBlobUrlToTargetsComponent).sendBlobUrl(TEST_BLOB_URL);
     }
 
     @Test
@@ -109,6 +119,7 @@ public class BlobExportServiceImplTest {
 
         underTest.exportBlobs();
 
+        verify(blobMessageBuilderComponent, never()).buildMessage(any(), any(), any());
         verify(emailBlobUrlToTargetsComponent, never()).sendBlobUrl(any());
     }
 

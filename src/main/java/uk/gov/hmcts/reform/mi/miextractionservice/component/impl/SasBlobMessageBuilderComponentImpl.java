@@ -3,14 +3,16 @@ package uk.gov.hmcts.reform.mi.miextractionservice.component.impl;
 import com.azure.storage.blob.BlobServiceClient;
 import org.apache.commons.text.WordUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobSasMessageBuilderComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobMessageBuilderComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.GenerateBlobUrlComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.SasIpWhitelist;
 
 @Component
-public class BlobSasMessageBuilderComponentImpl implements BlobSasMessageBuilderComponent {
+@ConditionalOnProperty(prefix = "mail.sas", name = "enabled", havingValue = "true")
+public class SasBlobMessageBuilderComponentImpl implements BlobMessageBuilderComponent {
 
     private static final String MESSAGE_DELIMITER = " : ";
     private static final String MESSAGE_NEWLINE_DELIMITER = "\n\n";

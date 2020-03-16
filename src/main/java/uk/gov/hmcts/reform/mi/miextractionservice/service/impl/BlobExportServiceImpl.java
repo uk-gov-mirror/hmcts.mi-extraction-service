@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobMessageBuilderComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.EmailBlobUrlToTargetsComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.factory.ExtractionBlobServiceClientFactory;
@@ -13,6 +14,8 @@ import uk.gov.hmcts.reform.mi.miextractionservice.service.BlobExportService;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
 
 import java.time.OffsetDateTime;
+
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_OUTPUT_CONTAINER_NAME;
 
 @Service
 public class BlobExportServiceImpl implements BlobExportService {
@@ -28,6 +31,9 @@ public class BlobExportServiceImpl implements BlobExportService {
 
     @Autowired
     private ExportBlobDataComponent exportBlobDataComponent;
+
+    @Autowired
+    private BlobMessageBuilderComponent blobMessageBuilderComponent;
 
     @Autowired
     private EmailBlobUrlToTargetsComponent sendBlobUrlToTargetsComponent;
@@ -52,7 +58,9 @@ public class BlobExportServiceImpl implements BlobExportService {
             toDate);
 
         if (outputBlobName != null) {
-            sendBlobUrlToTargetsComponent.sendBlobUrl(outputBlobName);
+            String message = blobMessageBuilderComponent.buildMessage(exportClient, CCD_OUTPUT_CONTAINER_NAME, outputBlobName);
+
+            sendBlobUrlToTargetsComponent.sendBlobUrl(message);
         }
     }
 

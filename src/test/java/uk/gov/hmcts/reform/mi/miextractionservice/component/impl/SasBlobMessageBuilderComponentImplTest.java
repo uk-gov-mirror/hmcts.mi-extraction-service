@@ -18,7 +18,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
-public class BlobSasMessageBuilderComponentImplTest {
+public class SasBlobMessageBuilderComponentImplTest {
 
     private static final String TEST_CONTAINER_NAME = "testContainerName";
     private static final String TEST_BLOB_NAME = "testBlobName";
@@ -31,7 +31,7 @@ public class BlobSasMessageBuilderComponentImplTest {
     private GenerateBlobUrlComponent generateBlobUrlComponent;
 
     @InjectMocks
-    private BlobSasMessageBuilderComponentImpl underTest;
+    private SasBlobMessageBuilderComponentImpl underTest;
 
     @Test
     public void givenNoWhitelistedIps_whenBuildMessage_thenReturnMessageWithUrl() {
