@@ -14,7 +14,7 @@ import static org.mockito.Mockito.when;
 public class UrlBlobMessageBuilderComponentImplTest {
 
     private static final String AZURE_PORTAL_URL = "https://portal.azure.com";
-    private static final String BODY = "Please visit %s. The output can be found in the %s storage account, %s container with the name %s";
+    private static final String BODY = "Please visit %s. The output can be found in the <%s> storage account, <%s> container with the name <%s>";
 
     private static final String TEST_ACCOUNT_NAME = "testAccountName";
     private static final String TEST_CONTAINER_NAME = "testContainerName";
