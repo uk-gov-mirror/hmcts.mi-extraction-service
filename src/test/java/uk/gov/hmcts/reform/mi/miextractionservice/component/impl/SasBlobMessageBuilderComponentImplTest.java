@@ -7,13 +7,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import uk.gov.hmcts.reform.mi.miextractionservice.component.GenerateBlobUrlComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.SasIpWhitelist;
+import uk.gov.hmcts.reform.mi.miextractionservice.exception.ExportException;
 
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -23,6 +26,8 @@ public class SasBlobMessageBuilderComponentImplTest {
     private static final String TEST_CONTAINER_NAME = "testContainerName";
     private static final String TEST_BLOB_NAME = "testBlobName";
     private static final String TEST_BLOB_URL = "testBlobUrl";
+
+    private static final String ENCRYPTION_ENABLED_KEY = "encryptionEnabled";
 
     @Mock
     private SasIpWhitelist sasIpWhitelist;
@@ -35,6 +40,8 @@ public class SasBlobMessageBuilderComponentImplTest {
 
     @Test
     public void givenNoWhitelistedIps_whenBuildMessage_thenReturnMessageWithUrl() {
+        ReflectionTestUtils.setField(underTest, ENCRYPTION_ENABLED_KEY, "true");
+
         when(sasIpWhitelist.getRange()).thenReturn(Collections.emptyMap());
 
         BlobServiceClient blobServiceClient = mock(BlobServiceClient.class);
@@ -48,6 +55,8 @@ public class SasBlobMessageBuilderComponentImplTest {
 
     @Test
     public void givenListOfWhitelistedIps_whenBuildMessage_thenReturnMessageWitMultipleBlobUrls() {
+        ReflectionTestUtils.setField(underTest, ENCRYPTION_ENABLED_KEY, "true");
+
         String homeOffice = "home.office";
         String homeIp = "homeIp";
         String workOffice = "work-office";
@@ -76,5 +85,12 @@ public class SasBlobMessageBuilderComponentImplTest {
 
         assertEquals(expectedMessage, underTest.buildMessage(blobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME),
             "Actual message does not match expected message.");
+    }
+
+    @Test
+    public void givenNoEncryptionSet_whenBuildMessage_thenThrowExportException() {
+        ReflectionTestUtils.setField(underTest, ENCRYPTION_ENABLED_KEY, "false");
+
+        assertThrows(ExportException.class, () -> underTest.buildMessage(mock(BlobServiceClient.class), TEST_CONTAINER_NAME, TEST_BLOB_NAME));
     }
 }
