@@ -6,7 +6,6 @@ mi-job:
     MI_CLIENT_ID: e719c01d-0095-462c-93e8-78f29ca20cff
     RETRIEVE_FROM_DATE: 1970-01-01
     RETRIEVE_TO_DATE: 1970-01-02
-    SASIPWHITELIST_RANGE_PETTY_FRANCE: 213.121.161.0-213.121.161.255
 global:
   subscriptionId: "a8140a9e-f1b0-481f-a4de-09e2ee23f7ab"
   environment: sbox
