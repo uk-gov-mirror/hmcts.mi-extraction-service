@@ -11,12 +11,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import uk.gov.hmcts.reform.mi.micore.model.CoreCaseData;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.ArchiveComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobDownloadComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CheckWhitelistComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CoreCaseDataFormatterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CsvWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.DataParserComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.component.EncryptArchiveComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
@@ -69,7 +69,7 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
     private CsvWriterComponent<OutputCoreCaseData> csvWriterComponent;
 
     @Autowired
-    private EncryptArchiveComponent encryptArchiveComponent;
+    private ArchiveComponent archiveComponent;
 
     @Autowired
     private DateTimeUtil dateTimeUtil;
@@ -93,7 +93,7 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
         boolean dataFound = readAndWriteDataAsCsv(sourceBlobServiceClient, fromDate, toDate);
 
         if (dataFound) {
-            encryptArchiveComponent.createEncryptedArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
+            archiveComponent.createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
 
             BlobContainerClient blobContainerClient = targetBlobServiceClient.getBlobContainerClient(CCD_OUTPUT_CONTAINER_NAME);
 

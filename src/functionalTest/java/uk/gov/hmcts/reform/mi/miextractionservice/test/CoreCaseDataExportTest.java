@@ -4,7 +4,6 @@ import com.azure.storage.blob.BlobServiceClient;
 import com.dumbster.smtp.SimpleSmtpServer;
 import com.dumbster.smtp.SmtpMessage;
 import net.lingala.zip4j.ZipFile;
-import net.lingala.zip4j.exception.ZipException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,7 +30,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.CCD_EXPORT_CONTAINER_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_BLOB_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_CCD_JSONL;
@@ -52,7 +50,6 @@ public class CoreCaseDataExportTest {
         + "BlobEndpoint=http://%s:%d/devstoreaccount1;";
 
     private static final String DEFAULT_HOST = "127.0.0.1";
-    private static final String TEST_PASSWORD = "testPassword";
     private static final String TEST_MAIL_ADDRESS = "TestMailAddress";
     private static final String CSV_EXTRACT_FILE_NAME = "CCD_EXTRACT.csv";
 
@@ -151,17 +148,6 @@ public class CoreCaseDataExportTest {
 
         ZipFile zipFile = new ZipFile(TEST_EXPORT_BLOB);
 
-        assertTrue(zipFile.isEncrypted(), "Zip file should be password protected.");
-
-        try {
-            zipFile.setPassword("wrongPassword".toCharArray());
-            zipFile.extractFile(CSV_EXTRACT_FILE_NAME, ".");
-            fail("Wrong password exception should have been thrown.");
-        } catch (ZipException e) {
-            assertTrue(e.getType().equals(ZipException.Type.WRONG_PASSWORD), "Expected error to be wrong password.");
-        }
-
-        zipFile.setPassword(TEST_PASSWORD.toCharArray());
         zipFile.extractFile(CSV_EXTRACT_FILE_NAME, ".");
 
         assertTrue(new File(CSV_EXTRACT_FILE_NAME).exists(), "Expected archived file to be extracted.");
