@@ -14,8 +14,8 @@ import uk.gov.hmcts.reform.mi.miextractionservice.component.ArchiveComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ArchiveException;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 @ConditionalOnProperty(prefix = "archive.encryption", name = "enabled", havingValue = "true")
@@ -32,13 +32,12 @@ public class EncryptArchiveComponentImpl implements ArchiveComponent {
         }
 
         try {
-            List<File> filesList = new ArrayList<>();
-            inputPaths.forEach(path -> filesList.add(new File(path)));
-
             ZipParameters zipParameters = new ZipParameters();
             zipParameters.setEncryptFiles(true);
             zipParameters.setEncryptionMethod(EncryptionMethod.AES);
             zipParameters.setAesKeyStrength(AesKeyStrength.KEY_STRENGTH_256);
+
+            List<File> filesList = inputPaths.stream().map(File::new).collect(Collectors.toList());
 
             new ZipFile(outputPath, archivePassword.toCharArray()).addFiles(filesList, zipParameters);
         } catch (ZipException e) {

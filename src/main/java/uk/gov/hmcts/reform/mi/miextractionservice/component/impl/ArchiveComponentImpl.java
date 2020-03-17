@@ -9,8 +9,8 @@ import uk.gov.hmcts.reform.mi.miextractionservice.component.ArchiveComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ArchiveException;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 @ConditionalOnProperty(prefix = "archive.encryption", name = "enabled", havingValue = "false")
@@ -20,8 +20,7 @@ public class ArchiveComponentImpl implements ArchiveComponent {
     public void createArchive(List<String> inputPaths, String outputPath) {
 
         try {
-            List<File> filesList = new ArrayList<>();
-            inputPaths.forEach(path -> filesList.add(new File(path)));
+            List<File> filesList = inputPaths.stream().map(File::new).collect(Collectors.toList());
 
             new ZipFile(outputPath).addFiles(filesList);
         } catch (ZipException e) {
