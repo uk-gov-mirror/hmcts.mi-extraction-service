@@ -6,37 +6,38 @@ import net.lingala.zip4j.model.ZipParameters;
 import net.lingala.zip4j.model.enums.AesKeyStrength;
 import net.lingala.zip4j.model.enums.EncryptionMethod;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import uk.gov.hmcts.reform.mi.miextractionservice.component.EncryptArchiveComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.ArchiveComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ArchiveException;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
-public class EncryptArchiveComponentImpl implements EncryptArchiveComponent {
+@ConditionalOnProperty(prefix = "archive.encryption", name = "enabled", havingValue = "true")
+public class EncryptArchiveComponentImpl implements ArchiveComponent {
 
-    @Value("${archive.password}")
+    @Value("${archive.encryption.password}")
     private String archivePassword;
 
     @Override
-    public void createEncryptedArchive(List<String> inputPaths, String outputPath) {
+    public void createArchive(List<String> inputPaths, String outputPath) {
 
         if (StringUtils.isEmpty(archivePassword)) {
             throw new ArchiveException("Archive password for encryption is not set.");
         }
 
         try {
-            List<File> filesList = new ArrayList<>();
-            inputPaths.forEach(path -> filesList.add(new File(path)));
-
             ZipParameters zipParameters = new ZipParameters();
             zipParameters.setEncryptFiles(true);
             zipParameters.setEncryptionMethod(EncryptionMethod.AES);
             zipParameters.setAesKeyStrength(AesKeyStrength.KEY_STRENGTH_256);
+
+            List<File> filesList = inputPaths.stream().map(File::new).collect(Collectors.toList());
 
             new ZipFile(outputPath, archivePassword.toCharArray()).addFiles(filesList, zipParameters);
         } catch (ZipException e) {

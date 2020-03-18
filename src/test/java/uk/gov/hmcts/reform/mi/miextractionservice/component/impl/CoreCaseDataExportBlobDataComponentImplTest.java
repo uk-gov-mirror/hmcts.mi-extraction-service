@@ -16,12 +16,12 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import uk.gov.hmcts.reform.mi.micore.model.CoreCaseData;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.ArchiveComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobDownloadComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CheckWhitelistComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CoreCaseDataFormatterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CsvWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.DataParserComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.component.EncryptArchiveComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
 import uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.PagedIterableStub;
@@ -101,7 +101,7 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
     private CsvWriterComponent<OutputCoreCaseData> csvWriterComponent;
 
     @Mock
-    private EncryptArchiveComponent encryptArchiveComponent;
+    private ArchiveComponent archiveComponent;
 
     @Spy
     private ReaderUtil readerUtil;
@@ -186,8 +186,8 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         verify(targetBlobContainerClient, never()).create();
         verify(csvWriterComponent, times(1))
             .writeBeansWithWriter(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
-        verify(encryptArchiveComponent)
-            .createEncryptedArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
+        verify(archiveComponent)
+            .createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
         verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
         verify(bufferedWriter, times(1)).close();
     }
@@ -239,8 +239,8 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         verify(targetBlobContainerClient, never()).create();
         verify(csvWriterComponent, times(3))
             .writeBeansWithWriter(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
-        verify(encryptArchiveComponent)
-            .createEncryptedArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
+        verify(archiveComponent)
+            .createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
         verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
         verify(bufferedWriter, times(1)).close();
     }
@@ -296,8 +296,8 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         verify(targetBlobContainerClient, never()).create();
         verify(csvWriterComponent)
             .writeBeansWithWriter(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
-        verify(encryptArchiveComponent)
-            .createEncryptedArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
+        verify(archiveComponent)
+            .createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
         verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
         verify(bufferedWriter, times(1)).close();
     }
@@ -347,8 +347,8 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         verify(targetBlobContainerClient, times(1)).create();
         verify(csvWriterComponent)
             .writeBeansWithWriter(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
-        verify(encryptArchiveComponent)
-            .createEncryptedArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
+        verify(archiveComponent)
+            .createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
         verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
         verify(bufferedWriter, times(1)).close();
     }
@@ -398,8 +398,8 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         verify(targetBlobContainerClient, times(1)).create();
         verify(csvWriterComponent)
             .writeBeansWithWriter(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
-        verify(encryptArchiveComponent)
-            .createEncryptedArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
+        verify(archiveComponent)
+            .createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
         verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
         verify(bufferedWriter, times(1)).close();
     }
@@ -449,8 +449,8 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         verify(targetBlobContainerClient, times(1)).create();
         verify(csvWriterComponent)
             .writeBeansWithWriter(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
-        verify(encryptArchiveComponent)
-            .createEncryptedArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
+        verify(archiveComponent)
+            .createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
         verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
         verify(bufferedWriter, times(1)).close();
     }

@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobSasMessageBuilderComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobMessageBuilderComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.EmailBlobUrlToTargetsComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.factory.ExtractionBlobServiceClientFactory;
@@ -33,7 +33,7 @@ public class BlobExportServiceImpl implements BlobExportService {
     private ExportBlobDataComponent exportBlobDataComponent;
 
     @Autowired
-    private BlobSasMessageBuilderComponent blobSasMessageBuilderComponent;
+    private BlobMessageBuilderComponent blobMessageBuilderComponent;
 
     @Autowired
     private EmailBlobUrlToTargetsComponent sendBlobUrlToTargetsComponent;
@@ -44,7 +44,7 @@ public class BlobExportServiceImpl implements BlobExportService {
     @Override
     public void exportBlobs() {
         OffsetDateTime fromDate = StringUtils.isEmpty(retrieveFromDate)
-            ? getStartOfDay(dateTimeUtil.getCurrentDateTime().minusDays(7L)) : dateTimeUtil.parseDateString(retrieveFromDate);
+            ? getStartOfDay(dateTimeUtil.getCurrentDateTime().minusDays(1L)) : dateTimeUtil.parseDateString(retrieveFromDate);
 
         OffsetDateTime toDate  = StringUtils.isEmpty(retrieveToDate)
             ? getEndOfDay(dateTimeUtil.getCurrentDateTime().minusDays(1L)) : getEndOfDay(dateTimeUtil.parseDateString(retrieveToDate));
@@ -58,7 +58,7 @@ public class BlobExportServiceImpl implements BlobExportService {
             toDate);
 
         if (outputBlobName != null) {
-            String message = blobSasMessageBuilderComponent.buildMessage(exportClient, CCD_OUTPUT_CONTAINER_NAME, outputBlobName);
+            String message = blobMessageBuilderComponent.buildMessage(exportClient, CCD_OUTPUT_CONTAINER_NAME, outputBlobName);
 
             sendBlobUrlToTargetsComponent.sendBlobUrl(message);
         }
