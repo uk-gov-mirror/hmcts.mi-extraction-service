@@ -22,6 +22,7 @@ import uk.gov.hmcts.reform.mi.miextractionservice.component.CheckWhitelistCompon
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CoreCaseDataFormatterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CsvWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.FilterComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.MetadataFilterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
 import uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.PagedIterableStub;
@@ -45,6 +46,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -90,6 +92,9 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
     private CheckWhitelistComponent checkWhitelistComponent;
 
     @Mock
+    private MetadataFilterComponent metadataFilterComponent;
+
+    @Mock
     private BlobDownloadComponent blobDownloadComponent;
 
     @Mock
@@ -128,6 +133,7 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         bufferedWriter = spy(Files.newBufferedWriter(Paths.get(CCD_WORKING_FILE_NAME)));
         when(writerWrapper.getBufferedWriter(any())).thenReturn(bufferedWriter);
         when(checkWhitelistComponent.isContainerWhitelisted(anyString())).thenReturn(true);
+        when(metadataFilterComponent.filterByMetadata(anyMap())).thenReturn(true);
     }
 
     @Test
@@ -575,5 +581,32 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
             verify(inputStream, times(2)).close();
             verify(bufferedWriter, times(1)).close();
         }
+    }
+
+    @Test
+    public void givenBlobMetadataDoesNotPassFilter_whenExportBlobData_thenReturnNull() {
+        BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
+
+        when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
+
+        when(blobContainerItem.getName()).thenReturn(TEST_CONTAINER_NAME);
+
+        BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
+
+        when(sourceBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)).thenReturn(blobContainerClient);
+
+        BlobItem blobItemOne = mock(BlobItem.class);
+
+        when(blobContainerClient.listBlobs()).thenReturn(new PagedIterableStub<>(blobItemOne));
+
+        when(blobItemOne.getName()).thenReturn(TEST_BLOB_NAME_ONE);
+        when(blobItemOne.getMetadata()).thenReturn(Collections.emptyMap());
+
+        when(metadataFilterComponent.filterByMetadata(Collections.emptyMap())).thenReturn(false);
+
+        assertEquals(
+            null,
+            underTest.exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME),
+            "Expected null output when no query matching data found.");
     }
 }

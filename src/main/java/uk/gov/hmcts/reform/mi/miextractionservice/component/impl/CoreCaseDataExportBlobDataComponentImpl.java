@@ -18,6 +18,7 @@ import uk.gov.hmcts.reform.mi.miextractionservice.component.CoreCaseDataFormatte
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CsvWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.FilterComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.MetadataFilterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
@@ -53,6 +54,9 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
 
     @Autowired
     private CheckWhitelistComponent checkWhitelistComponent;
+
+    @Autowired
+    private MetadataFilterComponent metadataFilterComponent;
 
     @Autowired
     private BlobDownloadComponent blobDownloadComponent;
@@ -133,7 +137,8 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
                     BlobContainerClient blobContainerClient = sourceBlobServiceClient.getBlobContainerClient(blobContainerItem.getName());
 
                     for (BlobItem blobItem : blobContainerClient.listBlobs()) {
-                        if (blobNameIndexes.parallelStream().anyMatch(blobItem.getName()::contains)) {
+                        if (blobNameIndexes.parallelStream().anyMatch(blobItem.getName()::contains)
+                            && metadataFilterComponent.filterByMetadata(blobItem.getMetadata())) {
 
                             // Once dataFound is true, stays true for the rest of the run.
                             dataFound = parseAndWriteData(

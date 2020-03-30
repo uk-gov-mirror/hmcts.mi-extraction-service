@@ -14,10 +14,10 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NO_FILTER_VALUE;
+
 @Component
 public class CoreCaseDataFilterComponentImpl implements FilterComponent<CoreCaseData> {
-
-    private static final String NO_FILTER_VALUE = "all";
 
     @Value("${filter.case-type}")
     private String filterCaseType;
