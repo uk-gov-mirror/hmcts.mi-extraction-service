@@ -16,8 +16,9 @@ import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobDownloadComponen
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CheckWhitelistComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CoreCaseDataFormatterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CsvWriterComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.component.DataParserComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.FilterComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.MetadataFilterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
@@ -29,9 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
-import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -57,10 +56,13 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
     private CheckWhitelistComponent checkWhitelistComponent;
 
     @Autowired
+    private MetadataFilterComponent metadataFilterComponent;
+
+    @Autowired
     private BlobDownloadComponent blobDownloadComponent;
 
     @Autowired
-    private DataParserComponent<CoreCaseData> dataParserComponent;
+    private FilterComponent<CoreCaseData> filterComponent;
 
     @Autowired
     private CoreCaseDataFormatterComponent<OutputCoreCaseData> coreCaseDataFormatterComponent;
@@ -135,7 +137,8 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
                     BlobContainerClient blobContainerClient = sourceBlobServiceClient.getBlobContainerClient(blobContainerItem.getName());
 
                     for (BlobItem blobItem : blobContainerClient.listBlobs()) {
-                        if (blobNameIndexes.parallelStream().anyMatch(blobItem.getName()::contains)) {
+                        if (blobNameIndexes.parallelStream().anyMatch(blobItem.getName()::contains)
+                            && metadataFilterComponent.filterByMetadata(blobItem.getMetadata())) {
 
                             // Once dataFound is true, stays true for the rest of the run.
                             dataFound = parseAndWriteData(
@@ -202,23 +205,11 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
     }
 
     private void writeDataToCsv(BufferedWriter writer, List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate) {
-        List<CoreCaseData> filteredData = filterDataInDateRange(data, fromDate, toDate);
+        List<CoreCaseData> filteredData = filterComponent.filterDataInDateRange(data, fromDate, toDate);
         List<OutputCoreCaseData> formattedData = filteredData.stream()
             .map(coreCaseDataFormatterComponent::formatData)
             .collect(Collectors.toList());
 
         csvWriterComponent.writeBeansWithWriter(writer, formattedData);
-    }
-
-    private List<CoreCaseData> filterDataInDateRange(List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate) {
-        return data
-            .stream()
-            .map(dataRow -> dataParserComponent.parse(dataRow))
-            .filter(coreCaseData -> {
-                OffsetDateTime eventCreatedDate = OffsetDateTime.ofInstant(Instant.ofEpochMilli(coreCaseData.getCeCreatedDate()), ZoneOffset.UTC);
-                return eventCreatedDate.isEqual(fromDate) || eventCreatedDate.isEqual(toDate)
-                    || eventCreatedDate.isAfter(fromDate) && eventCreatedDate.isBefore(toDate);
-            })
-            .collect(Collectors.toList());
     }
 }

@@ -48,6 +48,9 @@ public final class TestConstants {
     public static final String TEST_CCD_JSONL_OUTDATED_PAST = "{\"extraction_date\":\"19991201-1010\","
         + "\"case_metadata_event_id\":1000001,\"ce_case_data_id\":100001,\"ce_created_date\":900140800000,"
         + "\"ce_case_type_id\":\"CASETYPE\",\"ce_case_type_version\":1001,\"ce_state_id\":\"StateId\",\"ce_data\":{}}";
+    public static final String TEST_CCD_JSONL_NEW_CASETYPE = "{\"extraction_date\":\"19991201-1010\","
+        + "\"case_metadata_event_id\":1000001,\"ce_case_data_id\":100001,\"ce_created_date\":949104000000,"
+        + "\"ce_case_type_id\":\"NEWCASETYPE\",\"ce_case_type_version\":1001,\"ce_state_id\":\"StateId\",\"ce_data\":{}}";
 
     public static final CoreCaseData TEST_CCD_JSONL_AS_CORE_CASE_DATA = CoreCaseData.builder()
         .extractionDate("19991201-1010")
@@ -77,6 +80,17 @@ public final class TestConstants {
         .ceCaseDataId(100001L)
         .ceCreatedDate(900140800000L)
         .ceCaseTypeId("CASETYPE")
+        .ceCaseTypeVersion(1001L)
+        .ceStateId("StateId")
+        .ceData(Collections.emptyMap())
+        .build();
+
+    public static final CoreCaseData TEST_CCD_JSONL_NEW_CASETYPE_AS_CORE_CASE_DATA = CoreCaseData.builder()
+        .extractionDate("19991201-1010")
+        .caseMetadataEventId(1000001L)
+        .ceCaseDataId(100001L)
+        .ceCreatedDate(949104000000L)
+        .ceCaseTypeId("NEWCASETYPE")
         .ceCaseTypeVersion(1001L)
         .ceStateId("StateId")
         .ceData(Collections.emptyMap())

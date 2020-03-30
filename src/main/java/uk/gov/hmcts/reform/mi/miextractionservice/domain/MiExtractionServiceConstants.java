@@ -17,6 +17,8 @@ public final class MiExtractionServiceConstants {
     public static final String NOTIFY_VALID_PERIOD_TEMPLATE_PARAMETER = "validPeriod";
     public static final String NOTIFY_EMAIL_REFERENCE = "Management Information Extraction Service";
 
+    public static final String NO_FILTER_VALUE = "all";
+
     private MiExtractionServiceConstants() {
         // Private Constructor
     }
