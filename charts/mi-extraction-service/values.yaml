@@ -17,7 +17,6 @@ mi-job:
       secrets:
         - gov-uk-notify-api-key
         - mailing-targets
-        - archive-password
 
 global:
   enableKeyVaults: true
