@@ -9,6 +9,7 @@ import uk.gov.hmcts.reform.mi.miextractionservice.component.DataParserComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.FilterComponent;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -31,9 +32,12 @@ public class CoreCaseDataFilterComponentImpl implements FilterComponent<CoreCase
         List<CoreCaseData> filteredData = data.stream()
             .map(dataRow -> dataParserComponent.parse(dataRow))
             .filter(coreCaseData -> {
-                OffsetDateTime eventCreatedDate = OffsetDateTime.ofInstant(Instant.ofEpochMilli(coreCaseData.getCeCreatedDate()), ZoneOffset.UTC);
-                return eventCreatedDate.isEqual(fromDate) || eventCreatedDate.isEqual(toDate)
-                    || eventCreatedDate.isAfter(fromDate) && eventCreatedDate.isBefore(toDate);
+                LocalDate eventCreatedDate =
+                    OffsetDateTime.ofInstant(Instant.ofEpochMilli(coreCaseData.getCeCreatedDate()), ZoneOffset.UTC).toLocalDate();
+
+                // Minus and plus 1 day to account to include same day events
+                return eventCreatedDate.isAfter(fromDate.toLocalDate().minusDays(1L))
+                    && eventCreatedDate.isBefore(toDate.toLocalDate().plusDays(1L));
             })
             .collect(Collectors.toList());
 
