@@ -62,6 +62,30 @@ public class CoreCaseDataFilterComponentImplTest {
 
     @SuppressWarnings("PMD.JUnitAssertionsShouldIncludeMessage")
     @Test
+    public void givenRangeOfDatesWithSameDayDates_whenFilterByDate_thenReturnDataOnlyWithinDates() {
+        ReflectionTestUtils.setField(underTest, FILTER_KEY, DEFAULT_FILTER_VALUE);
+
+        when(dataParserComponent.parse(TEST_CCD_JSONL)).thenReturn(TEST_CCD_JSONL_AS_CORE_CASE_DATA);
+        when(dataParserComponent.parse(TEST_CCD_JSONL_OUTDATED_FUTURE)).thenReturn(TEST_CCD_JSONL_OUTDATED_FUTURE_AS_CORE_CASE_DATA);
+        when(dataParserComponent.parse(TEST_CCD_JSONL_OUTDATED_PAST)).thenReturn(TEST_CCD_JSONL_OUTDATED_PAST_AS_CORE_CASE_DATA);
+
+        List<String> inputData = ImmutableList.of(
+            TEST_CCD_JSONL, TEST_CCD_JSONL_OUTDATED_FUTURE, TEST_CCD_JSONL_OUTDATED_PAST
+        );
+
+        List<CoreCaseData> expected = ImmutableList.of(
+            TEST_CCD_JSONL_AS_CORE_CASE_DATA, TEST_CCD_JSONL_OUTDATED_FUTURE_AS_CORE_CASE_DATA, TEST_CCD_JSONL_OUTDATED_PAST_AS_CORE_CASE_DATA
+        );
+
+        OffsetDateTime testFromDate = OffsetDateTime.of(1998, 7, 11, 0, 0, 0, 0, ZoneOffset.UTC);
+        OffsetDateTime testToDate = OffsetDateTime.of(2001, 5, 18, 23, 59, 59, 999, ZoneOffset.UTC);
+
+        assertEquals(expected, underTest.filterDataInDateRange(inputData, testFromDate, testToDate),
+            "Date filter with on same day date did not work as expected.");
+    }
+
+    @SuppressWarnings("PMD.JUnitAssertionsShouldIncludeMessage")
+    @Test
     public void givenSpecificCaseType_whenFilter_thenReturnDataOnlyWithCaseType() {
         ReflectionTestUtils.setField(underTest, FILTER_KEY, "NEWCASETYPE");
 
