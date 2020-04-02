@@ -51,6 +51,7 @@ stages:
       product: $(product)
       chartEnv: $(environment)
       preIntegrationTest: true
+      promEnv: $(env.prom)
       functionalTest: true
       mutationTest: true
       azureVault: $(vault)
