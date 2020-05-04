@@ -7,6 +7,7 @@ import com.azure.storage.blob.models.BlobItem;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -44,6 +45,7 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServ
 
 @Slf4j
 @Component
+@Qualifier("ccd")
 public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataComponent {
 
     @Value("${max-lines-buffer}")
@@ -119,8 +121,8 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
     }
 
     private boolean readAndWriteData(BlobServiceClient sourceBlobServiceClient,
-                                          OffsetDateTime fromDate,
-                                          OffsetDateTime toDate) {
+                                     OffsetDateTime fromDate,
+                                     OffsetDateTime toDate) {
         boolean dataFound = false;
 
         List<String> blobNameIndexes = dateTimeUtil.getListOfYearsAndMonthsBetweenDates(fromDate, toDate);

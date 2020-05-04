@@ -2,6 +2,7 @@ package uk.gov.hmcts.reform.mi.miextractionservice.service.impl;
 
 import com.azure.storage.blob.BlobServiceClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -30,7 +31,8 @@ public class BlobExportServiceImpl implements BlobExportService {
     private ExtractionBlobServiceClientFactory extractionBlobServiceClientFactory;
 
     @Autowired
-    private ExportBlobDataComponent exportBlobDataComponent;
+    @Qualifier("ccd")
+    private ExportBlobDataComponent ccdExportBlobDataComponent;
 
     @Autowired
     private BlobMessageBuilderComponent blobMessageBuilderComponent;
@@ -51,7 +53,8 @@ public class BlobExportServiceImpl implements BlobExportService {
 
         BlobServiceClient exportClient = extractionBlobServiceClientFactory.getExportClient();
 
-        String outputBlobName = exportBlobDataComponent.exportBlobsAndGetOutputName(
+        // Export CCD Blobs
+        String outputBlobName = ccdExportBlobDataComponent.exportBlobsAndGetOutputName(
             extractionBlobServiceClientFactory.getStagingClient(),
             exportClient,
             fromDate,

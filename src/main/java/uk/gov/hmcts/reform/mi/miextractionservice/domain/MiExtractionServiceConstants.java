@@ -7,6 +7,7 @@ public final class MiExtractionServiceConstants {
     public static final String COMMA_DELIMITER = ",";
     public static final String NAME_DELIMITER = "-";
     public static final String QUERY_PART_DELIMITER = "?";
+    public static final String NEWLINE_DELIMITER = "\n";
 
     public static final String CCD_OUTPUT_CONTAINER_NAME = "ccd";
     public static final String CCD_DATA_CONTAINER_PREFIX = CCD_OUTPUT_CONTAINER_NAME + NAME_DELIMITER;

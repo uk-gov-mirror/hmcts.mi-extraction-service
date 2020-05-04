@@ -7,28 +7,25 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.Spy;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
-import uk.gov.hmcts.reform.mi.miextractionservice.wrapper.WriterWrapper;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NEWLINE_DELIMITER;
 import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_DATA_ID;
 import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_METADATA_EVENT_ID;
 import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CASE_STATE_ID;
@@ -56,21 +53,14 @@ public class CoreCaseDataJsonlWriterComponentImplTest {
     @Spy
     private ObjectMapper objectMapper;
 
-    @Mock
-    private WriterWrapper writerWrapper;
-
     @InjectMocks
     private CoreCaseDataJsonlWriterComponentImpl underTest;
 
-    private BufferedWriter bufferedWriter;
     private Writer writer;
 
     @BeforeEach
     public void setUp() {
         writer = mock(Writer.class);
-        bufferedWriter = spy(new BufferedWriter(writer));
-
-        when(writerWrapper.getBufferedWriter(writer)).thenReturn(bufferedWriter);
     }
 
     @AfterEach
@@ -82,14 +72,13 @@ public class CoreCaseDataJsonlWriterComponentImplTest {
     public void givenValidWriter_whenWriteBeans_thenLinesAreWritten() throws Exception {
         underTest.writeLinesAsJsonl(writer, Collections.singletonList(TEST_OUTPUT_DATA));
 
-        verify(bufferedWriter).write(getExpectedDataString());
-        verify(bufferedWriter, times(1)).newLine();
-        verify(bufferedWriter, times(1)).close();
+        verify(writer, times(1)).write(getExpectedDataString());
+        verify(writer, times(1)).write(NEWLINE_DELIMITER);
     }
 
     @Test
     public void givenExceptionOnClose_whenWriteBeans_thenThrowParserException() throws Exception {
-        doThrow(new IOException("Broken close")).when(bufferedWriter).close();
+        doThrow(new IOException("Broken close")).when(writer).write(anyString());
 
         assertThrows(ParserException.class, () -> underTest.writeLinesAsJsonl(writer, Collections.singletonList(TEST_OUTPUT_DATA)));
 
