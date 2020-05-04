@@ -64,6 +64,8 @@ task functional(type: Test, description: 'Runs the functional tests.', group: 'V
   testClassesDirs = sourceSets.functionalTest.output.classesDirs
   classpath = sourceSets.functionalTest.runtimeClasspath
   useJUnitPlatform()
+
+  outputs.upToDateWhen { false }
 }
 
 task integrationPreTest(type: Test, description: 'Runs the pre-job integration tests.', group: 'Verification') {

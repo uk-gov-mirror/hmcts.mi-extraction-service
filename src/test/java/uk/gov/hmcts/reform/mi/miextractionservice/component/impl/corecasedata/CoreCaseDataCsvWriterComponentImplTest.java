@@ -1,4 +1,4 @@
-package uk.gov.hmcts.reform.mi.miextractionservice.component.impl;
+package uk.gov.hmcts.reform.mi.miextractionservice.component.impl.corecasedata;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
@@ -48,7 +49,7 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConsta
 
 @SuppressWarnings({"PMD.TooManyMethods"})
 @ExtendWith(SpringExtension.class)
-public class CsvWriterComponentImplTest {
+public class CoreCaseDataCsvWriterComponentImplTest {
 
     private static final String TEST_FILE_NAME = "unit-test";
     private static final String EXPECTED_HEADER_ROW = "\"extraction_date\",\"case_metadata_event_id\",\"ce_case_data_id\","
@@ -72,7 +73,7 @@ public class CsvWriterComponentImplTest {
     private WriterWrapper writerWrapper;
 
     @InjectMocks
-    private CsvWriterComponentImpl underTest;
+    private CoreCaseDataCsvWriterComponentImpl underTest;
 
     private CSVWriterKeepAlive csvWriter;
     private BufferedWriter bufferedWriter;
@@ -87,7 +88,7 @@ public class CsvWriterComponentImplTest {
         bufferedWriter = spy(new BufferedWriter(writer));
 
         when(writerWrapper.getCsvWriter(any())).thenReturn(csvWriter);
-        when(writerWrapper.getBufferedWriter(any())).thenReturn(bufferedWriter);
+        when(writerWrapper.getBufferedWriter(any(Path.class))).thenReturn(bufferedWriter);
     }
 
     @AfterEach
@@ -183,7 +184,7 @@ public class CsvWriterComponentImplTest {
     @Test
     public void givenValidFilePathAndBeans_whenWriteBeanToCsv_thenCsvFileIsCreated() throws Exception {
         when(writerWrapper.getCsvWriter(any())).thenCallRealMethod();
-        when(writerWrapper.getBufferedWriter(any())).thenCallRealMethod();
+        when(writerWrapper.getBufferedWriter(any(Path.class))).thenCallRealMethod();
 
         underTest.writeBeansAsCsvFile(uniqueFileName, Collections.singletonList(TEST_OUTPUT_DATA));
 
@@ -204,7 +205,7 @@ public class CsvWriterComponentImplTest {
     @Test
     public void givenInvalidFilePath_whenWriteBeanToCsv_thenParserExceptionIsThrown() throws Exception {
         when(writerWrapper.getCsvWriter(any())).thenCallRealMethod();
-        when(writerWrapper.getBufferedWriter(any())).thenCallRealMethod();
+        when(writerWrapper.getBufferedWriter(any(Path.class))).thenCallRealMethod();
 
         assertThrows(ParserException.class, () -> underTest.writeBeansAsCsvFile("/", Collections.emptyList()));
     }

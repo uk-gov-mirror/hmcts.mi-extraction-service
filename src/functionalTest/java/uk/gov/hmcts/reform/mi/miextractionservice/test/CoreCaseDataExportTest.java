@@ -51,7 +51,7 @@ public class CoreCaseDataExportTest {
 
     private static final String DEFAULT_HOST = "127.0.0.1";
     private static final String TEST_MAIL_ADDRESS = "TestMailAddress";
-    private static final String CSV_EXTRACT_FILE_NAME = "CCD_EXTRACT.csv";
+    private static final String EXTRACT_FILE_NAME = "CCD_EXTRACT.jsonl";
 
     @Autowired
     private BlobServiceClientFactory blobServiceClientFactory;
@@ -110,7 +110,7 @@ public class CoreCaseDataExportTest {
 
         // Cleanup local created files
         File exportZip = new File(TEST_EXPORT_BLOB);
-        File exportFile = new File(CSV_EXTRACT_FILE_NAME);
+        File exportFile = new File(EXTRACT_FILE_NAME);
 
         if (exportZip.exists()) {
             exportZip.delete();
@@ -148,9 +148,9 @@ public class CoreCaseDataExportTest {
 
         ZipFile zipFile = new ZipFile(TEST_EXPORT_BLOB);
 
-        zipFile.extractFile(CSV_EXTRACT_FILE_NAME, ".");
+        zipFile.extractFile(EXTRACT_FILE_NAME, ".");
 
-        assertTrue(new File(CSV_EXTRACT_FILE_NAME).exists(), "Expected archived file to be extracted.");
+        assertTrue(new File(EXTRACT_FILE_NAME).exists(), "Expected archived file to be extracted.");
 
         List<SmtpMessage> receivedEmails = dumbster.getReceivedEmails();
         assertEquals(1, receivedEmails.size(), "Should have receivied only 1 email.");

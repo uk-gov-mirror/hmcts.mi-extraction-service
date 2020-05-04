@@ -1,4 +1,4 @@
-package uk.gov.hmcts.reform.mi.miextractionservice.component.impl;
+package uk.gov.hmcts.reform.mi.miextractionservice.component.impl.corecasedata;
 
 import com.google.common.collect.ImmutableList;
 import org.junit.jupiter.api.Test;

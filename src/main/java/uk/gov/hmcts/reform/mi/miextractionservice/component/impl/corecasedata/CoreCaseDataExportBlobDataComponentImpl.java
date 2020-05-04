@@ -1,4 +1,4 @@
-package uk.gov.hmcts.reform.mi.miextractionservice.component.impl;
+package uk.gov.hmcts.reform.mi.miextractionservice.component.impl.corecasedata;
 
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
@@ -15,9 +15,9 @@ import uk.gov.hmcts.reform.mi.miextractionservice.component.ArchiveComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobDownloadComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CheckWhitelistComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CoreCaseDataFormatterComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.component.CsvWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.FilterComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.JsonlWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.MetadataFilterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
@@ -68,7 +68,7 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
     private CoreCaseDataFormatterComponent<OutputCoreCaseData> coreCaseDataFormatterComponent;
 
     @Autowired
-    private CsvWriterComponent<OutputCoreCaseData> csvWriterComponent;
+    private JsonlWriterComponent<OutputCoreCaseData> jsonlWriterComponent;
 
     @Autowired
     private ArchiveComponent archiveComponent;
@@ -92,7 +92,7 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
                                               OffsetDateTime fromDate,
                                               OffsetDateTime toDate) {
 
-        boolean dataFound = readAndWriteDataAsCsv(sourceBlobServiceClient, fromDate, toDate);
+        boolean dataFound = readAndWriteData(sourceBlobServiceClient, fromDate, toDate);
 
         if (dataFound) {
             archiveComponent.createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
@@ -118,7 +118,7 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
         return null;
     }
 
-    private boolean readAndWriteDataAsCsv(BlobServiceClient sourceBlobServiceClient,
+    private boolean readAndWriteData(BlobServiceClient sourceBlobServiceClient,
                                           OffsetDateTime fromDate,
                                           OffsetDateTime toDate) {
         boolean dataFound = false;
@@ -126,8 +126,6 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
         List<String> blobNameIndexes = dateTimeUtil.getListOfYearsAndMonthsBetweenDates(fromDate, toDate);
 
         try (BufferedWriter bufferedWriter = writerWrapper.getBufferedWriter(Paths.get(CCD_WORKING_FILE_NAME))) {
-
-            csvWriterComponent.writeHeadersToCsvFile(bufferedWriter);
 
             for (BlobContainerItem blobContainerItem : sourceBlobServiceClient.listBlobContainers()) {
 
@@ -185,7 +183,7 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
 
                     // Reached max buffer, so write to file chunk and clear
                     if (outputLines.size() >= Integer.parseInt(maxLines)) {
-                        writeDataToCsv(bufferedWriter, outputLines, fromDate, toDate);
+                        writeData(bufferedWriter, outputLines, fromDate, toDate);
                         outputLines.clear();
                     }
                 }
@@ -194,7 +192,7 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
             }
 
             if (Boolean.FALSE.equals(outputLines.isEmpty())) {
-                writeDataToCsv(bufferedWriter, outputLines, fromDate, toDate);
+                writeData(bufferedWriter, outputLines, fromDate, toDate);
             }
         } catch (IOException exception) {
             log.error("Exception occurred writing data from blob to file.");
@@ -204,12 +202,12 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
         return dataFound;
     }
 
-    private void writeDataToCsv(BufferedWriter writer, List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate) {
+    private void writeData(BufferedWriter writer, List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate) {
         List<CoreCaseData> filteredData = filterComponent.filterDataInDateRange(data, fromDate, toDate);
         List<OutputCoreCaseData> formattedData = filteredData.stream()
             .map(coreCaseDataFormatterComponent::formatData)
             .collect(Collectors.toList());
 
-        csvWriterComponent.writeBeansWithWriter(writer, formattedData);
+        jsonlWriterComponent.writeLinesAsJsonl(writer, formattedData);
     }
 }
