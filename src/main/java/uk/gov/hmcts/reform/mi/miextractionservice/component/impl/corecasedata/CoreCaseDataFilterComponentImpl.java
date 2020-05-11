@@ -1,4 +1,4 @@
-package uk.gov.hmcts.reform.mi.miextractionservice.component.impl;
+package uk.gov.hmcts.reform.mi.miextractionservice.component.impl.corecasedata;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

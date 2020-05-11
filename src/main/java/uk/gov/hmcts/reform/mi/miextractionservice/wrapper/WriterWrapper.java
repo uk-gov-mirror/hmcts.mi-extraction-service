@@ -17,6 +17,10 @@ public class WriterWrapper {
         return new CSVWriterKeepAlive(writer);
     }
 
+    public BufferedWriter getBufferedWriter(Writer writer) {
+        return new BufferedWriter(writer);
+    }
+
     public BufferedWriter getBufferedWriter(Path filePath) throws IOException {
         return Files.newBufferedWriter(filePath);
     }

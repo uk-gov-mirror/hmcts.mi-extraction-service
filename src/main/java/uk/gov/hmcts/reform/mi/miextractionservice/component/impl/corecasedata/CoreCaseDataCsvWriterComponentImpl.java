@@ -1,4 +1,4 @@
-package uk.gov.hmcts.reform.mi.miextractionservice.component.impl;
+package uk.gov.hmcts.reform.mi.miextractionservice.component.impl.corecasedata;
 
 import com.opencsv.bean.StatefulBeanToCsv;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class CsvWriterComponentImpl implements CsvWriterComponent<OutputCoreCaseData> {
+public class CoreCaseDataCsvWriterComponentImpl implements CsvWriterComponent<OutputCoreCaseData> {
 
     @Autowired
     private WriterWrapper writerWrapper;
@@ -54,7 +54,7 @@ public class CsvWriterComponentImpl implements CsvWriterComponent<OutputCoreCase
     @Override
     public void writeBeansWithWriter(Writer writer, List<OutputCoreCaseData> outputBeans) {
         try (CSVWriterKeepAlive csvWriter = writerWrapper.getCsvWriter(writer)) {
-            StatefulBeanToCsv beanToCsv = new StatefulBeanToCsvBuilder(csvWriter).build();
+            StatefulBeanToCsv<OutputCoreCaseData> beanToCsv = new StatefulBeanToCsvBuilder<OutputCoreCaseData>(csvWriter).build();
 
             beanToCsv.write(outputBeans);
         } catch (IOException | CsvDataTypeMismatchException | CsvRequiredFieldEmptyException e) {

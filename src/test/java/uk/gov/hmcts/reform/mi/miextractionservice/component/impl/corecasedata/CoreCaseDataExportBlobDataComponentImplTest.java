@@ -1,4 +1,4 @@
-package uk.gov.hmcts.reform.mi.miextractionservice.component.impl;
+package uk.gov.hmcts.reform.mi.miextractionservice.component.impl.corecasedata;
 
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
@@ -20,8 +20,8 @@ import uk.gov.hmcts.reform.mi.miextractionservice.component.ArchiveComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobDownloadComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CheckWhitelistComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CoreCaseDataFormatterComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.component.CsvWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.FilterComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.JsonlWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.MetadataFilterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -82,7 +83,7 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
     private static final String TEST_OUTPUT_CONTAINER_NAME = "ccd";
     private static final String TEST_OUTPUT_BLOB_NAME = "1999-12-01-2001-01-01-CCD_EXTRACT.zip";
 
-    private static final String CCD_WORKING_FILE_NAME = "CCD_EXTRACT.csv";
+    private static final String CCD_WORKING_FILE_NAME = "CCD_EXTRACT.jsonl";
     private static final String CCD_WORKING_ARCHIVE = "CCD_EXTRACT.zip";
 
     @Mock
@@ -104,7 +105,7 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
     private CoreCaseDataFormatterComponent<OutputCoreCaseData> coreCaseDataFormatterComponent;
 
     @Mock
-    private CsvWriterComponent<OutputCoreCaseData> csvWriterComponent;
+    private JsonlWriterComponent<OutputCoreCaseData> jsonlWriterComponent;
 
     @Mock
     private ArchiveComponent archiveComponent;
@@ -131,7 +132,7 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         ReflectionTestUtils.setField(underTest, MAX_LINES_FIELD_PROPERTY, "3000");
 
         bufferedWriter = spy(Files.newBufferedWriter(Paths.get(CCD_WORKING_FILE_NAME)));
-        when(writerWrapper.getBufferedWriter(any())).thenReturn(bufferedWriter);
+        when(writerWrapper.getBufferedWriter(any(Path.class))).thenReturn(bufferedWriter);
         when(checkWhitelistComponent.isContainerWhitelisted(anyString())).thenReturn(true);
         when(metadataFilterComponent.filterByMetadata(anyMap())).thenReturn(true);
     }
@@ -193,8 +194,8 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         assertEquals(TEST_OUTPUT_BLOB_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, never()).create();
-        verify(csvWriterComponent, times(1))
-            .writeBeansWithWriter(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
+        verify(jsonlWriterComponent, times(1))
+            .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
         verify(archiveComponent)
             .createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
         verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
@@ -248,8 +249,8 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         assertEquals(TEST_OUTPUT_BLOB_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, never()).create();
-        verify(csvWriterComponent, times(3))
-            .writeBeansWithWriter(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
+        verify(jsonlWriterComponent, times(3))
+            .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
         verify(archiveComponent)
             .createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
         verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
@@ -306,8 +307,8 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         assertEquals(TEST_OUTPUT_BLOB_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, never()).create();
-        verify(csvWriterComponent)
-            .writeBeansWithWriter(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
+        verify(jsonlWriterComponent)
+            .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
         verify(archiveComponent)
             .createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
         verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
@@ -359,8 +360,8 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         assertEquals(TEST_OUTPUT_BLOB_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, times(1)).create();
-        verify(csvWriterComponent)
-            .writeBeansWithWriter(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
+        verify(jsonlWriterComponent)
+            .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
         verify(archiveComponent)
             .createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
         verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
@@ -412,8 +413,8 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         assertEquals(testOutputBlobName, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, times(1)).create();
-        verify(csvWriterComponent)
-            .writeBeansWithWriter(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
+        verify(jsonlWriterComponent)
+            .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
         verify(archiveComponent)
             .createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
         verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
@@ -465,8 +466,8 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         assertEquals(testOutputBlobName, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, times(1)).create();
-        verify(csvWriterComponent)
-            .writeBeansWithWriter(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
+        verify(jsonlWriterComponent)
+            .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
         verify(archiveComponent)
             .createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
         verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
@@ -534,13 +535,32 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
     @Test
     public void givenBufferedWriterWithException_whenExportBlobData_thenVerifyWriterIsClosed() throws Exception {
+        BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
+
+        when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
+
+        when(blobContainerItem.getName()).thenReturn(TEST_CONTAINER_NAME);
+
+        BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
+
+        when(sourceBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)).thenReturn(blobContainerClient);
+
+        BlobItem blobItemOne = mock(BlobItem.class);
+
+        when(blobContainerClient.listBlobs()).thenReturn(new PagedIterableStub<>(blobItemOne));
+
+        when(blobItemOne.getName()).thenReturn(TEST_BLOB_NAME_ONE);
+
+        when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
+            .thenReturn(new ByteArrayInputStream("Anything".getBytes()));
+
         doThrow(new IOException("Broken write.")).when(bufferedWriter).write(anyString());
 
         doAnswer((Answer<Void>) invocation -> {
             Writer writer = invocation.getArgument(0);
             writer.write("Should throw IOException");
             return null;
-        }).when(csvWriterComponent).writeHeadersToCsvFile(any());
+        }).when(jsonlWriterComponent).writeLinesAsJsonl(any(), any());
 
         assertThrows(ParserException.class, () ->
             underTest.exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME));
