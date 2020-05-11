@@ -23,6 +23,7 @@ import uk.gov.hmcts.reform.mi.miextractionservice.component.MetadataFilterCompon
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
+import uk.gov.hmcts.reform.mi.miextractionservice.wrapper.FileWrapper;
 import uk.gov.hmcts.reform.mi.miextractionservice.wrapper.WriterWrapper;
 
 import java.io.BufferedReader;
@@ -51,8 +52,14 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
     @Value("${max-lines-buffer}")
     private String maxLines;
 
+    @Value("${archive.compression.enabled}")
+    private String archiveFlag;
+
     @Autowired
     private WriterWrapper writerWrapper;
+
+    @Autowired
+    private FileWrapper fileWrapper;
 
     @Autowired
     private CheckWhitelistComponent checkWhitelistComponent;
@@ -94,24 +101,35 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
                                               OffsetDateTime fromDate,
                                               OffsetDateTime toDate) {
 
-        boolean dataFound = readAndWriteData(sourceBlobServiceClient, fromDate, toDate);
+        String outputDatePrefix = fromDate.format(dateTimeUtil.getDateFormat())
+            + NAME_DELIMITER
+            + toDate.format(dateTimeUtil.getDateFormat())
+            + NAME_DELIMITER;
+
+        String workingFileName = outputDatePrefix + CCD_WORKING_FILE_NAME;
+
+        boolean dataFound = readAndWriteData(sourceBlobServiceClient, fromDate, toDate, workingFileName);
 
         if (dataFound) {
-            archiveComponent.createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
-
             BlobContainerClient blobContainerClient = targetBlobServiceClient.getBlobContainerClient(CCD_OUTPUT_CONTAINER_NAME);
 
             if (!blobContainerClient.exists()) {
                 blobContainerClient.create();
             }
 
-            String outputBlobName = fromDate.format(dateTimeUtil.getDateFormat())
-                + NAME_DELIMITER
-                + toDate.format(dateTimeUtil.getDateFormat())
-                + NAME_DELIMITER
-                + CCD_WORKING_ARCHIVE;
+            String outputBlobName = workingFileName;
 
-            blobContainerClient.getBlobClient(outputBlobName).uploadFromFile(CCD_WORKING_ARCHIVE, true);
+            if (Boolean.TRUE.equals(Boolean.parseBoolean(archiveFlag))) {
+                outputBlobName = outputDatePrefix + CCD_WORKING_ARCHIVE;
+
+                archiveComponent.createArchive(Collections.singletonList(workingFileName), outputBlobName);
+            }
+
+            blobContainerClient.getBlobClient(outputBlobName).uploadFromFile(outputBlobName, true);
+
+            // Clean up files after upload
+            fileWrapper.deleteFileOnExit(workingFileName);
+            fileWrapper.deleteFileOnExit(outputBlobName);
 
             return outputBlobName;
         }
@@ -122,12 +140,13 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
 
     private boolean readAndWriteData(BlobServiceClient sourceBlobServiceClient,
                                      OffsetDateTime fromDate,
-                                     OffsetDateTime toDate) {
+                                     OffsetDateTime toDate,
+                                     String workingFileName) {
         boolean dataFound = false;
 
         List<String> blobNameIndexes = dateTimeUtil.getListOfYearsAndMonthsBetweenDates(fromDate, toDate);
 
-        try (BufferedWriter bufferedWriter = writerWrapper.getBufferedWriter(Paths.get(CCD_WORKING_FILE_NAME))) {
+        try (BufferedWriter bufferedWriter = writerWrapper.getBufferedWriter(Paths.get(workingFileName))) {
 
             for (BlobContainerItem blobContainerItem : sourceBlobServiceClient.listBlobContainers()) {
 
