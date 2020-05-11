@@ -54,7 +54,7 @@ public class CoreCaseDataCsvWriterComponentImpl implements CsvWriterComponent<Ou
     @Override
     public void writeBeansWithWriter(Writer writer, List<OutputCoreCaseData> outputBeans) {
         try (CSVWriterKeepAlive csvWriter = writerWrapper.getCsvWriter(writer)) {
-            StatefulBeanToCsv beanToCsv = new StatefulBeanToCsvBuilder(csvWriter).build();
+            StatefulBeanToCsv<OutputCoreCaseData> beanToCsv = new StatefulBeanToCsvBuilder<OutputCoreCaseData>(csvWriter).build();
 
             beanToCsv.write(outputBeans);
         } catch (IOException | CsvDataTypeMismatchException | CsvRequiredFieldEmptyException e) {
