@@ -51,7 +51,7 @@ public class CoreCaseDataExportTest {
 
     private static final String DEFAULT_HOST = "127.0.0.1";
     private static final String TEST_MAIL_ADDRESS = "TestMailAddress";
-    private static final String EXTRACT_FILE_NAME = "CCD_EXTRACT.jsonl";
+    private static final String EXTRACT_FILE_NAME = "1970-01-01-1970-01-02-CCD_EXTRACT.jsonl";
 
     @Autowired
     private BlobServiceClientFactory blobServiceClientFactory;
