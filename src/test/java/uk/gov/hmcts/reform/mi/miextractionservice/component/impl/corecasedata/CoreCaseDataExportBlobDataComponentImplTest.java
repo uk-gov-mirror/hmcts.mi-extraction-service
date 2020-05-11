@@ -28,6 +28,7 @@ import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
 import uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.PagedIterableStub;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.ReaderUtil;
+import uk.gov.hmcts.reform.mi.miextractionservice.wrapper.FileWrapper;
 import uk.gov.hmcts.reform.mi.miextractionservice.wrapper.WriterWrapper;
 
 import java.io.BufferedWriter;
@@ -47,6 +48,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -75,19 +77,27 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
     private static final OffsetDateTime TEST_TO_DATE_TIME = OffsetDateTime.of(2001, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
 
     private static final String MAX_LINES_FIELD_PROPERTY = "maxLines";
+    private static final String ARCHIVE_FLAG_PROPERTY = "archiveFlag";
 
     private static final String TEST_CONTAINER_NAME = "ccd-data-test";
     private static final String TEST_BLOB_NAME_ONE = "data-test-2000-01";
     private static final String TEST_BLOB_NAME_TWO = "data-test-2000-02";
 
     private static final String TEST_OUTPUT_CONTAINER_NAME = "ccd";
-    private static final String TEST_OUTPUT_BLOB_NAME = "1999-12-01-2001-01-01-CCD_EXTRACT.zip";
+
+    private static final String TEST_DATE_PREFIX = "1999-12-01-2001-01-01-";
 
     private static final String CCD_WORKING_FILE_NAME = "CCD_EXTRACT.jsonl";
     private static final String CCD_WORKING_ARCHIVE = "CCD_EXTRACT.zip";
 
+    private static final String OUTPUT_NAME = TEST_DATE_PREFIX + CCD_WORKING_ARCHIVE;
+    private static final String WORKING_FILE_NAME = TEST_DATE_PREFIX + CCD_WORKING_FILE_NAME;
+
     @Mock
     private WriterWrapper writerWrapper;
+
+    @Mock
+    private FileWrapper fileWrapper;
 
     @Mock
     private CheckWhitelistComponent checkWhitelistComponent;
@@ -130,6 +140,7 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
         targetBlobServiceClient = mock(BlobServiceClient.class);
 
         ReflectionTestUtils.setField(underTest, MAX_LINES_FIELD_PROPERTY, "3000");
+        ReflectionTestUtils.setField(underTest, ARCHIVE_FLAG_PROPERTY, "true");
 
         bufferedWriter = spy(Files.newBufferedWriter(Paths.get(CCD_WORKING_FILE_NAME)));
         when(writerWrapper.getBufferedWriter(any(Path.class))).thenReturn(bufferedWriter);
@@ -185,20 +196,22 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         BlobClient targetBlobClient = mock(BlobClient.class);
 
-        when(targetBlobContainerClient.getBlobClient(TEST_OUTPUT_BLOB_NAME)).thenReturn(targetBlobClient);
+        when(targetBlobContainerClient.getBlobClient(OUTPUT_NAME)).thenReturn(targetBlobClient);
 
         String result = underTest.exportBlobsAndGetOutputName(
             sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME
         );
 
-        assertEquals(TEST_OUTPUT_BLOB_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
+        assertEquals(OUTPUT_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, never()).create();
         verify(jsonlWriterComponent, times(1))
             .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
         verify(archiveComponent)
-            .createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
-        verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
+            .createArchive(Collections.singletonList(WORKING_FILE_NAME), OUTPUT_NAME);
+        verify(targetBlobClient).uploadFromFile(OUTPUT_NAME, true);
+        verify(fileWrapper).deleteFileOnExit(WORKING_FILE_NAME);
+        verify(fileWrapper).deleteFileOnExit(OUTPUT_NAME);
         verify(bufferedWriter, times(1)).close();
     }
 
@@ -240,20 +253,22 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         BlobClient targetBlobClient = mock(BlobClient.class);
 
-        when(targetBlobContainerClient.getBlobClient(TEST_OUTPUT_BLOB_NAME)).thenReturn(targetBlobClient);
+        when(targetBlobContainerClient.getBlobClient(OUTPUT_NAME)).thenReturn(targetBlobClient);
 
         String result = underTest.exportBlobsAndGetOutputName(
             sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME
         );
 
-        assertEquals(TEST_OUTPUT_BLOB_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
+        assertEquals(OUTPUT_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, never()).create();
         verify(jsonlWriterComponent, times(3))
             .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
         verify(archiveComponent)
-            .createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
-        verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
+            .createArchive(Collections.singletonList(WORKING_FILE_NAME), OUTPUT_NAME);
+        verify(targetBlobClient).uploadFromFile(OUTPUT_NAME, true);
+        verify(fileWrapper).deleteFileOnExit(WORKING_FILE_NAME);
+        verify(fileWrapper).deleteFileOnExit(OUTPUT_NAME);
         verify(bufferedWriter, times(1)).close();
     }
 
@@ -298,20 +313,22 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         BlobClient targetBlobClient = mock(BlobClient.class);
 
-        when(targetBlobContainerClient.getBlobClient(TEST_OUTPUT_BLOB_NAME)).thenReturn(targetBlobClient);
+        when(targetBlobContainerClient.getBlobClient(OUTPUT_NAME)).thenReturn(targetBlobClient);
 
         String result = underTest.exportBlobsAndGetOutputName(
             sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME
         );
 
-        assertEquals(TEST_OUTPUT_BLOB_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
+        assertEquals(OUTPUT_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, never()).create();
         verify(jsonlWriterComponent)
             .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
         verify(archiveComponent)
-            .createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
-        verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
+            .createArchive(Collections.singletonList(WORKING_FILE_NAME), OUTPUT_NAME);
+        verify(targetBlobClient).uploadFromFile(OUTPUT_NAME, true);
+        verify(fileWrapper).deleteFileOnExit(WORKING_FILE_NAME);
+        verify(fileWrapper).deleteFileOnExit(OUTPUT_NAME);
         verify(bufferedWriter, times(1)).close();
     }
 
@@ -351,27 +368,31 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         BlobClient targetBlobClient = mock(BlobClient.class);
 
-        when(targetBlobContainerClient.getBlobClient(TEST_OUTPUT_BLOB_NAME)).thenReturn(targetBlobClient);
+        when(targetBlobContainerClient.getBlobClient(OUTPUT_NAME)).thenReturn(targetBlobClient);
 
         String result = underTest.exportBlobsAndGetOutputName(
             sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME
         );
 
-        assertEquals(TEST_OUTPUT_BLOB_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
+        assertEquals(OUTPUT_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, times(1)).create();
         verify(jsonlWriterComponent)
             .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
         verify(archiveComponent)
-            .createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
-        verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
+            .createArchive(Collections.singletonList(WORKING_FILE_NAME), OUTPUT_NAME);
+        verify(targetBlobClient).uploadFromFile(OUTPUT_NAME, true);
+        verify(fileWrapper).deleteFileOnExit(WORKING_FILE_NAME);
+        verify(fileWrapper).deleteFileOnExit(OUTPUT_NAME);
         verify(bufferedWriter, times(1)).close();
     }
 
     @Test
     public void givenSameFromDate_whenExportBlobDataAndGetUrl_thenCreateContainerAndReturnUrlOfUploadedExtractedDataBlob() throws Exception {
-        OffsetDateTime fromDateSameAsEventDate = OffsetDateTime.of(2000, 01, 29, 0, 0, 0, 0, ZoneOffset.UTC);
-        String testOutputBlobName = "2000-01-29-2001-01-01-CCD_EXTRACT.zip";
+        final OffsetDateTime fromDateSameAsEventDate = OffsetDateTime.of(2000, 01, 29, 0, 0, 0, 0, ZoneOffset.UTC);
+        final String datePrefix = "2000-01-29-2001-01-01-";
+        final String workingFileName = datePrefix + CCD_WORKING_FILE_NAME;
+        final String outputName = datePrefix + CCD_WORKING_ARCHIVE;
 
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
 
@@ -405,26 +426,30 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         BlobClient targetBlobClient = mock(BlobClient.class);
 
-        when(targetBlobContainerClient.getBlobClient(testOutputBlobName)).thenReturn(targetBlobClient);
+        when(targetBlobContainerClient.getBlobClient(outputName)).thenReturn(targetBlobClient);
 
         String result = underTest
             .exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, fromDateSameAsEventDate, TEST_TO_DATE_TIME);
 
-        assertEquals(testOutputBlobName, result, OUTPUT_ASSERTION_MATCHING_ERROR);
+        assertEquals(outputName, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, times(1)).create();
         verify(jsonlWriterComponent)
             .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
         verify(archiveComponent)
-            .createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
-        verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
+            .createArchive(Collections.singletonList(workingFileName), outputName);
+        verify(targetBlobClient).uploadFromFile(outputName, true);
+        verify(fileWrapper).deleteFileOnExit(workingFileName);
+        verify(fileWrapper).deleteFileOnExit(outputName);
         verify(bufferedWriter, times(1)).close();
     }
 
     @Test
     public void givenSameToDate_whenExportBlobDataAndGetUrl_thenCreateContainerAndReturnUrlOfUploadedExtractedDataBlob() throws Exception {
-        OffsetDateTime toDateSameAsEventDate = OffsetDateTime.of(2000, 01, 29, 0, 0, 0, 0, ZoneOffset.UTC);
-        String testOutputBlobName = "1999-12-01-2000-01-29-CCD_EXTRACT.zip";
+        final OffsetDateTime toDateSameAsEventDate = OffsetDateTime.of(2000, 01, 29, 0, 0, 0, 0, ZoneOffset.UTC);
+        final String datePrefix = "1999-12-01-2000-01-29-";
+        final String workingFileName = datePrefix + CCD_WORKING_FILE_NAME;
+        final String outputName = datePrefix + CCD_WORKING_ARCHIVE;
 
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
 
@@ -458,19 +483,21 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
 
         BlobClient targetBlobClient = mock(BlobClient.class);
 
-        when(targetBlobContainerClient.getBlobClient(testOutputBlobName)).thenReturn(targetBlobClient);
+        when(targetBlobContainerClient.getBlobClient(outputName)).thenReturn(targetBlobClient);
 
         String result = underTest
             .exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, toDateSameAsEventDate);
 
-        assertEquals(testOutputBlobName, result, OUTPUT_ASSERTION_MATCHING_ERROR);
+        assertEquals(outputName, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, times(1)).create();
         verify(jsonlWriterComponent)
             .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
         verify(archiveComponent)
-            .createArchive(Collections.singletonList(CCD_WORKING_FILE_NAME), CCD_WORKING_ARCHIVE);
-        verify(targetBlobClient).uploadFromFile(CCD_WORKING_ARCHIVE, true);
+            .createArchive(Collections.singletonList(workingFileName), outputName);
+        verify(targetBlobClient).uploadFromFile(outputName, true);
+        verify(fileWrapper).deleteFileOnExit(workingFileName);
+        verify(fileWrapper).deleteFileOnExit(outputName);
         verify(bufferedWriter, times(1)).close();
     }
 
@@ -628,5 +655,58 @@ public class CoreCaseDataExportBlobDataComponentImplTest {
             null,
             underTest.exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME),
             "Expected null output when no query matching data found.");
+    }
+
+    @Test
+    public void givenExtractionWithArchiveDisabled_whenExportBlobDataAndGetUrl_thenReturnUrlOfUploadedExtractedDataBlob() throws Exception {
+        ReflectionTestUtils.setField(underTest, ARCHIVE_FLAG_PROPERTY, "false");
+
+        BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
+
+        when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
+
+        when(blobContainerItem.getName()).thenReturn(TEST_CONTAINER_NAME);
+
+        BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
+
+        when(sourceBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)).thenReturn(blobContainerClient);
+
+        BlobItem blobItem = mock(BlobItem.class);
+
+        when(blobContainerClient.listBlobs()).thenReturn(new PagedIterableStub<>(blobItem));
+
+        when(blobItem.getName()).thenReturn(TEST_BLOB_NAME_ONE);
+
+        when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
+            .thenReturn(new ByteArrayInputStream(TEST_CCD_JSONL.getBytes()));
+
+        when(filterComponent
+            .filterDataInDateRange(argThat(allOf(hasItem(TEST_CCD_JSONL))), eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME)))
+            .thenReturn(Collections.singletonList(TEST_CCD_JSONL_AS_CORE_CASE_DATA));
+
+        when(coreCaseDataFormatterComponent.formatData(TEST_CCD_JSONL_AS_CORE_CASE_DATA)).thenReturn(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA);
+
+        BlobContainerClient targetBlobContainerClient = mock(BlobContainerClient.class);
+
+        when(targetBlobServiceClient.getBlobContainerClient(TEST_OUTPUT_CONTAINER_NAME)).thenReturn(targetBlobContainerClient);
+        when(targetBlobContainerClient.exists()).thenReturn(true);
+
+        BlobClient targetBlobClient = mock(BlobClient.class);
+
+        when(targetBlobContainerClient.getBlobClient(WORKING_FILE_NAME)).thenReturn(targetBlobClient);
+
+        String result = underTest.exportBlobsAndGetOutputName(
+            sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME
+        );
+
+        assertEquals(WORKING_FILE_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
+
+        verify(targetBlobContainerClient, never()).create();
+        verify(jsonlWriterComponent, times(1))
+            .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
+        verify(archiveComponent, never()).createArchive(anyList(), anyString());
+        verify(targetBlobClient).uploadFromFile(WORKING_FILE_NAME, true);
+        verify(fileWrapper, times(2)).deleteFileOnExit(WORKING_FILE_NAME);
+        verify(bufferedWriter, times(1)).close();
     }
 }

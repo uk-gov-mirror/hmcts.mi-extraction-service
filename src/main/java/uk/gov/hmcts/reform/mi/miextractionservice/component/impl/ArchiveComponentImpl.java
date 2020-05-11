@@ -18,7 +18,6 @@ public class ArchiveComponentImpl implements ArchiveComponent {
 
     @Override
     public void createArchive(List<String> inputPaths, String outputPath) {
-
         try {
             List<File> filesList = inputPaths.stream().map(File::new).collect(Collectors.toList());
 
