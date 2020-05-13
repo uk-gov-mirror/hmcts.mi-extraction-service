@@ -8,6 +8,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.testcontainers.containers.GenericContainer;
@@ -15,6 +16,8 @@ import org.testcontainers.junit.jupiter.Container;
 
 import uk.gov.hmcts.reform.mi.micore.factory.BlobServiceClientFactory;
 import uk.gov.hmcts.reform.mi.miextractionservice.TestConfig;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.EmailBlobUrlToTargetsComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.factory.ExtractionBlobServiceClientFactory;
 import uk.gov.hmcts.reform.mi.miextractionservice.service.BlobExportService;
 
@@ -34,7 +37,8 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.CCD_
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_BLOB_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_CCD_JSONL;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_CONTAINER_NAME;
-import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_EXPORT_BLOB;
+import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_EXPORT_BLOB_ARCHIVE;
+import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_EXPORT_BLOB_FILE;
 
 @SuppressWarnings({"unchecked","PMD.AvoidUsingHardCodedIP","PMD.ExcessiveImports"})
 @SpringBootTest(classes = TestConfig.class)
@@ -51,7 +55,6 @@ public class CoreCaseDataExportTest {
 
     private static final String DEFAULT_HOST = "127.0.0.1";
     private static final String TEST_MAIL_ADDRESS = "TestMailAddress";
-    private static final String EXTRACT_FILE_NAME = "1970-01-01-1970-01-02-CCD_EXTRACT.jsonl";
 
     @Autowired
     private BlobServiceClientFactory blobServiceClientFactory;
@@ -72,6 +75,13 @@ public class CoreCaseDataExportTest {
     private BlobServiceClient exportBlobServiceClient;
 
     private SimpleSmtpServer dumbster;
+
+    @Autowired
+    private EmailBlobUrlToTargetsComponent emailBlobUrlToTargetsComponent;
+
+    @Autowired
+    @Qualifier("ccd")
+    private ExportBlobDataComponent ccdExportBlobDataComponent;
 
     @Autowired
     private ExtractionBlobServiceClientFactory extractionBlobServiceClientFactory;
@@ -99,6 +109,9 @@ public class CoreCaseDataExportTest {
             "stagingConnString", String.format(DEFAULT_CONN_STRING, DEFAULT_HOST, stagingPort));
         ReflectionTestUtils.setField(extractionBlobServiceClientFactory,
             "exportConnString", String.format(DEFAULT_CONN_STRING, DEFAULT_HOST, exportPort));
+
+        ReflectionTestUtils.setField(emailBlobUrlToTargetsComponent, "targets", "");
+        ReflectionTestUtils.setField(ccdExportBlobDataComponent, "archiveFlag", "false");
     }
 
     @AfterEach
@@ -109,8 +122,8 @@ public class CoreCaseDataExportTest {
         EXPORT_CONTAINER.stop();
 
         // Cleanup local created files
-        File exportZip = new File(TEST_EXPORT_BLOB);
-        File exportFile = new File(EXTRACT_FILE_NAME);
+        File exportZip = new File(TEST_EXPORT_BLOB_ARCHIVE);
+        File exportFile = new File(TEST_EXPORT_BLOB_FILE);
 
         if (exportZip.exists()) {
             exportZip.delete();
@@ -140,17 +153,48 @@ public class CoreCaseDataExportTest {
 
         assertTrue(exportBlobServiceClient.getBlobContainerClient(CCD_EXPORT_CONTAINER_NAME).exists(), "No container was created.");
         assertTrue(exportBlobServiceClient.getBlobContainerClient(CCD_EXPORT_CONTAINER_NAME)
-            .getBlobClient(TEST_EXPORT_BLOB).exists(), "No first blob was created.");
+            .getBlobClient(TEST_EXPORT_BLOB_FILE).exists(), "No first blob was created.");
 
-        try (OutputStream outputStream = Files.newOutputStream(Paths.get(TEST_EXPORT_BLOB))) {
-            exportBlobServiceClient.getBlobContainerClient(CCD_EXPORT_CONTAINER_NAME).getBlobClient(TEST_EXPORT_BLOB).download(outputStream);
+        try (OutputStream outputStream = Files.newOutputStream(Paths.get(TEST_EXPORT_BLOB_FILE))) {
+            exportBlobServiceClient.getBlobContainerClient(CCD_EXPORT_CONTAINER_NAME).getBlobClient(TEST_EXPORT_BLOB_FILE).download(outputStream);
         }
 
-        ZipFile zipFile = new ZipFile(TEST_EXPORT_BLOB);
+        assertTrue(new File(TEST_EXPORT_BLOB_FILE).exists(), "Expected jsonl file to be downloaded.");
+    }
 
-        zipFile.extractFile(EXTRACT_FILE_NAME, ".");
+    @Test
+    public void givenTestContainerWithArchiveAndMailEnabled_whenExportBlob_thenArchivedBlobIsCreatedInExportAndEmailIsSent() throws Exception {
+        ReflectionTestUtils.setField(emailBlobUrlToTargetsComponent, "targets", TEST_MAIL_ADDRESS);
+        ReflectionTestUtils.setField(ccdExportBlobDataComponent, "archiveFlag", "true");
 
-        assertTrue(new File(EXTRACT_FILE_NAME).exists(), "Expected archived file to be extracted.");
+        byte[] inputData = TEST_CCD_JSONL.getBytes();
+        InputStream inputStream = new ByteArrayInputStream(inputData);
+
+        stagingBlobServiceClient
+            .createBlobContainer(TEST_CONTAINER_NAME)
+            .getBlobClient(TEST_BLOB_NAME)
+            .getBlockBlobClient()
+            .upload(inputStream, inputData.length);
+
+        assertFalse(exportBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME).exists(), "Leftover container exists.");
+        assertFalse(exportBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)
+            .getBlobClient(TEST_BLOB_NAME).exists(), "Leftover first blob exists.");
+
+        underTest.exportBlobs();
+
+        assertTrue(exportBlobServiceClient.getBlobContainerClient(CCD_EXPORT_CONTAINER_NAME).exists(), "No container was created.");
+        assertTrue(exportBlobServiceClient.getBlobContainerClient(CCD_EXPORT_CONTAINER_NAME)
+            .getBlobClient(TEST_EXPORT_BLOB_ARCHIVE).exists(), "No first blob was created.");
+
+        try (OutputStream outputStream = Files.newOutputStream(Paths.get(TEST_EXPORT_BLOB_ARCHIVE))) {
+            exportBlobServiceClient.getBlobContainerClient(CCD_EXPORT_CONTAINER_NAME).getBlobClient(TEST_EXPORT_BLOB_ARCHIVE).download(outputStream);
+        }
+
+        ZipFile zipFile = new ZipFile(TEST_EXPORT_BLOB_ARCHIVE);
+
+        zipFile.extractFile(TEST_EXPORT_BLOB_FILE, ".");
+
+        assertTrue(new File(TEST_EXPORT_BLOB_FILE).exists(), "Expected archived file to be extracted.");
 
         List<SmtpMessage> receivedEmails = dumbster.getReceivedEmails();
         assertEquals(1, receivedEmails.size(), "Should have receivied only 1 email.");
@@ -159,7 +203,7 @@ public class CoreCaseDataExportTest {
         assertEquals(TEST_MAIL_ADDRESS, email.getHeaderValue("To"), "Should have sent an email to TestMailAddress.");
         assertEquals("Management Information Exported Data Url", email.getHeaderValue("Subject"),
             "Should have a static subject message.");
-        assertTrue(email.getBody().contains(TEST_EXPORT_BLOB),
+        assertTrue(email.getBody().contains(TEST_EXPORT_BLOB_ARCHIVE),
             "Should have output blob name somewhere in email body as part of the generated SAS url.");
     }
 

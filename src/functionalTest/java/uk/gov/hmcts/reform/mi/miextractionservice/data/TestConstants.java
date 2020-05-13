@@ -9,7 +9,8 @@ public final class TestConstants {
     public static final String TEST_BLOB_NAME = "testblob-" + TEST_ID + "-1970-01";
 
     public static final String CCD_EXPORT_CONTAINER_NAME = "ccd";
-    public static final String TEST_EXPORT_BLOB = "1970-01-01-1970-01-02-CCD_EXTRACT.zip";
+    public static final String TEST_EXPORT_BLOB_FILE = "1970-01-01-1970-01-02-CCD_EXTRACT.jsonl";
+    public static final String TEST_EXPORT_BLOB_ARCHIVE = "1970-01-01-1970-01-02-CCD_EXTRACT.zip";
 
     public static final String TEST_CCD_JSONL = "{\"extraction_date\":\"19991201-1010\","
         + "\"case_metadata_event_id\":1000001,\"ce_case_data_id\":100001,\"ce_created_date\":1001,"
