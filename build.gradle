@@ -154,7 +154,7 @@ dependencyManagement {
     dependency group: 'com.squareup.retrofit2', name: 'retrofit', version: '2.8.1'
     dependency group: 'com.squareup.retrofit2', name: 'adapter-rxjava', version: '2.8.1'
     // CVE-2020-9488
-    dependencySet(group: 'org.apache.logging.log4j', version: '2.13.2') {
+    dependencySet(group: 'org.apache.logging.log4j', version: '2.13.3') {
       entry 'log4j-to-slf4j'
       entry 'log4j-api'
     }
