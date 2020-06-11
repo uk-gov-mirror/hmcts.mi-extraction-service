@@ -32,6 +32,14 @@ public class CoreCaseDataOutputFormatterComponentImpl implements CoreCaseDataFor
                 .ce_case_type_id(coreCaseData.getCeCaseTypeId())
                 .ce_case_type_version(String.valueOf(coreCaseData.getCeCaseTypeVersion()))
                 .ce_state_id(coreCaseData.getCeStateId())
+                .ce_state_name(coreCaseData.getCeStateName())
+                .ce_summary(coreCaseData.getSummary())
+                .ce_description(coreCaseData.getDescription())
+                .ce_event_id(coreCaseData.getCeEventId())
+                .ce_event_name(coreCaseData.getCeEventName())
+                .ce_user_id(coreCaseData.getCeUserId())
+                .ce_user_first_name(coreCaseData.getCeUserFirstName())
+                .ce_user_last_name(coreCaseData.getCeUserLastName())
                 .data(objectMapper.writeValueAsString(coreCaseData.getCeData()))
                 .build();
         } catch (JsonProcessingException e) {

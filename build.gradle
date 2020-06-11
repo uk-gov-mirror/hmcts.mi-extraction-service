@@ -175,7 +175,7 @@ def versions = [
   dumbster         : '1.7.1',
   hmctsNotify      : '3.15.1-RELEASE',
   junit            : '5.5.0',
-  miCoreLib        : '3.0.8',
+  miCoreLib        : '3.2.1',
   reformLogging    : '5.1.5',
   openCsv          : '5.1',
   piTest           : '1.5.0',
