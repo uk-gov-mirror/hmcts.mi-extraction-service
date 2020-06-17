@@ -102,9 +102,11 @@ public class NotifyExportBlobDataComponentImpl implements ExportBlobDataComponen
 
         String workingFileName = outputDatePrefix + NOTIFY_WORKING_FILENAME;
 
-        boolean dataFound = readAndWriteData(sourceBlobServiceClient, fromDate, toDate, workingFileName);
+        int dataCount = readAndWriteData(sourceBlobServiceClient, fromDate, toDate, workingFileName);
 
-        if (dataFound) {
+        if (dataCount > 0) {
+            log.info("Found a total of {} records to write for Notify. About to upload blob.");
+
             BlobContainerClient blobContainerClient = targetBlobServiceClient.getBlobContainerClient(NOTIFY_OUTPUT_CONTAINER_NAME);
 
             if (!blobContainerClient.exists()) {
@@ -123,6 +125,8 @@ public class NotifyExportBlobDataComponentImpl implements ExportBlobDataComponen
 
             blobContainerClient.getBlobClient(outputBlobName).uploadFromFile(outputBlobName, true);
 
+            log.info("Uploaded blob {} for Notify.", outputBlobName);
+
             fileWrapper.deleteFileOnExit(outputBlobName);
 
             return outputBlobName;
@@ -132,11 +136,11 @@ public class NotifyExportBlobDataComponentImpl implements ExportBlobDataComponen
         return null;
     }
 
-    private boolean readAndWriteData(BlobServiceClient sourceBlobServiceClient,
-                                     OffsetDateTime fromDate,
-                                     OffsetDateTime toDate,
-                                     String workingFileName) {
-        boolean dataFound = false;
+    private int readAndWriteData(BlobServiceClient sourceBlobServiceClient,
+                                 OffsetDateTime fromDate,
+                                 OffsetDateTime toDate,
+                                 String workingFileName) {
+        int dataCount = 0;
 
         List<String> blobNameIndexes = dateTimeUtil.getListOfYearsAndMonthsBetweenDates(fromDate, toDate);
 
@@ -144,24 +148,33 @@ public class NotifyExportBlobDataComponentImpl implements ExportBlobDataComponen
 
             for (BlobContainerItem blobContainerItem : sourceBlobServiceClient.listBlobContainers()) {
 
+                log.debug("About to check blob container {} for Notify data", blobContainerItem.getName());
+
                 if (checkWhitelistComponent.isContainerWhitelisted(blobContainerItem.getName())
                     && blobContainerItem.getName().startsWith(NOTIFY_CONTAINER_PREFIX)) {
 
                     BlobContainerClient blobContainerClient = sourceBlobServiceClient.getBlobContainerClient(blobContainerItem.getName());
 
                     for (BlobItem blobItem : blobContainerClient.listBlobs()) {
+
+                        log.debug("About to check container {} with blob {} for Notify data", blobContainerItem.getName(), blobItem.getName());
+
                         if (blobNameIndexes.parallelStream().anyMatch(blobItem.getName()::contains)
                             && metadataFilterComponent.filterByMetadata(blobItem.getMetadata())) {
 
-                            // Once dataFound is true, stays true for the rest of the run.
-                            dataFound = parseAndWriteData(
+                            log.info("Container {} with Blob {} meets Notify filter criteria. Parsing for data.",
+                                blobContainerItem.getName(), blobItem.getName());
+
+                            int addedRecordsCount = parseAndWriteData(
                                 bufferedWriter,
                                 sourceBlobServiceClient,
                                 blobContainerItem.getName(),
                                 blobItem.getName(),
                                 fromDate,
                                 toDate
-                            ) || dataFound;
+                            );
+
+                            dataCount = dataCount + addedRecordsCount;
                         }
                     }
                 }
@@ -171,18 +184,18 @@ public class NotifyExportBlobDataComponentImpl implements ExportBlobDataComponen
             throw new ParserException("Unable create file for writing.", exception);
         }
 
-        return dataFound;
+        return dataCount;
     }
 
     @SuppressWarnings("PMD.LawOfDemeter")
-    private boolean parseAndWriteData(BufferedWriter bufferedWriter,
+    private int parseAndWriteData(BufferedWriter bufferedWriter,
                                       BlobServiceClient sourceBlobServiceClient,
                                       String blobContainerName,
                                       String blobName,
                                       OffsetDateTime fromDate,
                                       OffsetDateTime toDate) {
 
-        boolean dataFound = false;
+        int dataCount = 0;
 
         try (InputStream inputStream = blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, blobContainerName, blobName);
              BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
@@ -194,7 +207,7 @@ public class NotifyExportBlobDataComponentImpl implements ExportBlobDataComponen
             while (line != null) {
                 if (StringUtils.isNotBlank(line)) {
                     outputLines.add(line);
-                    dataFound = true;
+                    dataCount = dataCount + 1;
 
                     // Reached max buffer, so write to file chunk and clear
                     if (outputLines.size() >= Integer.parseInt(maxLines)) {
@@ -214,7 +227,9 @@ public class NotifyExportBlobDataComponentImpl implements ExportBlobDataComponen
             throw new ParserException("Unable to parse or write data to file.", exception);
         }
 
-        return dataFound;
+        log.info("Number of records found for container {} with blob {} is: {}", blobContainerName, blobName, dataCount);
+
+        return dataCount;
     }
 
     private void writeData(BufferedWriter writer, List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate) {
