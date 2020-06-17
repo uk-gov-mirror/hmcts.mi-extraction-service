@@ -1,4 +1,4 @@
-package uk.gov.hmcts.reform.mi.miextractionservice.component.impl.notify;
+package uk.gov.hmcts.reform.mi.miextractionservice.component.impl;
 
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
@@ -15,16 +15,17 @@ import org.mockito.stubbing.Answer;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import uk.gov.hmcts.reform.mi.micore.model.NotificationOutput;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ArchiveComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobDownloadComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CheckWhitelistComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.component.FilterComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.component.JsonlWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.MetadataFilterComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.WriteDataComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.domain.SourceEnum;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
+import uk.gov.hmcts.reform.mi.miextractionservice.factory.WriteDataFactory;
 import uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.PagedIterableStub;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
+import uk.gov.hmcts.reform.mi.miextractionservice.util.SourceUtil;
 import uk.gov.hmcts.reform.mi.miextractionservice.wrapper.FileWrapper;
 import uk.gov.hmcts.reform.mi.miextractionservice.wrapper.WriterWrapper;
 
@@ -39,12 +40,12 @@ import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
+import java.util.List;
 
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -56,11 +57,13 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.hamcrest.MockitoHamcrest.argThat;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CCD_JSONL;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CCD_JSONL_OUTDATED_FUTURE;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CCD_JSONL_OUTDATED_PAST;
 
 @SuppressWarnings({"PMD.UnusedPrivateField","PMD.ExcessiveImports","PMD.TooManyMethods"})
 @ExtendWith(SpringExtension.class)
-class NotifyExportBlobDataComponentImplTest {
+class ExportBlobDataComponentImplTest {
 
     private static final String OUTPUT_ASSERTION_MATCHING_ERROR = "Returned blob name does not match the expected.";
 
@@ -70,24 +73,19 @@ class NotifyExportBlobDataComponentImplTest {
     private static final String MAX_LINES_FIELD_PROPERTY = "maxLines";
     private static final String ARCHIVE_FLAG_PROPERTY = "archiveFlag";
 
-    private static final String TEST_CONTAINER_NAME = "notify-data-test";
+    private static final String TEST_CONTAINER_NAME = "ccd-data-test";
     private static final String TEST_BLOB_NAME_ONE = "data-test-2000-01";
     private static final String TEST_BLOB_NAME_TWO = "data-test-2000-02";
 
-    private static final String TEST_OUTPUT_CONTAINER_NAME = "notify";
+    private static final String TEST_OUTPUT_CONTAINER_NAME = "ccd";
 
     private static final String TEST_DATE_PREFIX = "1999-12-01-2001-01-01-";
 
-    private static final String NOTIFY_WORKING_FILE_NAME = "NOTIFY_EXTRACT.jsonl";
-    private static final String NOTIFY_WORKING_ARCHIVE = "NOTIFY_EXTRACT.zip";
+    private static final String CCD_WORKING_FILE_NAME = "CCD_EXTRACT.jsonl";
+    private static final String CCD_WORKING_ARCHIVE = "CCD_EXTRACT.zip";
 
-    private static final String OUTPUT_NAME = TEST_DATE_PREFIX + NOTIFY_WORKING_FILE_NAME;
-
-    private static final String NOTIFY_JSON = "{\"created_at\":\"2000-01-01T10:00:00.000000Z\"}";
-    private static final String NOTIFY_JSON_FUTURE = "{\"created_at\":\"2002-01-01T10:00:00.000000Z\"}";
-    private static final String NOTIFY_JSON_PAST = "{\"created_at\":\"1998-01-01T10:00:00.000000Z\"}";
-
-    private static final NotificationOutput NOTIFY_OUTPUT = NotificationOutput.builder().createdAt("2000-01-01T10:00:00.000000Z").build();
+    private static final String OUTPUT_NAME = TEST_DATE_PREFIX + CCD_WORKING_ARCHIVE;
+    private static final String WORKING_FILE_NAME = TEST_DATE_PREFIX + CCD_WORKING_FILE_NAME;
 
     @Mock
     private WriterWrapper writerWrapper;
@@ -105,10 +103,7 @@ class NotifyExportBlobDataComponentImplTest {
     private BlobDownloadComponent blobDownloadComponent;
 
     @Mock
-    private FilterComponent<NotificationOutput> filterComponent;
-
-    @Mock
-    private JsonlWriterComponent<NotificationOutput> jsonlWriterComponent;
+    private WriteDataFactory writeDataFactory;
 
     @Mock
     private ArchiveComponent archiveComponent;
@@ -116,30 +111,37 @@ class NotifyExportBlobDataComponentImplTest {
     @Spy
     private DateTimeUtil dateTimeUtil;
 
+    @Spy
+    private SourceUtil sourceUtil;
+
     @InjectMocks
-    private NotifyExportBlobDataComponentImpl underTest;
+    private ExportBlobDataComponentImpl underTest;
 
     private BlobServiceClient sourceBlobServiceClient;
     private BlobServiceClient targetBlobServiceClient;
 
     private BufferedWriter bufferedWriter;
+    private WriteDataComponent writeDataComponent;
 
     @BeforeEach
-    void setUp() throws IOException {
+    public void setUp() throws IOException {
         sourceBlobServiceClient = mock(BlobServiceClient.class);
         targetBlobServiceClient = mock(BlobServiceClient.class);
 
         ReflectionTestUtils.setField(underTest, MAX_LINES_FIELD_PROPERTY, "3000");
-        ReflectionTestUtils.setField(underTest, ARCHIVE_FLAG_PROPERTY, "false");
+        ReflectionTestUtils.setField(underTest, ARCHIVE_FLAG_PROPERTY, "true");
 
-        bufferedWriter = spy(Files.newBufferedWriter(Paths.get(NOTIFY_WORKING_FILE_NAME)));
+        bufferedWriter = spy(Files.newBufferedWriter(Paths.get(CCD_WORKING_FILE_NAME)));
         when(writerWrapper.getBufferedWriter(any(Path.class))).thenReturn(bufferedWriter);
         when(checkWhitelistComponent.isContainerWhitelisted(anyString())).thenReturn(true);
         when(metadataFilterComponent.filterByMetadata(anyMap())).thenReturn(true);
+
+        writeDataComponent = mock(WriteDataComponent.class);
+        when(writeDataFactory.getWriteComponent(SourceEnum.CORE_CASE_DATA)).thenReturn(writeDataComponent);
     }
 
     @Test
-    void givenBlobServiceClientsAndDatesToExtract_whenExportBlobDataAndGetUrl_thenReturnUrlOfUploadedExtractedDataBlob() throws Exception {
+    public void givenBlobServiceClientsAndDatesToExtract_whenExportBlobDataAndGetUrl_thenReturnUrlOfUploadedExtractedDataBlob() throws Exception {
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
         BlobContainerItem notCcdBlobContainerItem = mock(BlobContainerItem.class);
 
@@ -162,20 +164,12 @@ class NotifyExportBlobDataComponentImplTest {
         when(blobItemTwo.getName()).thenReturn(TEST_BLOB_NAME_TWO);
         when(outOfDateBlobItem.getName()).thenReturn("not-data-test-2010-01");
 
-        String dataInPresentAndFuture = NOTIFY_JSON + "\n" + NOTIFY_JSON_FUTURE;
+        String dataInPresentAndFuture = TEST_CCD_JSONL + "\n" + TEST_CCD_JSONL_OUTDATED_FUTURE;
 
         when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
             .thenReturn(new ByteArrayInputStream(dataInPresentAndFuture.getBytes()));
         when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_TWO))
-            .thenReturn(new ByteArrayInputStream(NOTIFY_JSON_PAST.getBytes()));
-
-        when(filterComponent
-            .filterDataInDateRange(argThat(allOf(hasItem(NOTIFY_JSON), hasItem(NOTIFY_JSON_FUTURE))),
-                eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME)))
-            .thenReturn(Collections.singletonList(NOTIFY_OUTPUT));
-        when(filterComponent
-            .filterDataInDateRange(argThat(allOf(hasItem(NOTIFY_JSON_PAST))), eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME)))
-            .thenReturn(Collections.emptyList());
+            .thenReturn(new ByteArrayInputStream(TEST_CCD_JSONL_OUTDATED_PAST.getBytes()));
 
         BlobContainerClient targetBlobContainerClient = mock(BlobContainerClient.class);
 
@@ -187,21 +181,30 @@ class NotifyExportBlobDataComponentImplTest {
         when(targetBlobContainerClient.getBlobClient(OUTPUT_NAME)).thenReturn(targetBlobClient);
 
         String result = underTest.exportBlobsAndGetOutputName(
-            sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME
+            sourceBlobServiceClient, targetBlobServiceClient,
+            TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME,
+            CCD_WORKING_FILE_NAME, SourceEnum.CORE_CASE_DATA
         );
 
         assertEquals(OUTPUT_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, never()).create();
-        verify(jsonlWriterComponent, times(1))
-            .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(NOTIFY_OUTPUT)));
+        verify(writeDataComponent, times(1))
+            .writeData(any(BufferedWriter.class), eq(List.of(TEST_CCD_JSONL, TEST_CCD_JSONL_OUTDATED_FUTURE)),
+                eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME));
+        verify(writeDataComponent, times(1))
+            .writeData(any(BufferedWriter.class), eq(List.of(TEST_CCD_JSONL_OUTDATED_PAST)),
+                eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME));
+        verify(archiveComponent)
+            .createArchive(Collections.singletonList(WORKING_FILE_NAME), OUTPUT_NAME);
         verify(targetBlobClient).uploadFromFile(OUTPUT_NAME, true);
+        verify(fileWrapper).deleteFileOnExit(WORKING_FILE_NAME);
         verify(fileWrapper).deleteFileOnExit(OUTPUT_NAME);
         verify(bufferedWriter, times(1)).close();
     }
 
     @Test
-    void givenDataOverMaxLines_whenExportBlobDataAndGetUrl_thenReturnUrlOfUploadedExtractedDataBlob() throws Exception {
+    public void givenDataOverMaxLines_whenExportBlobDataAndGetUrl_thenReturnUrlOfUploadedExtractedDataBlob() throws Exception {
         ReflectionTestUtils.setField(underTest, MAX_LINES_FIELD_PROPERTY, "1");
 
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
@@ -220,14 +223,10 @@ class NotifyExportBlobDataComponentImplTest {
 
         when(blobItemOne.getName()).thenReturn(TEST_BLOB_NAME_ONE);
 
-        String multiLineData = NOTIFY_JSON + "\n" + NOTIFY_JSON + "\n" + NOTIFY_JSON;
+        String multiLineData = TEST_CCD_JSONL + "\n" + TEST_CCD_JSONL + "\n" + TEST_CCD_JSONL;
 
         when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
             .thenReturn(new ByteArrayInputStream(multiLineData.getBytes()));
-
-        when(filterComponent
-            .filterDataInDateRange(argThat(allOf(hasItem(NOTIFY_JSON))), eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME)))
-            .thenReturn(Collections.singletonList(NOTIFY_OUTPUT));
 
         BlobContainerClient targetBlobContainerClient = mock(BlobContainerClient.class);
 
@@ -238,16 +237,28 @@ class NotifyExportBlobDataComponentImplTest {
 
         when(targetBlobContainerClient.getBlobClient(OUTPUT_NAME)).thenReturn(targetBlobClient);
 
+        doAnswer((Answer<Void>) invocation -> {
+            // Mockito verifies by reference to list, so this is to ensure the correct args are used at time of invocation.
+            assertEquals(Collections.singletonList(TEST_CCD_JSONL), invocation.getArgument(1),
+                "Expected test data to be written on write data.");
+            return null;
+        }).when(writeDataComponent).writeData(any(BufferedWriter.class), anyList(), any(), any());
+
         String result = underTest.exportBlobsAndGetOutputName(
-            sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME
+            sourceBlobServiceClient, targetBlobServiceClient,
+            TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME,
+            CCD_WORKING_FILE_NAME, SourceEnum.CORE_CASE_DATA
         );
 
         assertEquals(OUTPUT_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, never()).create();
-        verify(jsonlWriterComponent, times(3))
-            .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(NOTIFY_OUTPUT)));
+        verify(writeDataComponent, times(3))
+            .writeData(any(BufferedWriter.class), anyList(), eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME));
+        verify(archiveComponent)
+            .createArchive(Collections.singletonList(WORKING_FILE_NAME), OUTPUT_NAME);
         verify(targetBlobClient).uploadFromFile(OUTPUT_NAME, true);
+        verify(fileWrapper).deleteFileOnExit(WORKING_FILE_NAME);
         verify(fileWrapper).deleteFileOnExit(OUTPUT_NAME);
         verify(bufferedWriter, times(1)).close();
     }
@@ -272,17 +283,15 @@ class NotifyExportBlobDataComponentImplTest {
         when(blobItemOne.getName()).thenReturn(TEST_BLOB_NAME_ONE);
         when(blobItemTwo.getName()).thenReturn(TEST_BLOB_NAME_TWO);
 
-        String dataInPresentAndFuture = NOTIFY_JSON + "\n" + NOTIFY_JSON_FUTURE;
+        String dataInPresentAndFuture = TEST_CCD_JSONL + "\n" + TEST_CCD_JSONL_OUTDATED_FUTURE;
 
         when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
             .thenReturn(new ByteArrayInputStream(dataInPresentAndFuture.getBytes()));
         when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_TWO))
             .thenReturn(new ByteArrayInputStream("".getBytes()));
 
-        when(filterComponent
-            .filterDataInDateRange(argThat(allOf(hasItem(NOTIFY_JSON), hasItem(NOTIFY_JSON_FUTURE))),
-                eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME)))
-            .thenReturn(Collections.singletonList(NOTIFY_OUTPUT));
+        WriteDataComponent writeDataComponent = mock(WriteDataComponent.class);
+        when(writeDataFactory.getWriteComponent(SourceEnum.CORE_CASE_DATA)).thenReturn(writeDataComponent);
 
         BlobContainerClient targetBlobContainerClient = mock(BlobContainerClient.class);
 
@@ -294,15 +303,21 @@ class NotifyExportBlobDataComponentImplTest {
         when(targetBlobContainerClient.getBlobClient(OUTPUT_NAME)).thenReturn(targetBlobClient);
 
         String result = underTest.exportBlobsAndGetOutputName(
-            sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME
+            sourceBlobServiceClient, targetBlobServiceClient,
+            TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME,
+            CCD_WORKING_FILE_NAME, SourceEnum.CORE_CASE_DATA
         );
 
         assertEquals(OUTPUT_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, never()).create();
-        verify(jsonlWriterComponent)
-            .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(NOTIFY_OUTPUT)));
+        verify(writeDataComponent, times(1))
+            .writeData(any(BufferedWriter.class), eq(List.of(TEST_CCD_JSONL, TEST_CCD_JSONL_OUTDATED_FUTURE)),
+                eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME));
+        verify(archiveComponent)
+            .createArchive(Collections.singletonList(WORKING_FILE_NAME), OUTPUT_NAME);
         verify(targetBlobClient).uploadFromFile(OUTPUT_NAME, true);
+        verify(fileWrapper).deleteFileOnExit(WORKING_FILE_NAME);
         verify(fileWrapper).deleteFileOnExit(OUTPUT_NAME);
         verify(bufferedWriter, times(1)).close();
     }
@@ -328,11 +343,7 @@ class NotifyExportBlobDataComponentImplTest {
         when(blobItem.getName()).thenReturn(TEST_BLOB_NAME_ONE);
 
         when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
-            .thenReturn(new ByteArrayInputStream(NOTIFY_JSON.getBytes()));
-
-        when(filterComponent
-            .filterDataInDateRange(argThat(allOf(hasItem(NOTIFY_JSON))), eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME)))
-            .thenReturn(Collections.singletonList(NOTIFY_OUTPUT));
+            .thenReturn(new ByteArrayInputStream(TEST_CCD_JSONL.getBytes()));
 
         BlobContainerClient targetBlobContainerClient = mock(BlobContainerClient.class);
 
@@ -344,15 +355,20 @@ class NotifyExportBlobDataComponentImplTest {
         when(targetBlobContainerClient.getBlobClient(OUTPUT_NAME)).thenReturn(targetBlobClient);
 
         String result = underTest.exportBlobsAndGetOutputName(
-            sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME
+            sourceBlobServiceClient, targetBlobServiceClient,
+            TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME,
+            CCD_WORKING_FILE_NAME, SourceEnum.CORE_CASE_DATA
         );
 
         assertEquals(OUTPUT_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, times(1)).create();
-        verify(jsonlWriterComponent)
-            .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(NOTIFY_OUTPUT)));
+        verify(writeDataComponent, times(1))
+            .writeData(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL)), eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME));
+        verify(archiveComponent)
+            .createArchive(Collections.singletonList(WORKING_FILE_NAME), OUTPUT_NAME);
         verify(targetBlobClient).uploadFromFile(OUTPUT_NAME, true);
+        verify(fileWrapper).deleteFileOnExit(WORKING_FILE_NAME);
         verify(fileWrapper).deleteFileOnExit(OUTPUT_NAME);
         verify(bufferedWriter, times(1)).close();
     }
@@ -361,7 +377,8 @@ class NotifyExportBlobDataComponentImplTest {
     public void givenSameFromDate_whenExportBlobDataAndGetUrl_thenCreateContainerAndReturnUrlOfUploadedExtractedDataBlob() throws Exception {
         final OffsetDateTime fromDateSameAsEventDate = OffsetDateTime.of(2000, 01, 29, 0, 0, 0, 0, ZoneOffset.UTC);
         final String datePrefix = "2000-01-29-2001-01-01-";
-        final String outputName = datePrefix + NOTIFY_WORKING_FILE_NAME;
+        final String workingFileName = datePrefix + CCD_WORKING_FILE_NAME;
+        final String outputName = datePrefix + CCD_WORKING_ARCHIVE;
 
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
 
@@ -380,11 +397,7 @@ class NotifyExportBlobDataComponentImplTest {
         when(blobItem.getName()).thenReturn(TEST_BLOB_NAME_ONE);
 
         when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
-            .thenReturn(new ByteArrayInputStream(NOTIFY_JSON.getBytes()));
-
-        when(filterComponent
-            .filterDataInDateRange(argThat(allOf(hasItem(NOTIFY_JSON))), eq(fromDateSameAsEventDate), eq(TEST_TO_DATE_TIME)))
-            .thenReturn(Collections.singletonList(NOTIFY_OUTPUT));
+            .thenReturn(new ByteArrayInputStream(TEST_CCD_JSONL.getBytes()));
 
         BlobContainerClient targetBlobContainerClient = mock(BlobContainerClient.class);
 
@@ -395,15 +408,22 @@ class NotifyExportBlobDataComponentImplTest {
 
         when(targetBlobContainerClient.getBlobClient(outputName)).thenReturn(targetBlobClient);
 
-        String result = underTest
-            .exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, fromDateSameAsEventDate, TEST_TO_DATE_TIME);
+        String result = underTest.exportBlobsAndGetOutputName(
+            sourceBlobServiceClient, targetBlobServiceClient,
+            fromDateSameAsEventDate, TEST_TO_DATE_TIME,
+            CCD_WORKING_FILE_NAME, SourceEnum.CORE_CASE_DATA
+        );
 
         assertEquals(outputName, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, times(1)).create();
-        verify(jsonlWriterComponent)
-            .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(NOTIFY_OUTPUT)));
+        verify(writeDataComponent, times(1))
+            .writeData(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL)),
+                eq(fromDateSameAsEventDate), eq(TEST_TO_DATE_TIME));
+        verify(archiveComponent)
+            .createArchive(Collections.singletonList(workingFileName), outputName);
         verify(targetBlobClient).uploadFromFile(outputName, true);
+        verify(fileWrapper).deleteFileOnExit(workingFileName);
         verify(fileWrapper).deleteFileOnExit(outputName);
         verify(bufferedWriter, times(1)).close();
     }
@@ -412,7 +432,8 @@ class NotifyExportBlobDataComponentImplTest {
     public void givenSameToDate_whenExportBlobDataAndGetUrl_thenCreateContainerAndReturnUrlOfUploadedExtractedDataBlob() throws Exception {
         final OffsetDateTime toDateSameAsEventDate = OffsetDateTime.of(2000, 01, 29, 0, 0, 0, 0, ZoneOffset.UTC);
         final String datePrefix = "1999-12-01-2000-01-29-";
-        final String outputName = datePrefix + NOTIFY_WORKING_FILE_NAME;
+        final String workingFileName = datePrefix + CCD_WORKING_FILE_NAME;
+        final String outputName = datePrefix + CCD_WORKING_ARCHIVE;
 
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
 
@@ -431,11 +452,7 @@ class NotifyExportBlobDataComponentImplTest {
         when(blobItem.getName()).thenReturn(TEST_BLOB_NAME_ONE);
 
         when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
-            .thenReturn(new ByteArrayInputStream(NOTIFY_JSON.getBytes()));
-
-        when(filterComponent
-            .filterDataInDateRange(argThat(allOf(hasItem(NOTIFY_JSON))), eq(TEST_FROM_DATE_TIME), eq(toDateSameAsEventDate)))
-            .thenReturn(Collections.singletonList(NOTIFY_OUTPUT));
+            .thenReturn(new ByteArrayInputStream(TEST_CCD_JSONL.getBytes()));
 
         BlobContainerClient targetBlobContainerClient = mock(BlobContainerClient.class);
 
@@ -446,15 +463,22 @@ class NotifyExportBlobDataComponentImplTest {
 
         when(targetBlobContainerClient.getBlobClient(outputName)).thenReturn(targetBlobClient);
 
-        String result = underTest
-            .exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, toDateSameAsEventDate);
+        String result = underTest.exportBlobsAndGetOutputName(
+            sourceBlobServiceClient, targetBlobServiceClient,
+            TEST_FROM_DATE_TIME, toDateSameAsEventDate,
+            CCD_WORKING_FILE_NAME, SourceEnum.CORE_CASE_DATA
+        );
 
         assertEquals(outputName, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, times(1)).create();
-        verify(jsonlWriterComponent)
-            .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(NOTIFY_OUTPUT)));
+        verify(writeDataComponent, times(1))
+            .writeData(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL)),
+                eq(TEST_FROM_DATE_TIME), eq(toDateSameAsEventDate));
+        verify(archiveComponent)
+            .createArchive(Collections.singletonList(workingFileName), outputName);
         verify(targetBlobClient).uploadFromFile(outputName, true);
+        verify(fileWrapper).deleteFileOnExit(workingFileName);
         verify(fileWrapper).deleteFileOnExit(outputName);
         verify(bufferedWriter, times(1)).close();
     }
@@ -475,7 +499,11 @@ class NotifyExportBlobDataComponentImplTest {
 
         assertEquals(
             null,
-            underTest.exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME),
+            underTest.exportBlobsAndGetOutputName(
+                sourceBlobServiceClient, targetBlobServiceClient,
+                TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME,
+                CCD_WORKING_FILE_NAME, SourceEnum.CORE_CASE_DATA
+            ),
             "Expected null output when no containers match whitelist.");
     }
 
@@ -485,7 +513,11 @@ class NotifyExportBlobDataComponentImplTest {
 
         assertEquals(
             null,
-            underTest.exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME),
+            underTest.exportBlobsAndGetOutputName(
+                sourceBlobServiceClient, targetBlobServiceClient,
+                TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME,
+                CCD_WORKING_FILE_NAME, SourceEnum.CORE_CASE_DATA
+            ),
             "Expected null output when no containers exist.");
     }
 
@@ -512,7 +544,11 @@ class NotifyExportBlobDataComponentImplTest {
 
         assertEquals(
             null,
-            underTest.exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME),
+            underTest.exportBlobsAndGetOutputName(
+                sourceBlobServiceClient, targetBlobServiceClient,
+                TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME,
+                CCD_WORKING_FILE_NAME, SourceEnum.CORE_CASE_DATA
+            ),
             "Expected null output when no query matching data found.");
 
         verify(bufferedWriter, times(1)).close();
@@ -545,10 +581,14 @@ class NotifyExportBlobDataComponentImplTest {
             Writer writer = invocation.getArgument(0);
             writer.write("Should throw IOException");
             return null;
-        }).when(jsonlWriterComponent).writeLinesAsJsonl(any(), any());
+        }).when(writeDataComponent).writeData(any(), any(), any(), any());
 
         assertThrows(ParserException.class, () ->
-            underTest.exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME));
+            underTest.exportBlobsAndGetOutputName(
+                sourceBlobServiceClient, targetBlobServiceClient,
+                TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME,
+                CCD_WORKING_FILE_NAME, SourceEnum.CORE_CASE_DATA
+            ));
 
         verify(bufferedWriter, times(1)).close();
     }
@@ -580,7 +620,11 @@ class NotifyExportBlobDataComponentImplTest {
                 .thenReturn(inputStream);
 
             assertThrows(ParserException.class, () ->
-                underTest.exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME));
+                underTest.exportBlobsAndGetOutputName(
+                    sourceBlobServiceClient, targetBlobServiceClient,
+                    TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME,
+                    CCD_WORKING_FILE_NAME, SourceEnum.CORE_CASE_DATA
+                ));
 
             // One close each for Buffered Reader and InputStreamReader in try-with-resource
             verify(inputStream, times(2)).close();
@@ -611,13 +655,17 @@ class NotifyExportBlobDataComponentImplTest {
 
         assertEquals(
             null,
-            underTest.exportBlobsAndGetOutputName(sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME),
+            underTest.exportBlobsAndGetOutputName(
+                sourceBlobServiceClient, targetBlobServiceClient,
+                TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME,
+                CCD_WORKING_FILE_NAME, SourceEnum.CORE_CASE_DATA
+            ),
             "Expected null output when no query matching data found.");
     }
 
     @Test
-    public void givenExtractionWithArchiveEnabled_whenExportBlobDataAndGetUrl_thenReturnUrlOfUploadedExtractedDataBlob() throws Exception {
-        ReflectionTestUtils.setField(underTest, ARCHIVE_FLAG_PROPERTY, "true");
+    public void givenExtractionWithArchiveDisabled_whenExportBlobDataAndGetUrl_thenReturnUrlOfUploadedExtractedDataBlob() throws Exception {
+        ReflectionTestUtils.setField(underTest, ARCHIVE_FLAG_PROPERTY, "false");
 
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
 
@@ -636,11 +684,7 @@ class NotifyExportBlobDataComponentImplTest {
         when(blobItem.getName()).thenReturn(TEST_BLOB_NAME_ONE);
 
         when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
-            .thenReturn(new ByteArrayInputStream(NOTIFY_JSON.getBytes()));
-
-        when(filterComponent
-            .filterDataInDateRange(argThat(allOf(hasItem(NOTIFY_JSON))), eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME)))
-            .thenReturn(Collections.singletonList(NOTIFY_OUTPUT));
+            .thenReturn(new ByteArrayInputStream(TEST_CCD_JSONL.getBytes()));
 
         BlobContainerClient targetBlobContainerClient = mock(BlobContainerClient.class);
 
@@ -649,24 +693,22 @@ class NotifyExportBlobDataComponentImplTest {
 
         BlobClient targetBlobClient = mock(BlobClient.class);
 
-        String archiveOutputName = TEST_DATE_PREFIX + NOTIFY_WORKING_ARCHIVE;
-
-        when(targetBlobContainerClient.getBlobClient(archiveOutputName)).thenReturn(targetBlobClient);
+        when(targetBlobContainerClient.getBlobClient(WORKING_FILE_NAME)).thenReturn(targetBlobClient);
 
         String result = underTest.exportBlobsAndGetOutputName(
-            sourceBlobServiceClient, targetBlobServiceClient, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME
+            sourceBlobServiceClient, targetBlobServiceClient,
+            TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME,
+            CCD_WORKING_FILE_NAME, SourceEnum.CORE_CASE_DATA
         );
 
-        assertEquals(archiveOutputName, result, OUTPUT_ASSERTION_MATCHING_ERROR);
+        assertEquals(WORKING_FILE_NAME, result, OUTPUT_ASSERTION_MATCHING_ERROR);
 
         verify(targetBlobContainerClient, never()).create();
-        verify(jsonlWriterComponent, times(1))
-            .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(NOTIFY_OUTPUT)));
-        verify(archiveComponent)
-            .createArchive(Collections.singletonList(OUTPUT_NAME), archiveOutputName);
-        verify(targetBlobClient).uploadFromFile(archiveOutputName, true);
-        verify(fileWrapper, times(1)).deleteFileOnExit(OUTPUT_NAME);
-        verify(fileWrapper, times(1)).deleteFileOnExit(archiveOutputName);
+        verify(writeDataComponent, times(1))
+            .writeData(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL)), eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME));
+        verify(archiveComponent, never()).createArchive(anyList(), anyString());
+        verify(targetBlobClient).uploadFromFile(WORKING_FILE_NAME, true);
+        verify(fileWrapper, times(1)).deleteFileOnExit(WORKING_FILE_NAME);
         verify(bufferedWriter, times(1)).close();
     }
 }

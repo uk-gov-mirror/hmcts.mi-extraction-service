@@ -1,4 +1,4 @@
-package uk.gov.hmcts.reform.mi.miextractionservice.component.impl.notify;
+package uk.gov.hmcts.reform.mi.miextractionservice.component.impl;
 
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
@@ -7,20 +7,19 @@ import com.azure.storage.blob.models.BlobItem;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import uk.gov.hmcts.reform.mi.micore.model.NotificationOutput;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ArchiveComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobDownloadComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CheckWhitelistComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.component.FilterComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.component.JsonlWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.MetadataFilterComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.domain.SourceEnum;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
+import uk.gov.hmcts.reform.mi.miextractionservice.factory.WriteDataFactory;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
+import uk.gov.hmcts.reform.mi.miextractionservice.util.SourceUtil;
 import uk.gov.hmcts.reform.mi.miextractionservice.wrapper.FileWrapper;
 import uk.gov.hmcts.reform.mi.miextractionservice.wrapper.WriterWrapper;
 
@@ -35,16 +34,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.DOT_DELIMITER;
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NAME_DELIMITER;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NOTIFY_CONTAINER_PREFIX;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NOTIFY_OUTPUT_CONTAINER_NAME;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NOTIFY_WORKING_ARCHIVE;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NOTIFY_WORKING_FILENAME;
 
 @Slf4j
 @Component
-@Qualifier("notify")
-public class NotifyExportBlobDataComponentImpl implements ExportBlobDataComponent {
+public class ExportBlobDataComponentImpl implements ExportBlobDataComponent {
 
     @Value("${max-lines-buffer}")
     private String maxLines;
@@ -68,10 +63,7 @@ public class NotifyExportBlobDataComponentImpl implements ExportBlobDataComponen
     private BlobDownloadComponent blobDownloadComponent;
 
     @Autowired
-    private FilterComponent<NotificationOutput> filterComponent;
-
-    @Autowired
-    private JsonlWriterComponent<NotificationOutput> jsonlWriterComponent;
+    private WriteDataFactory writeDataFactory;
 
     @Autowired
     private ArchiveComponent archiveComponent;
@@ -79,53 +71,62 @@ public class NotifyExportBlobDataComponentImpl implements ExportBlobDataComponen
     @Autowired
     private DateTimeUtil dateTimeUtil;
 
+    @Autowired
+    private SourceUtil sourceUtil;
+
     /**
-     * Exports data matching date range provided as a JsonL.
+     * Exports data matching date range provided as a JsonL, compressed in an encrypted archive for ease of upload and download and security.
      *
      * @param sourceBlobServiceClient the blob service client of the source storage account.
      * @param targetBlobServiceClient the blob service client of the target storage account.
      * @param fromDate the first date in yyyy-MM-dd format to pull data for.
      * @param toDate the last date in yyyy-MM-dd format to pull data for.
-     * @return String name of the generated output stored as a blob on the storage account.
+     * @param fileName the fileName of the output.
+     * @return String name of the generated archive stored as a blob on the storage account.
      */
     @SuppressWarnings("PMD.LawOfDemeter")
     @Override
     public String exportBlobsAndGetOutputName(BlobServiceClient sourceBlobServiceClient,
                                               BlobServiceClient targetBlobServiceClient,
                                               OffsetDateTime fromDate,
-                                              OffsetDateTime toDate) {
+                                              OffsetDateTime toDate,
+                                              String fileName,
+                                              SourceEnum source) {
 
         String outputDatePrefix = fromDate.format(dateTimeUtil.getDateFormat())
             + NAME_DELIMITER
             + toDate.format(dateTimeUtil.getDateFormat())
             + NAME_DELIMITER;
 
-        String workingFileName = outputDatePrefix + NOTIFY_WORKING_FILENAME;
+        String workingFileName = outputDatePrefix + fileName;
 
-        int dataCount = readAndWriteData(sourceBlobServiceClient, fromDate, toDate, workingFileName);
+        int dataCount = readAndWriteData(sourceBlobServiceClient, fromDate, toDate, workingFileName, source);
 
         if (dataCount > 0) {
-            log.info("Found a total of {} records to write for Notify. About to upload blob.");
+            log.info("Found a total of {} records to write for Notify. About to upload blob.", dataCount);
 
-            BlobContainerClient blobContainerClient = targetBlobServiceClient.getBlobContainerClient(NOTIFY_OUTPUT_CONTAINER_NAME);
+            BlobContainerClient blobContainerClient = targetBlobServiceClient.getBlobContainerClient(sourceUtil.getContainerName(source));
 
             if (!blobContainerClient.exists()) {
                 blobContainerClient.create();
             }
+
             String outputBlobName = workingFileName;
 
             if (Boolean.TRUE.equals(Boolean.parseBoolean(archiveFlag))) {
-                outputBlobName = outputDatePrefix + NOTIFY_WORKING_ARCHIVE;
+                String fileExtension = fileName.substring(fileName.lastIndexOf(DOT_DELIMITER));
+                String archiveName = fileName.replace(fileExtension, ".zip");
+
+                outputBlobName = outputDatePrefix + archiveName;
 
                 archiveComponent.createArchive(Collections.singletonList(workingFileName), outputBlobName);
 
-                // Delete temporary file after it has been archived.
                 fileWrapper.deleteFileOnExit(workingFileName);
             }
 
             blobContainerClient.getBlobClient(outputBlobName).uploadFromFile(outputBlobName, true);
 
-            log.info("Uploaded blob {} for Notify.", outputBlobName);
+            log.info("Uploaded blob {} for {}}.", outputBlobName, source.getValue());
 
             fileWrapper.deleteFileOnExit(outputBlobName);
 
@@ -137,9 +138,10 @@ public class NotifyExportBlobDataComponentImpl implements ExportBlobDataComponen
     }
 
     private int readAndWriteData(BlobServiceClient sourceBlobServiceClient,
-                                 OffsetDateTime fromDate,
-                                 OffsetDateTime toDate,
-                                 String workingFileName) {
+                                     OffsetDateTime fromDate,
+                                     OffsetDateTime toDate,
+                                     String workingFileName,
+                                     SourceEnum source) {
         int dataCount = 0;
 
         List<String> blobNameIndexes = dateTimeUtil.getListOfYearsAndMonthsBetweenDates(fromDate, toDate);
@@ -148,22 +150,17 @@ public class NotifyExportBlobDataComponentImpl implements ExportBlobDataComponen
 
             for (BlobContainerItem blobContainerItem : sourceBlobServiceClient.listBlobContainers()) {
 
-                log.debug("About to check blob container {} for Notify data", blobContainerItem.getName());
-
                 if (checkWhitelistComponent.isContainerWhitelisted(blobContainerItem.getName())
-                    && blobContainerItem.getName().startsWith(NOTIFY_CONTAINER_PREFIX)) {
+                    && blobContainerItem.getName().startsWith(sourceUtil.getContainerName(source))) {
 
                     BlobContainerClient blobContainerClient = sourceBlobServiceClient.getBlobContainerClient(blobContainerItem.getName());
 
                     for (BlobItem blobItem : blobContainerClient.listBlobs()) {
-
-                        log.debug("About to check container {} with blob {} for Notify data", blobContainerItem.getName(), blobItem.getName());
-
                         if (blobNameIndexes.parallelStream().anyMatch(blobItem.getName()::contains)
                             && metadataFilterComponent.filterByMetadata(blobItem.getMetadata())) {
 
-                            log.info("Container {} with Blob {} meets Notify filter criteria. Parsing for data.",
-                                blobContainerItem.getName(), blobItem.getName());
+                            log.info("Container {} with Blob {} meets {} source criteria. Parsing for data.",
+                                blobContainerItem.getName(), blobItem.getName(), source.getValue());
 
                             int addedRecordsCount = parseAndWriteData(
                                 bufferedWriter,
@@ -171,7 +168,8 @@ public class NotifyExportBlobDataComponentImpl implements ExportBlobDataComponen
                                 blobContainerItem.getName(),
                                 blobItem.getName(),
                                 fromDate,
-                                toDate
+                                toDate,
+                                source
                             );
 
                             dataCount = dataCount + addedRecordsCount;
@@ -193,7 +191,8 @@ public class NotifyExportBlobDataComponentImpl implements ExportBlobDataComponen
                                       String blobContainerName,
                                       String blobName,
                                       OffsetDateTime fromDate,
-                                      OffsetDateTime toDate) {
+                                      OffsetDateTime toDate,
+                                      SourceEnum source) {
 
         int dataCount = 0;
 
@@ -211,7 +210,7 @@ public class NotifyExportBlobDataComponentImpl implements ExportBlobDataComponen
 
                     // Reached max buffer, so write to file chunk and clear
                     if (outputLines.size() >= Integer.parseInt(maxLines)) {
-                        writeData(bufferedWriter, outputLines, fromDate, toDate);
+                        writeData(bufferedWriter, outputLines, fromDate, toDate, source);
                         outputLines.clear();
                     }
                 }
@@ -220,21 +219,17 @@ public class NotifyExportBlobDataComponentImpl implements ExportBlobDataComponen
             }
 
             if (Boolean.FALSE.equals(outputLines.isEmpty())) {
-                writeData(bufferedWriter, outputLines, fromDate, toDate);
+                writeData(bufferedWriter, outputLines, fromDate, toDate, source);
             }
         } catch (IOException exception) {
             log.error("Exception occurred writing data from blob to file.");
             throw new ParserException("Unable to parse or write data to file.", exception);
         }
 
-        log.info("Number of records found for container {} with blob {} is: {}", blobContainerName, blobName, dataCount);
-
         return dataCount;
     }
 
-    private void writeData(BufferedWriter writer, List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate) {
-        List<NotificationOutput> filteredData = filterComponent.filterDataInDateRange(data, fromDate, toDate);
-
-        jsonlWriterComponent.writeLinesAsJsonl(writer, filteredData);
+    private void writeData(BufferedWriter writer, List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate, SourceEnum source) {
+        writeDataFactory.getWriteComponent(source).writeData(writer, data, fromDate, toDate);
     }
 }

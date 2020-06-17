@@ -2,7 +2,6 @@ package uk.gov.hmcts.reform.mi.miextractionservice.service.impl;
 
 import com.azure.storage.blob.BlobServiceClient;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -10,6 +9,7 @@ import org.springframework.util.StringUtils;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobMessageBuilderComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.EmailBlobUrlToTargetsComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.domain.SourceEnum;
 import uk.gov.hmcts.reform.mi.miextractionservice.factory.ExtractionBlobServiceClientFactory;
 import uk.gov.hmcts.reform.mi.miextractionservice.service.BlobExportService;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
@@ -20,10 +20,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_OUTPUT_CONTAINER_NAME;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CORE_CASE_DATA_FILTER_VALUE;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_WORKING_FILE_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NEWLINE_DELIMITER;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NOTIFY_FILTER_VALUE;
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NOTIFY_OUTPUT_CONTAINER_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NOTIFY_WORKING_FILE_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NO_FILTER_VALUE;
 
 @Service
@@ -42,12 +42,7 @@ public class BlobExportServiceImpl implements BlobExportService {
     private ExtractionBlobServiceClientFactory extractionBlobServiceClientFactory;
 
     @Autowired
-    @Qualifier("ccd")
-    private ExportBlobDataComponent ccdExportBlobDataComponent;
-
-    @Autowired
-    @Qualifier("notify")
-    private ExportBlobDataComponent notifyExportBlobDataComponent;
+    private ExportBlobDataComponent exportBlobDataComponent;
 
     @Autowired
     private BlobMessageBuilderComponent blobMessageBuilderComponent;
@@ -58,6 +53,7 @@ public class BlobExportServiceImpl implements BlobExportService {
     @Autowired
     private DateTimeUtil dateTimeUtil;
 
+    @SuppressWarnings("PMD.LawOfDemeter")
     @Override
     public void exportBlobs() {
         OffsetDateTime fromDate = StringUtils.isEmpty(retrieveFromDate)
@@ -71,11 +67,11 @@ public class BlobExportServiceImpl implements BlobExportService {
 
         List<String> messages = new ArrayList<>();
 
-        if (dataSource.equalsIgnoreCase(NO_FILTER_VALUE) || dataSource.equalsIgnoreCase(CORE_CASE_DATA_FILTER_VALUE)) {
+        if (dataSource.equalsIgnoreCase(NO_FILTER_VALUE) || dataSource.equalsIgnoreCase(SourceEnum.CORE_CASE_DATA.getValue())) {
             exportCcdData(stagingClient, exportClient, fromDate, toDate, messages);
         }
 
-        if (dataSource.equalsIgnoreCase(NO_FILTER_VALUE) || dataSource.equalsIgnoreCase(NOTIFY_FILTER_VALUE)) {
+        if (dataSource.equalsIgnoreCase(NO_FILTER_VALUE) || dataSource.equalsIgnoreCase(SourceEnum.NOTIFY.getValue())) {
             exportNotifyData(stagingClient, exportClient, fromDate, toDate, messages);
         }
 
@@ -87,11 +83,13 @@ public class BlobExportServiceImpl implements BlobExportService {
     private void exportCcdData(BlobServiceClient stagingClient, BlobServiceClient exportClient, OffsetDateTime fromDate, OffsetDateTime toDate,
                                List<String> messages) {
 
-        String outputBlobName = ccdExportBlobDataComponent.exportBlobsAndGetOutputName(
+        String outputBlobName = exportBlobDataComponent.exportBlobsAndGetOutputName(
             stagingClient,
             exportClient,
             fromDate,
-            toDate
+            toDate,
+            CCD_WORKING_FILE_NAME,
+            SourceEnum.CORE_CASE_DATA
         );
 
         if (outputBlobName != null) {
@@ -102,11 +100,13 @@ public class BlobExportServiceImpl implements BlobExportService {
     private void exportNotifyData(BlobServiceClient stagingClient, BlobServiceClient exportClient, OffsetDateTime fromDate, OffsetDateTime toDate,
                                   List<String> messages) {
 
-        String notifyOutputBlobName = notifyExportBlobDataComponent.exportBlobsAndGetOutputName(
+        String notifyOutputBlobName = exportBlobDataComponent.exportBlobsAndGetOutputName(
             stagingClient,
             exportClient,
             fromDate,
-            toDate
+            toDate,
+            NOTIFY_WORKING_FILE_NAME,
+            SourceEnum.NOTIFY
         );
 
         if (notifyOutputBlobName != null) {
