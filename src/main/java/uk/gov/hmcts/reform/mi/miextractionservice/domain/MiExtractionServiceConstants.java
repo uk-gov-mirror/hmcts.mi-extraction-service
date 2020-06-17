@@ -26,6 +26,8 @@ public final class MiExtractionServiceConstants {
     public static final String NOTIFY_EMAIL_REFERENCE = "Management Information Extraction Service";
 
     public static final String NO_FILTER_VALUE = "all";
+    public static final String CORE_CASE_DATA_FILTER_VALUE = "CoreCaseData";
+    public static final String NOTIFY_FILTER_VALUE = "Notify";
 
     public static final String NOTIFY_TIMESTAMP_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'";
 

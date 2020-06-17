@@ -15,7 +15,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-public class HealthServiceTest {
+class HealthServiceTest {
 
     @InjectMocks
     private HealthService classToTest;
@@ -23,13 +23,13 @@ public class HealthServiceTest {
     private BlobExportService blobService;
 
     @Test
-    public void testCheckAllDependencies() throws ServiceNotAvailableException {
+    void testCheckAllDependencies() throws ServiceNotAvailableException {
         classToTest.check();
         verify(blobService, times(1)).checkStorageConnection();
     }
 
     @Test
-    public void testExceptionOnDependencyFail() {
+    void testExceptionOnDependencyFail() {
         doThrow(new RuntimeException()).when(blobService).checkStorageConnection();
         assertThrows(ServiceNotAvailableException.class, () -> classToTest.check());
     }

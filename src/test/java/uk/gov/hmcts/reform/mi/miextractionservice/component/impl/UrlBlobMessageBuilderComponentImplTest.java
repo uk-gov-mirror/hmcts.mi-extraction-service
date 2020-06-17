@@ -11,7 +11,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
-public class UrlBlobMessageBuilderComponentImplTest {
+class UrlBlobMessageBuilderComponentImplTest {
 
     private static final String AZURE_PORTAL_URL = "https://portal.azure.com";
     private static final String BODY = "Please visit %s. The output can be found in the <%s> storage account, <%s> container with the name <%s>";
@@ -24,7 +24,7 @@ public class UrlBlobMessageBuilderComponentImplTest {
     private UrlBlobMessageBuilderComponentImpl underTest;
 
     @Test
-    public void givenNoWhitelistedIps_whenBuildMessage_thenReturnMessageWithUrl() {
+    void givenNoWhitelistedIps_whenBuildMessage_thenReturnMessageWithUrl() {
         BlobServiceClient blobServiceClient = mock(BlobServiceClient.class);
 
         when(blobServiceClient.getAccountName()).thenReturn(TEST_ACCOUNT_NAME);

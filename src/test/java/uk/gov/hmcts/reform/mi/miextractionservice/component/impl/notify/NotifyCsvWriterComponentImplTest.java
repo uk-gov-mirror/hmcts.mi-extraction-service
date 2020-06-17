@@ -41,7 +41,7 @@ import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"PMD.TooManyMethods"})
 @ExtendWith(SpringExtension.class)
-public class NotifyCsvWriterComponentImplTest {
+class NotifyCsvWriterComponentImplTest {
 
     private static final String TEST_FILE_NAME = "unit-test";
     private static final CsvNotificationOutput TEST_OUTPUT_DATA = CsvNotificationOutput.builder()
@@ -67,7 +67,7 @@ public class NotifyCsvWriterComponentImplTest {
     private Writer writer;
 
     @BeforeEach
-    public void setUp() throws IOException {
+    void setUp() throws IOException {
         uniqueFileName = TEST_FILE_NAME + "-" + UUID.randomUUID().toString();
 
         writer = mock(Writer.class);
@@ -79,7 +79,7 @@ public class NotifyCsvWriterComponentImplTest {
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    void tearDown() throws Exception {
         File testFile = new File(uniqueFileName);
 
         if (testFile.exists()) {
@@ -90,7 +90,7 @@ public class NotifyCsvWriterComponentImplTest {
     }
 
     @Test
-    public void givenValidWriter_whenWriteHeaders_thenWriterWritesHeaders() throws Exception {
+    void givenValidWriter_whenWriteHeaders_thenWriterWritesHeaders() throws Exception {
         underTest.writeHeadersToCsvFile(writer);
 
         verify(writer).write(contains(EXPECTED_HEADER_OUTPUT + "\n"));
@@ -99,7 +99,7 @@ public class NotifyCsvWriterComponentImplTest {
     }
 
     @Test
-    public void givenValidWriter_whenWriteBeans_thenCsvFileIsCreated() throws Exception {
+    void givenValidWriter_whenWriteBeans_thenCsvFileIsCreated() throws Exception {
         underTest.writeBeansWithWriter(writer, Collections.singletonList(TEST_OUTPUT_DATA));
 
         verify(writer).write(getExpectedDataString() + "\n");
@@ -108,7 +108,7 @@ public class NotifyCsvWriterComponentImplTest {
     }
 
     @Test
-    public void givenExceptionOnClose_whenWriteHeaders_thenThrowParserException() throws Exception {
+    void givenExceptionOnClose_whenWriteHeaders_thenThrowParserException() throws Exception {
         doThrow(new IOException("Broken close")).when(csvWriter).close();
 
         assertThrows(ParserException.class, () -> underTest.writeHeadersToCsvFile(writer));
@@ -117,7 +117,7 @@ public class NotifyCsvWriterComponentImplTest {
     }
 
     @Test
-    public void givenExceptionOnClose_whenWriteBeans_thenThrowParserException() throws Exception {
+    void givenExceptionOnClose_whenWriteBeans_thenThrowParserException() throws Exception {
         doThrow(new IOException("Broken close")).when(csvWriter).close();
 
         assertThrows(ParserException.class, () -> underTest.writeBeansWithWriter(writer, Collections.singletonList(TEST_OUTPUT_DATA)));
@@ -126,7 +126,7 @@ public class NotifyCsvWriterComponentImplTest {
     }
 
     @Test
-    public void givenExceptionOnClose_whenWriteBeanToCsv_thenThrowParserException() throws Exception {
+    void givenExceptionOnClose_whenWriteBeanToCsv_thenThrowParserException() throws Exception {
         doThrow(new IOException("Broken close")).when(bufferedWriter).close();
 
         assertThrows(ParserException.class, () -> underTest.writeBeansAsCsvFile(uniqueFileName, Collections.singletonList(TEST_OUTPUT_DATA)));
@@ -136,7 +136,7 @@ public class NotifyCsvWriterComponentImplTest {
     }
 
     @Test
-    public void givenExceptionOnWrite_whenWriteHeaders_thenExceptionCaughtAndWriterIsClosed() throws Exception {
+    void givenExceptionOnWrite_whenWriteHeaders_thenExceptionCaughtAndWriterIsClosed() throws Exception {
         try (CSVWriterThrowExceptionStub csvWriterThrowsException = spy(new CSVWriterThrowExceptionStub(writer))) {
             when(writerWrapper.getCsvWriter(any())).thenReturn(csvWriterThrowsException);
 

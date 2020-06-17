@@ -60,7 +60,7 @@ import static org.mockito.hamcrest.MockitoHamcrest.argThat;
 
 @SuppressWarnings({"PMD.UnusedPrivateField","PMD.ExcessiveImports","PMD.TooManyMethods"})
 @ExtendWith(SpringExtension.class)
-public class NotifyExportBlobDataComponentImplTest {
+class NotifyExportBlobDataComponentImplTest {
 
     private static final String OUTPUT_ASSERTION_MATCHING_ERROR = "Returned blob name does not match the expected.";
 
@@ -125,7 +125,7 @@ public class NotifyExportBlobDataComponentImplTest {
     private BufferedWriter bufferedWriter;
 
     @BeforeEach
-    public void setUp() throws IOException {
+    void setUp() throws IOException {
         sourceBlobServiceClient = mock(BlobServiceClient.class);
         targetBlobServiceClient = mock(BlobServiceClient.class);
 
@@ -139,7 +139,7 @@ public class NotifyExportBlobDataComponentImplTest {
     }
 
     @Test
-    public void givenBlobServiceClientsAndDatesToExtract_whenExportBlobDataAndGetUrl_thenReturnUrlOfUploadedExtractedDataBlob() throws Exception {
+    void givenBlobServiceClientsAndDatesToExtract_whenExportBlobDataAndGetUrl_thenReturnUrlOfUploadedExtractedDataBlob() throws Exception {
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
         BlobContainerItem notCcdBlobContainerItem = mock(BlobContainerItem.class);
 
@@ -201,7 +201,7 @@ public class NotifyExportBlobDataComponentImplTest {
     }
 
     @Test
-    public void givenDataOverMaxLines_whenExportBlobDataAndGetUrl_thenReturnUrlOfUploadedExtractedDataBlob() throws Exception {
+    void givenDataOverMaxLines_whenExportBlobDataAndGetUrl_thenReturnUrlOfUploadedExtractedDataBlob() throws Exception {
         ReflectionTestUtils.setField(underTest, MAX_LINES_FIELD_PROPERTY, "1");
 
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);

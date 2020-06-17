@@ -28,7 +28,7 @@ import static org.mockito.Mockito.verify;
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NEWLINE_DELIMITER;
 
 @ExtendWith(SpringExtension.class)
-public class NotifyJsonlWriterComponentImplTest {
+class NotifyJsonlWriterComponentImplTest {
 
     private static final NotificationOutput TEST_OUTPUT_DATA = NotificationOutput.builder()
         .extractionDate("20000101-1000")

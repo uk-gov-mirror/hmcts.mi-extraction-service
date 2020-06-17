@@ -19,7 +19,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-public class MiExtractionServiceApplicationTest {
+class MiExtractionServiceApplicationTest {
 
     @InjectMocks
     private MiExtractionServiceApplication classToTest;
@@ -31,7 +31,7 @@ public class MiExtractionServiceApplicationTest {
     private TelemetryClient client;
 
     @Test
-    public void testApplicationExecuted() throws Exception {
+    void testApplicationExecuted() throws Exception {
         classToTest.run(null);
         verify(blobExportService, times(1)).exportBlobs();
         verify(healthCheck, never()).check();
@@ -39,7 +39,7 @@ public class MiExtractionServiceApplicationTest {
     }
 
     @Test
-    public void testSmokeCheckExecuted() throws Exception {
+    void testSmokeCheckExecuted() throws Exception {
         ReflectionTestUtils.setField(classToTest, "smokeTest", true);
         classToTest.run(null);
         verify(healthCheck, times(1)).check();
@@ -48,7 +48,7 @@ public class MiExtractionServiceApplicationTest {
     }
 
     @Test
-    public void testSmokeCheckExceptionPropagated() throws Exception {
+    void testSmokeCheckExceptionPropagated() throws Exception {
         ReflectionTestUtils.setField(classToTest, "smokeTest", true);
         doThrow(new ServiceNotAvailableException("Not available")).when(healthCheck).check();
         assertThrows(ServiceNotAvailableException.class, () -> classToTest.run(null));

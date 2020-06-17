@@ -32,8 +32,9 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServ
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NOTIFY_OUTPUT_CONTAINER_NAME;
 
 @ExtendWith(SpringExtension.class)
-public class BlobExportServiceImplTest {
+class BlobExportServiceImplTest {
 
+    private static final String DATA_SOURCE_FILTER_KEY = "dataSource";
     private static final String TEST_BLOB_NAME = "testBlobName";
     private static final String TEST_BLOB_URL = "testBlobUrl";
     private static final OffsetDateTime FIXED_DATETIME = OffsetDateTime.of(2000, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
@@ -66,7 +67,9 @@ public class BlobExportServiceImplTest {
     private BlobServiceClient exportClient;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
+        ReflectionTestUtils.setField(underTest, DATA_SOURCE_FILTER_KEY, "all");
+
         stagingClient = mock(BlobServiceClient.class);
         exportClient = mock(BlobServiceClient.class);
 
@@ -78,7 +81,7 @@ public class BlobExportServiceImplTest {
     }
 
     @Test
-    public void givenNoDates_whenExportAllData_thenSendEmailWithBlobUrlForDailyData() {
+    void givenNoDates_whenExportAllData_thenSendEmailWithBlobUrlForDailyData() {
         when(ccdExportBlobDataComponent.exportBlobsAndGetOutputName(
             eq(stagingClient),
             eq(exportClient),
@@ -102,7 +105,7 @@ public class BlobExportServiceImplTest {
     }
 
     @Test
-    public void givenNoDates_whenExportCcdData_thenSendEmailWithBlobUrlForDailyData() {
+    void givenNoDates_whenExportCcdData_thenSendEmailWithBlobUrlForDailyData() {
         when(ccdExportBlobDataComponent.exportBlobsAndGetOutputName(
             eq(stagingClient),
             eq(exportClient),
@@ -114,11 +117,12 @@ public class BlobExportServiceImplTest {
 
         underTest.exportBlobs();
 
+        verify(notifyExportBlobDataComponent).exportBlobsAndGetOutputName(any(), any(), any(), any());
         verify(emailBlobUrlToTargetsComponent).sendBlobUrl(TEST_BLOB_URL);
     }
 
     @Test
-    public void givenNoDates_whenExportNotifyData_thenSendEmailWithBlobUrlForDailyData() {
+    void givenNoDates_whenExportNotifyData_thenSendEmailWithBlobUrlForDailyData() {
         when(notifyExportBlobDataComponent.exportBlobsAndGetOutputName(
             eq(stagingClient),
             eq(exportClient),
@@ -130,11 +134,50 @@ public class BlobExportServiceImplTest {
 
         underTest.exportBlobs();
 
+        verify(ccdExportBlobDataComponent).exportBlobsAndGetOutputName(any(), any(), any(), any());
         verify(emailBlobUrlToTargetsComponent).sendBlobUrl(TEST_BLOB_URL);
     }
 
     @Test
-    public void givenDates_whenExportData_thenSendEmailWithBlobUrlForDates() {
+    void givenDataSourceFilterToCcd_whenExportCcdData_thenSendEmailWithBlobUrlForDailyData() {
+        ReflectionTestUtils.setField(underTest, DATA_SOURCE_FILTER_KEY, "CoreCaseData");
+
+        when(ccdExportBlobDataComponent.exportBlobsAndGetOutputName(
+            eq(stagingClient),
+            eq(exportClient),
+            eq(FIXED_DATETIME.minusDays(1L)),
+            eq(FIXED_DATETIME.minusDays(1L).plusHours(23L).plusMinutes(59L).plusSeconds(59L).plusNanos(999L))
+        )).thenReturn(TEST_BLOB_NAME);
+
+        when(blobMessageBuilderComponent.buildMessage(exportClient, CCD_OUTPUT_CONTAINER_NAME, TEST_BLOB_NAME)).thenReturn(TEST_BLOB_URL);
+
+        underTest.exportBlobs();
+
+        verify(notifyExportBlobDataComponent, never()).exportBlobsAndGetOutputName(any(), any(), any(), any());
+        verify(emailBlobUrlToTargetsComponent).sendBlobUrl(TEST_BLOB_URL);
+    }
+
+    @Test
+    void givenDataSourceFilterToNotify_whenExportNotifyData_thenSendEmailWithBlobUrlForDailyData() {
+        ReflectionTestUtils.setField(underTest, DATA_SOURCE_FILTER_KEY, "Notify");
+
+        when(notifyExportBlobDataComponent.exportBlobsAndGetOutputName(
+            eq(stagingClient),
+            eq(exportClient),
+            eq(FIXED_DATETIME.minusDays(1L)),
+            eq(FIXED_DATETIME.minusDays(1L).plusHours(23L).plusMinutes(59L).plusSeconds(59L).plusNanos(999L))
+        )).thenReturn(TEST_BLOB_NAME);
+
+        when(blobMessageBuilderComponent.buildMessage(exportClient, NOTIFY_OUTPUT_CONTAINER_NAME, TEST_BLOB_NAME)).thenReturn(TEST_BLOB_URL);
+
+        underTest.exportBlobs();
+
+        verify(ccdExportBlobDataComponent, never()).exportBlobsAndGetOutputName(any(), any(), any(), any());
+        verify(emailBlobUrlToTargetsComponent).sendBlobUrl(TEST_BLOB_URL);
+    }
+
+    @Test
+    void givenDates_whenExportData_thenSendEmailWithBlobUrlForDates() {
         ReflectionTestUtils.setField(underTest, "retrieveFromDate", "2000-01-10");
         ReflectionTestUtils.setField(underTest, "retrieveToDate", "2000-01-20");
 
@@ -153,7 +196,7 @@ public class BlobExportServiceImplTest {
     }
 
     @Test
-    public void givenNoOutputBlob_whenExportData_thenDoNotSendEmail() {
+    void givenNoOutputBlob_whenExportData_thenDoNotSendEmail() {
         when(ccdExportBlobDataComponent.exportBlobsAndGetOutputName(
             any(),
             any(),
@@ -168,7 +211,7 @@ public class BlobExportServiceImplTest {
     }
 
     @Test
-    public void testAllStorageAccountsConnection() {
+    void testAllStorageAccountsConnection() {
         when(stagingClient.listBlobContainers())
             .thenReturn(new PagedIterableStub<>(blobContainerItem));
         when(exportClient.listBlobContainers())

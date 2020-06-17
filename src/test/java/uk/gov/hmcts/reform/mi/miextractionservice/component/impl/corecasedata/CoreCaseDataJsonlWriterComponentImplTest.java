@@ -36,7 +36,7 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConsta
 import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_EXTRACTION_DATE;
 
 @ExtendWith(SpringExtension.class)
-public class CoreCaseDataJsonlWriterComponentImplTest {
+class CoreCaseDataJsonlWriterComponentImplTest {
 
     private static final OutputCoreCaseData TEST_OUTPUT_DATA = OutputCoreCaseData
         .builder()
@@ -59,17 +59,17 @@ public class CoreCaseDataJsonlWriterComponentImplTest {
     private Writer writer;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         writer = mock(Writer.class);
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    void tearDown() throws Exception {
         writer.close();
     }
 
     @Test
-    public void givenValidWriter_whenWriteBeans_thenLinesAreWritten() throws Exception {
+    void givenValidWriter_whenWriteBeans_thenLinesAreWritten() throws Exception {
         underTest.writeLinesAsJsonl(writer, Collections.singletonList(TEST_OUTPUT_DATA));
 
         verify(writer, times(1)).write(getExpectedDataString());
@@ -77,7 +77,7 @@ public class CoreCaseDataJsonlWriterComponentImplTest {
     }
 
     @Test
-    public void givenExceptionOnClose_whenWriteBeans_thenThrowParserException() throws Exception {
+    void givenExceptionOnClose_whenWriteBeans_thenThrowParserException() throws Exception {
         doThrow(new IOException("Broken close")).when(writer).write(anyString());
 
         assertThrows(ParserException.class, () -> underTest.writeLinesAsJsonl(writer, Collections.singletonList(TEST_OUTPUT_DATA)));

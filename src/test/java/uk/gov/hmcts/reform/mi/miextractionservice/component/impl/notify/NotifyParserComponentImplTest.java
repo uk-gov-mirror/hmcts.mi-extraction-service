@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(SpringExtension.class)
-public class NotifyParserComponentImplTest {
+class NotifyParserComponentImplTest {
 
     @SuppressWarnings("PMD.UnusedPrivateField")
     @Spy

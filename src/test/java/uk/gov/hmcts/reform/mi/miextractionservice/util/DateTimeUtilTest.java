@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
-public class DateTimeUtilTest {
+class DateTimeUtilTest {
 
     @Mock
     private Clock clock;
@@ -29,40 +29,40 @@ public class DateTimeUtilTest {
     private DateTimeUtil underTest;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         when(clock.instant()).thenReturn(Instant.ofEpochMilli(0));
         when(clock.getZone()).thenReturn(ZoneOffset.UTC);
     }
 
     @Test
-    public void givenClock_whenGetCurrentTime_thenReturnOffsetDateTime() {
+    void givenClock_whenGetCurrentTime_thenReturnOffsetDateTime() {
         OffsetDateTime fixedDateTime = OffsetDateTime.ofInstant(Instant.ofEpochMilli(0), ZoneOffset.UTC);
         assertEquals(fixedDateTime, underTest.getCurrentDateTime(), "Wrong time was returned when retrieving.");
     }
 
     @Test
-    public void givenDateString_whenParseDateString_thenReturnOffsetDateTime() {
+    void givenDateString_whenParseDateString_thenReturnOffsetDateTime() {
         OffsetDateTime expectedDate = OffsetDateTime.of(2000, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
         assertEquals(expectedDate, underTest.parseDateString("2000-01-01"), "Parsed date did not match expected date.");
     }
 
     @Test
-    public void givenMillisecondsSinceEpoch_whenGetTimestampFromLong_thenTimestampString() {
+    void givenMillisecondsSinceEpoch_whenGetTimestampFromLong_thenTimestampString() {
         assertEquals("1970-01-01 00:00:00.000", underTest.getTimestampFormatFromLong(0L), "Expected timestamp does not match.");
     }
 
     @Test
-    public void givenTwoDigitMonth_whenGetFormattedMonthNumber_returnTwoDigitMonth() {
+    void givenTwoDigitMonth_whenGetFormattedMonthNumber_returnTwoDigitMonth() {
         assertEquals("10", underTest.getFormattedMonthNumber(10), "Unexpected format in result.");
     }
 
     @Test
-    public void givenOneDigitMonth_whenGetFormattedMonthNumber_returnTwoDigitMonth() {
+    void givenOneDigitMonth_whenGetFormattedMonthNumber_returnTwoDigitMonth() {
         assertEquals("01", underTest.getFormattedMonthNumber(1), "Unexpected format in result.");
     }
 
     @Test
-    public void givenTestDate_whenGetDateFormat_thenReturnDateTimeFormatterThatCanParseYearMonthDay() {
+    void givenTestDate_whenGetDateFormat_thenReturnDateTimeFormatterThatCanParseYearMonthDay() {
         DateTimeFormatter dateTimeFormatter = underTest.getDateFormat();
         String testDate = "2000-01-01";
 
@@ -74,7 +74,7 @@ public class DateTimeUtilTest {
     }
 
     @Test
-    public void givenFromDateAndToDate_whenGetListOfYearsAndMonthsBetweenDates_thenReturnListOfDateStrings() {
+    void givenFromDateAndToDate_whenGetListOfYearsAndMonthsBetweenDates_thenReturnListOfDateStrings() {
         OffsetDateTime fromDate = OffsetDateTime.of(1999, 12, 1, 0, 0, 0, 0, ZoneOffset.UTC);
         OffsetDateTime toDate = OffsetDateTime.of(2001, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
 

@@ -30,7 +30,7 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConsta
 import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_EXTRACTION_DATE;
 
 @ExtendWith(SpringExtension.class)
-public class CoreCaseDataOutputFormatterComponentImplTest {
+class CoreCaseDataOutputFormatterComponentImplTest {
 
     @SuppressWarnings("PMD.UnusedPrivateField")
     @Spy
@@ -45,7 +45,7 @@ public class CoreCaseDataOutputFormatterComponentImplTest {
     // PMD not picking up message in assertion for some reason.
     @SuppressWarnings("PMD.JUnitAssertionsShouldIncludeMessage")
     @Test
-    public void givenCoreCaseData_whenFormatData_thenReturnOutputCoreCaseData() throws Exception {
+    void givenCoreCaseData_whenFormatData_thenReturnOutputCoreCaseData() throws Exception {
         String dataString = DEFAULT_TEST_CORE_CASE_DATA_JSON_STRING;
 
         CoreCaseData coreCaseData = new ObjectMapper().readValue(dataString, CoreCaseData.class);
@@ -68,7 +68,7 @@ public class CoreCaseDataOutputFormatterComponentImplTest {
     }
 
     @Test
-    public void givenCoreCaseDataWithInvalidData_whenFormatData_thenThrowParserException() throws Exception {
+    void givenCoreCaseDataWithInvalidData_whenFormatData_thenThrowParserException() throws Exception {
         CoreCaseData coreCaseData = objectMapper.readValue(DEFAULT_TEST_CORE_CASE_DATA_JSON_STRING, CoreCaseData.class);
 
         ObjectMapper mockObjectMapper = mock(ObjectMapper.class);

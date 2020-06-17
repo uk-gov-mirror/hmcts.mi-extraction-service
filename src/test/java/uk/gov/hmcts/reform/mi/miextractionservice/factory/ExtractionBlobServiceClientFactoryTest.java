@@ -16,7 +16,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
-public class ExtractionBlobServiceClientFactoryTest {
+class ExtractionBlobServiceClientFactoryTest {
 
     private static final String TEST_CLIENT_ID = "testId";
     private static final String TEST_STAGING_NAME = "persistentStore";
@@ -33,12 +33,12 @@ public class ExtractionBlobServiceClientFactoryTest {
     private BlobServiceClient blobServiceClient;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         blobServiceClient = mock(BlobServiceClient.class);
     }
 
     @Test
-    public void givenManagedIdentity_whenGetStagingBlobServiceClient_returnStagingBlobServiceClient() {
+    void givenManagedIdentity_whenGetStagingBlobServiceClient_returnStagingBlobServiceClient() {
         ReflectionTestUtils.setField(underTest, "clientId", TEST_CLIENT_ID);
         ReflectionTestUtils.setField(underTest, "stagingName", TEST_STAGING_NAME);
 
@@ -48,7 +48,7 @@ public class ExtractionBlobServiceClientFactoryTest {
     }
 
     @Test
-    public void givenManagedIdentity_whenGetExportBlobServiceClient_returnExportBlobServiceClient() {
+    void givenManagedIdentity_whenGetExportBlobServiceClient_returnExportBlobServiceClient() {
         ReflectionTestUtils.setField(underTest, "clientId", TEST_CLIENT_ID);
         ReflectionTestUtils.setField(underTest, "exportName", TEST_EXPORT_NAME);
 
@@ -58,7 +58,7 @@ public class ExtractionBlobServiceClientFactoryTest {
     }
 
     @Test
-    public void givenConnectionString_whenGetStagingBlobServiceClient_returnStagingBlobServiceClient() {
+    void givenConnectionString_whenGetStagingBlobServiceClient_returnStagingBlobServiceClient() {
         ReflectionTestUtils.setField(underTest, "stagingConnString", TEST_STAGING_CONN_STRING);
 
         when(blobServiceClientFactory.getBlobClientWithConnectionString(TEST_STAGING_CONN_STRING)).thenReturn(blobServiceClient);
@@ -67,7 +67,7 @@ public class ExtractionBlobServiceClientFactoryTest {
     }
 
     @Test
-    public void givenConnectionString_whenGetExportBlobServiceClient_returnExportBlobServiceClient() {
+    void givenConnectionString_whenGetExportBlobServiceClient_returnExportBlobServiceClient() {
         ReflectionTestUtils.setField(underTest, "exportConnString", TEST_EXPORT_CONN_STRING);
 
         when(blobServiceClientFactory.getBlobClientWithConnectionString(TEST_EXPORT_CONN_STRING)).thenReturn(blobServiceClient);

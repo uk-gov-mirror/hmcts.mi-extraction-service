@@ -12,7 +12,7 @@ import uk.gov.hmcts.reform.mi.miextractionservice.domain.CsvNotificationOutput;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(SpringExtension.class)
-public class NotifyToCsvFormatterComponentImplTest {
+class NotifyToCsvFormatterComponentImplTest {
 
     private NotifyToCsvFormatterComponentImpl underTest;
 
@@ -24,7 +24,7 @@ public class NotifyToCsvFormatterComponentImplTest {
     // PMD not picking up message in assertion for some reason.
     @SuppressWarnings("PMD.JUnitAssertionsShouldIncludeMessage")
     @Test
-    public void givenNotificationOutputData_whenFormatData_thenReturnCsvNotificationOutput() throws Exception {
+    void givenNotificationOutputData_whenFormatData_thenReturnCsvNotificationOutput() throws Exception {
         String dataString = "{"
             + "\"extraction_date\":\"extractionDate\",\"id\":\"id\",\"service\":\"service\",\"reference\":\"reference\","
             + "\"email_address\":null,\"phone_number\":null,\"line_1\":null,\"line_2\":null,\"line_3\":null,\"line_4\":null,\"line_5\":null,"

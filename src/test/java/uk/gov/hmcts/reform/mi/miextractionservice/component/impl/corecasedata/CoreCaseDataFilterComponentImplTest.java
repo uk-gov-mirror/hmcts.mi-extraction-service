@@ -28,7 +28,7 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConsta
 import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CCD_JSONL_OUTDATED_PAST_AS_CORE_CASE_DATA;
 
 @ExtendWith(SpringExtension.class)
-public class CoreCaseDataFilterComponentImplTest {
+class CoreCaseDataFilterComponentImplTest {
 
     private static final String FILTER_KEY = "filterCaseType";
     private static final String DEFAULT_FILTER_VALUE = "all";

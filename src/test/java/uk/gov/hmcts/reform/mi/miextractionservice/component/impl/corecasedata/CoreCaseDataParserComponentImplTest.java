@@ -24,7 +24,7 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConsta
 import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_EXTRACTION_DATE;
 
 @ExtendWith(SpringExtension.class)
-public class CoreCaseDataParserComponentImplTest {
+class CoreCaseDataParserComponentImplTest {
 
     @SuppressWarnings("PMD.UnusedPrivateField")
     @Spy
@@ -34,7 +34,7 @@ public class CoreCaseDataParserComponentImplTest {
     private CoreCaseDataParserComponentImpl underTest;
 
     @Test
-    public void givenCoreCaseDataJsonString_whenParseData_thenReturnCoreCaseDataObject() {
+    void givenCoreCaseDataJsonString_whenParseData_thenReturnCoreCaseDataObject() {
         CoreCaseData expected = CoreCaseData.builder()
             .extractionDate(TEST_EXTRACTION_DATE)
             .caseMetadataEventId(Long.parseLong(TEST_CASE_METADATA_EVENT_ID))
@@ -50,7 +50,7 @@ public class CoreCaseDataParserComponentImplTest {
     }
 
     @Test
-    public void givenInvalidCoreCaseDataJsonString_whenParseData_thenThrowParserException() {
+    void givenInvalidCoreCaseDataJsonString_whenParseData_thenThrowParserException() {
         assertThrows(ParserException.class, () -> underTest.parse("InvalidJsonString"));
     }
 }

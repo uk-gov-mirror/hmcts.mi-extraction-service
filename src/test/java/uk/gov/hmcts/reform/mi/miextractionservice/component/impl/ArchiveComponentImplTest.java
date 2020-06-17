@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(SpringExtension.class)
-public class ArchiveComponentImplTest {
+class ArchiveComponentImplTest {
 
     private static final String TEST_FILE_NAME = "test";
     private static final String TEST_ZIP_NAME = "output";
@@ -28,7 +28,7 @@ public class ArchiveComponentImplTest {
     private ArchiveComponentImpl underTest;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         uniqueFileName = TEST_FILE_NAME + UUID.randomUUID().toString();
         uniqueZipName = TEST_ZIP_NAME + UUID.randomUUID().toString();
 
@@ -36,7 +36,7 @@ public class ArchiveComponentImplTest {
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         File testFile = new File(uniqueFileName);
         File testZip = new File(uniqueZipName);
 
@@ -50,7 +50,7 @@ public class ArchiveComponentImplTest {
     }
 
     @Test
-    public void givenInputFilesAndOutputPath_whenCreateEncryptedArchive_thenCreateZip() throws Exception {
+    void givenInputFilesAndOutputPath_whenCreateEncryptedArchive_thenCreateZip() throws Exception {
         File testFile = new File(uniqueFileName);
         testFile.createNewFile();
 
@@ -65,7 +65,7 @@ public class ArchiveComponentImplTest {
     }
 
     @Test
-    public void givenNoFilesToZip_whenCreateEncryptedArchive_thenThrowArchiveException() {
+    void givenNoFilesToZip_whenCreateEncryptedArchive_thenThrowArchiveException() {
         assertThrows(ArchiveException.class, () -> underTest.createArchive(Collections.emptyList(), uniqueZipName),
             "Expected exception was not thrown for missing files.");
     }

@@ -7,8 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.Objects;
 
-import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_CONTAINER_NAME;
-
 @Slf4j
 public final class TestUtils {
 
@@ -51,7 +49,9 @@ public final class TestUtils {
     }
 
     @SuppressWarnings("PMD.DataflowAnomalyAnalysis")
-    public static BlobClient createTestBlob(BlobServiceClient blobServiceClient, String blobName) throws InterruptedException {
+    public static BlobClient createTestBlob(BlobServiceClient blobServiceClient, String containerName, String blobName)
+        throws InterruptedException {
+
         long startTime = System.currentTimeMillis();
 
         BlobClient blobClient = null;
@@ -60,7 +60,7 @@ public final class TestUtils {
             checkTimeout(startTime);
 
             try {
-                BlobContainerClient blobContainerClient = blobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME);
+                BlobContainerClient blobContainerClient = blobServiceClient.getBlobContainerClient(containerName);
 
                 if (blobContainerClient.exists()) {
                     blobClient = blobContainerClient.getBlobClient(blobName);

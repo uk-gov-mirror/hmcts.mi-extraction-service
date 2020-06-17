@@ -29,18 +29,18 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.CCD_EXPORT_CONTAINER_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.NOTIFY_EXPORT_CONTAINER_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.NOTIFY_TEST_CONTAINER_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.NOTIFY_TEST_EXPORT_BLOB;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_BLOB_NAME;
-import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_CCD_JSONL;
-import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_CONTAINER_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_EXPORT_BLOB;
+import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_NOTIFY_JSONL;
 
 @SuppressWarnings({"unchecked","PMD.AvoidUsingHardCodedIP","PMD.ExcessiveImports"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 @SpringBootTest(classes = TestConfig.class)
-public class CoreCaseDataExportTest {
+public class NotifyDataExportTest {
 
     private static final String AZURITE_IMAGE = "mcr.microsoft.com/azure-storage/azurite";
 
@@ -53,7 +53,7 @@ public class CoreCaseDataExportTest {
 
     private static final String DEFAULT_HOST = "127.0.0.1";
     private static final String TEST_MAIL_ADDRESS = "TestMailAddress";
-    private static final String EXTRACT_FILE_NAME = "1970-01-01-1970-01-02-CCD_EXTRACT.jsonl";
+    private static final String EXTRACT_FILE_NAME = "1970-01-01-1970-01-02-NOTIFY_EXTRACT.jsonl";
 
     @Autowired
     private BlobServiceClientFactory blobServiceClientFactory;
@@ -97,7 +97,7 @@ public class CoreCaseDataExportTest {
         exportBlobServiceClient = blobServiceClientFactory
             .getBlobClientWithConnectionString(String.format(DEFAULT_CONN_STRING, DEFAULT_HOST, exportPort));
 
-        ReflectionTestUtils.setField(underTest, "dataSource", "CoreCaseData");
+        ReflectionTestUtils.setField(underTest, "dataSource", "Notify");
         ReflectionTestUtils.setField(extractionBlobServiceClientFactory, "clientId", null);
         ReflectionTestUtils.setField(extractionBlobServiceClientFactory,
             "stagingConnString", String.format(DEFAULT_CONN_STRING, DEFAULT_HOST, stagingPort));
@@ -127,30 +127,31 @@ public class CoreCaseDataExportTest {
 
     @Test
     public void givenTestContainer_whenExportBlob_thenArchivedBlobIsCreatedInExportAndEmailIsSent() throws Exception {
-        byte[] inputData = TEST_CCD_JSONL.getBytes();
+        byte[] inputData = TEST_NOTIFY_JSONL.getBytes();
         InputStream inputStream = new ByteArrayInputStream(inputData);
 
         stagingBlobServiceClient
-            .createBlobContainer(TEST_CONTAINER_NAME)
+            .createBlobContainer(NOTIFY_TEST_CONTAINER_NAME)
             .getBlobClient(TEST_BLOB_NAME)
             .getBlockBlobClient()
             .upload(inputStream, inputData.length);
 
-        assertFalse(exportBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME).exists(), "Leftover container exists.");
-        assertFalse(exportBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)
+        assertFalse(exportBlobServiceClient.getBlobContainerClient(NOTIFY_TEST_CONTAINER_NAME).exists(), "Leftover container exists.");
+        assertFalse(exportBlobServiceClient.getBlobContainerClient(NOTIFY_TEST_CONTAINER_NAME)
             .getBlobClient(TEST_BLOB_NAME).exists(), "Leftover first blob exists.");
 
         underTest.exportBlobs();
 
-        assertTrue(exportBlobServiceClient.getBlobContainerClient(CCD_EXPORT_CONTAINER_NAME).exists(), "No container was created.");
-        assertTrue(exportBlobServiceClient.getBlobContainerClient(CCD_EXPORT_CONTAINER_NAME)
-            .getBlobClient(TEST_EXPORT_BLOB).exists(), "No first blob was created.");
+        assertTrue(exportBlobServiceClient.getBlobContainerClient(NOTIFY_EXPORT_CONTAINER_NAME).exists(), "No container was created.");
+        assertTrue(exportBlobServiceClient.getBlobContainerClient(NOTIFY_EXPORT_CONTAINER_NAME)
+            .getBlobClient(NOTIFY_TEST_EXPORT_BLOB).exists(), "No first blob was created.");
 
-        try (OutputStream outputStream = Files.newOutputStream(Paths.get(TEST_EXPORT_BLOB))) {
-            exportBlobServiceClient.getBlobContainerClient(CCD_EXPORT_CONTAINER_NAME).getBlobClient(TEST_EXPORT_BLOB).download(outputStream);
+        try (OutputStream outputStream = Files.newOutputStream(Paths.get(NOTIFY_TEST_EXPORT_BLOB))) {
+            exportBlobServiceClient.getBlobContainerClient(NOTIFY_EXPORT_CONTAINER_NAME).getBlobClient(NOTIFY_TEST_EXPORT_BLOB)
+                .download(outputStream);
         }
 
-        ZipFile zipFile = new ZipFile(TEST_EXPORT_BLOB);
+        ZipFile zipFile = new ZipFile(NOTIFY_TEST_EXPORT_BLOB);
 
         zipFile.extractFile(EXTRACT_FILE_NAME, ".");
 
@@ -163,27 +164,7 @@ public class CoreCaseDataExportTest {
         assertEquals(TEST_MAIL_ADDRESS, email.getHeaderValue("To"), "Should have sent an email to TestMailAddress.");
         assertEquals("Management Information Exported Data Url", email.getHeaderValue("Subject"),
             "Should have a static subject message.");
-        assertTrue(email.getBody().contains(TEST_EXPORT_BLOB),
+        assertTrue(email.getBody().contains(NOTIFY_TEST_EXPORT_BLOB),
             "Should have output blob name somewhere in email body as part of the generated SAS url.");
-    }
-
-    @Test
-    public void givenInvalidConnectionString_whenExportBlob_thenExceptionIsThrown() {
-        ReflectionTestUtils.setField(extractionBlobServiceClientFactory, "stagingConnString", "InvalidConnectionString");
-
-        assertThrows(Exception.class, () -> underTest.exportBlobs());
-
-        assertFalse(exportBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME).exists(),
-            "Container was unexpectedly created with invalid connection string.");
-    }
-
-    @Test
-    public void givenInvalidManagedIdentity_whenExportBlob_thenExceptionIsThrown() {
-        ReflectionTestUtils.setField(extractionBlobServiceClientFactory, "clientId", "InvalidIdentity");
-
-        assertThrows(Exception.class, () -> underTest.exportBlobs());
-
-        assertFalse(exportBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME).exists(),
-            "Container was unexpectedly created with wrong managed identity.");
     }
 }

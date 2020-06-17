@@ -13,7 +13,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(SpringExtension.class)
-public class SendEmailComponentImplTest {
+class SendEmailComponentImplTest {
 
     private static final String TEST_EMAIL = "testEmail@example.com";
     private static final String TEST_SUBJECT = "testSubject";
@@ -26,7 +26,7 @@ public class SendEmailComponentImplTest {
     private SendEmailComponentImpl underTest;
 
     @Test
-    public void givenEmailSubjectAndContent_whenSendEmail_thenJavaMailSenderIsTriggered() {
+    void givenEmailSubjectAndContent_whenSendEmail_thenJavaMailSenderIsTriggered() {
         underTest.sendEmail(TEST_EMAIL, TEST_SUBJECT, TEST_CONTENT);
 
         SimpleMailMessage expectedMailMessage = new SimpleMailMessage();

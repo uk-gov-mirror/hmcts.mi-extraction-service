@@ -14,7 +14,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
-public class BlobDownloadComponentImplTest {
+class BlobDownloadComponentImplTest {
 
     private static final String TEST_CONTAINER_NAME = "testContainer";
     private static final String TEST_BLOB_NAME = "testBlob";

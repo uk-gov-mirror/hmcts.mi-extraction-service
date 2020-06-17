@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
-public class NotifyFilterComponentImplTest {
+class NotifyFilterComponentImplTest {
 
     private static final String FILTER_KEY = "filterService";
     private static final String DEFAULT_FILTER_VALUE = "all";
@@ -44,7 +44,7 @@ public class NotifyFilterComponentImplTest {
 
     @SuppressWarnings("PMD.JUnitAssertionsShouldIncludeMessage")
     @Test
-    public void givenRangeOfDates_whenFilterByDate_thenReturnDataOnlyWithinDates() {
+    void givenRangeOfDates_whenFilterByDate_thenReturnDataOnlyWithinDates() {
         ReflectionTestUtils.setField(underTest, FILTER_KEY, DEFAULT_FILTER_VALUE);
 
         when(dataParserComponent.parse(NOTIFY_JSON)).thenReturn(NOTIFY_OUTPUT);
@@ -62,7 +62,7 @@ public class NotifyFilterComponentImplTest {
 
     @SuppressWarnings("PMD.JUnitAssertionsShouldIncludeMessage")
     @Test
-    public void givenRangeOfDatesWithSameDayDates_whenFilterByDate_thenReturnDataOnlyWithinDates() {
+    void givenRangeOfDatesWithSameDayDates_whenFilterByDate_thenReturnDataOnlyWithinDates() {
         ReflectionTestUtils.setField(underTest, FILTER_KEY, DEFAULT_FILTER_VALUE);
 
         when(dataParserComponent.parse(NOTIFY_JSON)).thenReturn(NOTIFY_OUTPUT);
@@ -86,7 +86,7 @@ public class NotifyFilterComponentImplTest {
 
     @SuppressWarnings("PMD.JUnitAssertionsShouldIncludeMessage")
     @Test
-    public void givenSpecificService_whenFilter_thenReturnDataOnlyWithCaseType() {
+    void givenSpecificService_whenFilter_thenReturnDataOnlyWithCaseType() {
         ReflectionTestUtils.setField(underTest, FILTER_KEY, "NEWCASETYPE");
 
         String notifyJsonWithService = "{\"service\":\"NEWCASETYPE\",\"created_at\":\"2000-01-01T10:00:00.000000Z\"}";

@@ -69,7 +69,7 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConsta
 
 @SuppressWarnings({"PMD.UnusedPrivateField","PMD.ExcessiveImports","PMD.TooManyMethods"})
 @ExtendWith(SpringExtension.class)
-public class CoreCaseDataExportBlobDataComponentImplTest {
+class CoreCaseDataExportBlobDataComponentImplTest {
 
     private static final String OUTPUT_ASSERTION_MATCHING_ERROR = "Returned blob name does not match the expected.";
 
