@@ -20,7 +20,7 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServ
 @Component
 public class CoreCaseDataFilterComponentImpl implements FilterComponent<CoreCaseData> {
 
-    @Value("${filter.case-type}")
+    @Value("${filter.ccd.case-type}")
     private String filterCaseType;
 
     @Autowired

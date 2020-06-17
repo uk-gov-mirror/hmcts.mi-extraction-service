@@ -1,4 +1,4 @@
-package uk.gov.hmcts.reform.mi.miextractionservice.component.impl.corecasedata;
+package uk.gov.hmcts.reform.mi.miextractionservice.component.impl.notify;
 
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
@@ -11,16 +11,14 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import uk.gov.hmcts.reform.mi.micore.model.CoreCaseData;
+import uk.gov.hmcts.reform.mi.micore.model.NotificationOutput;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ArchiveComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobDownloadComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CheckWhitelistComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.component.CoreCaseDataFormatterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.FilterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.JsonlWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.MetadataFilterComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
 import uk.gov.hmcts.reform.mi.miextractionservice.wrapper.FileWrapper;
@@ -36,18 +34,17 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_DATA_CONTAINER_PREFIX;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_OUTPUT_CONTAINER_NAME;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_WORKING_ARCHIVE;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_WORKING_FILE_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NAME_DELIMITER;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NOTIFY_CONTAINER_PREFIX;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NOTIFY_OUTPUT_CONTAINER_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NOTIFY_WORKING_ARCHIVE;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NOTIFY_WORKING_FILENAME;
 
 @Slf4j
 @Component
-@Qualifier("ccd")
-public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataComponent {
+@Qualifier("notify")
+public class NotifyExportBlobDataComponentImpl implements ExportBlobDataComponent {
 
     @Value("${max-lines-buffer}")
     private String maxLines;
@@ -71,13 +68,10 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
     private BlobDownloadComponent blobDownloadComponent;
 
     @Autowired
-    private FilterComponent<CoreCaseData> filterComponent;
+    private FilterComponent<NotificationOutput> filterComponent;
 
     @Autowired
-    private CoreCaseDataFormatterComponent<OutputCoreCaseData> coreCaseDataFormatterComponent;
-
-    @Autowired
-    private JsonlWriterComponent<OutputCoreCaseData> jsonlWriterComponent;
+    private JsonlWriterComponent<NotificationOutput> jsonlWriterComponent;
 
     @Autowired
     private ArchiveComponent archiveComponent;
@@ -86,13 +80,13 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
     private DateTimeUtil dateTimeUtil;
 
     /**
-     * Exports data matching date range provided as a JsonL, compressed in an encrypted archive for ease of upload and download and security.
+     * Exports data matching date range provided as a JsonL.
      *
      * @param sourceBlobServiceClient the blob service client of the source storage account.
      * @param targetBlobServiceClient the blob service client of the target storage account.
      * @param fromDate the first date in yyyy-MM-dd format to pull data for.
      * @param toDate the last date in yyyy-MM-dd format to pull data for.
-     * @return String name of the generated archive stored as a blob on the storage account.
+     * @return String name of the generated output stored as a blob on the storage account.
      */
     @SuppressWarnings("PMD.LawOfDemeter")
     @Override
@@ -106,29 +100,29 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
             + toDate.format(dateTimeUtil.getDateFormat())
             + NAME_DELIMITER;
 
-        String workingFileName = outputDatePrefix + CCD_WORKING_FILE_NAME;
+        String workingFileName = outputDatePrefix + NOTIFY_WORKING_FILENAME;
 
         boolean dataFound = readAndWriteData(sourceBlobServiceClient, fromDate, toDate, workingFileName);
 
         if (dataFound) {
-            BlobContainerClient blobContainerClient = targetBlobServiceClient.getBlobContainerClient(CCD_OUTPUT_CONTAINER_NAME);
+            BlobContainerClient blobContainerClient = targetBlobServiceClient.getBlobContainerClient(NOTIFY_OUTPUT_CONTAINER_NAME);
 
             if (!blobContainerClient.exists()) {
                 blobContainerClient.create();
             }
-
             String outputBlobName = workingFileName;
 
             if (Boolean.TRUE.equals(Boolean.parseBoolean(archiveFlag))) {
-                outputBlobName = outputDatePrefix + CCD_WORKING_ARCHIVE;
+                outputBlobName = outputDatePrefix + NOTIFY_WORKING_ARCHIVE;
 
                 archiveComponent.createArchive(Collections.singletonList(workingFileName), outputBlobName);
+
+                // Delete temporary file after it has been archived.
+                fileWrapper.deleteFileOnExit(workingFileName);
             }
 
             blobContainerClient.getBlobClient(outputBlobName).uploadFromFile(outputBlobName, true);
 
-            // Clean up files after upload
-            fileWrapper.deleteFileOnExit(workingFileName);
             fileWrapper.deleteFileOnExit(outputBlobName);
 
             return outputBlobName;
@@ -151,7 +145,7 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
             for (BlobContainerItem blobContainerItem : sourceBlobServiceClient.listBlobContainers()) {
 
                 if (checkWhitelistComponent.isContainerWhitelisted(blobContainerItem.getName())
-                    && blobContainerItem.getName().startsWith(CCD_DATA_CONTAINER_PREFIX)) {
+                    && blobContainerItem.getName().startsWith(NOTIFY_CONTAINER_PREFIX)) {
 
                     BlobContainerClient blobContainerClient = sourceBlobServiceClient.getBlobContainerClient(blobContainerItem.getName());
 
@@ -224,11 +218,8 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
     }
 
     private void writeData(BufferedWriter writer, List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate) {
-        List<CoreCaseData> filteredData = filterComponent.filterDataInDateRange(data, fromDate, toDate);
-        List<OutputCoreCaseData> formattedData = filteredData.stream()
-            .map(coreCaseDataFormatterComponent::formatData)
-            .collect(Collectors.toList());
+        List<NotificationOutput> filteredData = filterComponent.filterDataInDateRange(data, fromDate, toDate);
 
-        jsonlWriterComponent.writeLinesAsJsonl(writer, formattedData);
+        jsonlWriterComponent.writeLinesAsJsonl(writer, filteredData);
     }
 }

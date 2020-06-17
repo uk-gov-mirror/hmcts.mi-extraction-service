@@ -15,8 +15,13 @@ import uk.gov.hmcts.reform.mi.miextractionservice.service.BlobExportService;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_OUTPUT_CONTAINER_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NEWLINE_DELIMITER;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NOTIFY_OUTPUT_CONTAINER_NAME;
 
 @Service
 public class BlobExportServiceImpl implements BlobExportService {
@@ -33,6 +38,10 @@ public class BlobExportServiceImpl implements BlobExportService {
     @Autowired
     @Qualifier("ccd")
     private ExportBlobDataComponent ccdExportBlobDataComponent;
+
+    @Autowired
+    @Qualifier("notify")
+    private ExportBlobDataComponent notifyExportBlobDataComponent;
 
     @Autowired
     private BlobMessageBuilderComponent blobMessageBuilderComponent;
@@ -58,12 +67,29 @@ public class BlobExportServiceImpl implements BlobExportService {
             extractionBlobServiceClientFactory.getStagingClient(),
             exportClient,
             fromDate,
-            toDate);
+            toDate
+        );
+
+        // Export Notify Blobs
+        String notifyOutputBlobName = notifyExportBlobDataComponent.exportBlobsAndGetOutputName(
+            extractionBlobServiceClientFactory.getStagingClient(),
+            exportClient,
+            fromDate,
+            toDate
+        );
+
+        List<String> messages = new ArrayList<>();
 
         if (outputBlobName != null) {
-            String message = blobMessageBuilderComponent.buildMessage(exportClient, CCD_OUTPUT_CONTAINER_NAME, outputBlobName);
+            messages.add(blobMessageBuilderComponent.buildMessage(exportClient, CCD_OUTPUT_CONTAINER_NAME, outputBlobName));
+        }
 
-            sendBlobUrlToTargetsComponent.sendBlobUrl(message);
+        if (notifyOutputBlobName != null) {
+            messages.add(blobMessageBuilderComponent.buildMessage(exportClient, NOTIFY_OUTPUT_CONTAINER_NAME, notifyOutputBlobName));
+        }
+
+        if (!messages.isEmpty()) {
+            sendBlobUrlToTargetsComponent.sendBlobUrl(messages.stream().collect(Collectors.joining(NEWLINE_DELIMITER)));
         }
     }
 
