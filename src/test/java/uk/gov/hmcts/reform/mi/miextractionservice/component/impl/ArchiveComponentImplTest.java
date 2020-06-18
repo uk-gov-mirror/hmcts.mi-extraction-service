@@ -67,7 +67,8 @@ class ArchiveComponentImplTest {
 
     @Test
     void givenNoFilesToZip_whenCreateEncryptedArchive_thenThrowArchiveException() {
-        assertThrows(ArchiveException.class, () -> underTest.createArchive(List.of(), uniqueZipName),
+        List<String> testList = Collections.emptyList();
+        assertThrows(ArchiveException.class, () -> underTest.createArchive(testList, uniqueZipName),
             "Expected exception was not thrown for missing files.");
     }
 }

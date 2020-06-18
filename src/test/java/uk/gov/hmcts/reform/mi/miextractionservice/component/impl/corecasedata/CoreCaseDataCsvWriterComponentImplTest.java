@@ -84,6 +84,7 @@ class CoreCaseDataCsvWriterComponentImplTest {
         .ce_description(TEST_DESCRIPTION)
         .data(TEST_DATA_JSON_STRING)
         .build();
+    private static final List<OutputCoreCaseData> TEST_OUTPUT_LIST = Collections.singletonList(TEST_OUTPUT_DATA);
 
     private String uniqueFileName;
 
@@ -131,7 +132,7 @@ class CoreCaseDataCsvWriterComponentImplTest {
 
     @Test
     void givenValidWriter_whenWriteBeans_thenCsvFileIsCreated() throws Exception {
-        underTest.writeBeansWithWriter(writer, Collections.singletonList(TEST_OUTPUT_DATA));
+        underTest.writeBeansWithWriter(writer, TEST_OUTPUT_LIST);
 
         verify(writer).write(getExpectedDataString() + "\n");
         verify(writer, times(1)).flush();
@@ -151,7 +152,7 @@ class CoreCaseDataCsvWriterComponentImplTest {
     void givenExceptionOnClose_whenWriteBeans_thenThrowParserException() throws Exception {
         doThrow(new IOException("Broken close")).when(csvWriter).close();
 
-        assertThrows(ParserException.class, () -> underTest.writeBeansWithWriter(writer, List.of(TEST_OUTPUT_DATA)));
+        assertThrows(ParserException.class, () -> underTest.writeBeansWithWriter(writer, TEST_OUTPUT_LIST));
 
         verify(writer, never()).flush();
     }
@@ -160,7 +161,7 @@ class CoreCaseDataCsvWriterComponentImplTest {
     void givenExceptionOnClose_whenWriteBeanToCsv_thenThrowParserException() throws Exception {
         doThrow(new IOException("Broken close")).when(bufferedWriter).close();
 
-        assertThrows(ParserException.class, () -> underTest.writeBeansAsCsvFile(uniqueFileName, List.of(TEST_OUTPUT_DATA)));
+        assertThrows(ParserException.class, () -> underTest.writeBeansAsCsvFile(uniqueFileName, TEST_OUTPUT_LIST));
 
         // One flush for write header and one flush for write line. Final flush for writer close not called due to exception.
         verify(writer, times(2)).flush();
@@ -182,7 +183,7 @@ class CoreCaseDataCsvWriterComponentImplTest {
         try (CSVWriterThrowExceptionStub csvWriterThrowsException = spy(new CSVWriterThrowExceptionStub(writer))) {
             when(writerWrapper.getCsvWriter(any())).thenReturn(csvWriterThrowsException);
 
-            assertThrows(RuntimeException.class, () -> underTest.writeBeansWithWriter(writer, List.of(TEST_OUTPUT_DATA)));
+            assertThrows(RuntimeException.class, () -> underTest.writeBeansWithWriter(writer, TEST_OUTPUT_LIST));
 
             verify(csvWriterThrowsException, times(1)).close();
         }
@@ -193,7 +194,7 @@ class CoreCaseDataCsvWriterComponentImplTest {
         try (CSVWriterThrowExceptionStub csvWriterThrowsException = spy(new CSVWriterThrowExceptionStub(writer))) {
             when(writerWrapper.getCsvWriter(any())).thenReturn(csvWriterThrowsException);
 
-            assertThrows(RuntimeException.class, () -> underTest.writeBeansAsCsvFile(uniqueFileName, List.of(TEST_OUTPUT_DATA)));
+            assertThrows(RuntimeException.class, () -> underTest.writeBeansAsCsvFile(uniqueFileName, TEST_OUTPUT_LIST));
 
             verify(csvWriterThrowsException, times(1)).close();
         }
@@ -204,7 +205,7 @@ class CoreCaseDataCsvWriterComponentImplTest {
         when(writerWrapper.getCsvWriter(any())).thenCallRealMethod();
         when(writerWrapper.getBufferedWriter(any(Path.class))).thenCallRealMethod();
 
-        underTest.writeBeansAsCsvFile(uniqueFileName, Collections.singletonList(TEST_OUTPUT_DATA));
+        underTest.writeBeansAsCsvFile(uniqueFileName, TEST_OUTPUT_LIST);
 
         try (InputStream fileInputStream = Files.newInputStream(Paths.get(uniqueFileName))) {
 
@@ -225,7 +226,8 @@ class CoreCaseDataCsvWriterComponentImplTest {
         when(writerWrapper.getCsvWriter(any())).thenCallRealMethod();
         when(writerWrapper.getBufferedWriter(any(Path.class))).thenCallRealMethod();
 
-        assertThrows(ParserException.class, () -> underTest.writeBeansAsCsvFile("/", List.of()));
+        List<OutputCoreCaseData> emptyList = Collections.emptyList();
+        assertThrows(ParserException.class, () -> underTest.writeBeansAsCsvFile("/", emptyList));
     }
 
     private String wrapStringInQuotes(String inputString) {

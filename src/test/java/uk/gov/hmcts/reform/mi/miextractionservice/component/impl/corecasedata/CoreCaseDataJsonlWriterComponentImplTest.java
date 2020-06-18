@@ -50,6 +50,7 @@ class CoreCaseDataJsonlWriterComponentImplTest {
         .ce_state_id(TEST_CASE_STATE_ID)
         .data(TEST_DATA_JSON_STRING)
         .build();
+    private static final List<OutputCoreCaseData> TEST_OUTPUT_LIST = Collections.singletonList(TEST_OUTPUT_DATA);
 
     @Spy
     private ObjectMapper objectMapper;
@@ -71,7 +72,7 @@ class CoreCaseDataJsonlWriterComponentImplTest {
 
     @Test
     void givenValidWriter_whenWriteBeans_thenLinesAreWritten() throws Exception {
-        underTest.writeLinesAsJsonl(writer, Collections.singletonList(TEST_OUTPUT_DATA));
+        underTest.writeLinesAsJsonl(writer, TEST_OUTPUT_LIST);
 
         verify(writer, times(1)).write(getExpectedDataString());
         verify(writer, times(1)).write(NEWLINE_DELIMITER);
@@ -81,7 +82,7 @@ class CoreCaseDataJsonlWriterComponentImplTest {
     void givenExceptionOnClose_whenWriteBeans_thenThrowParserException() throws Exception {
         doThrow(new IOException("Broken close")).when(writer).write(anyString());
 
-        assertThrows(ParserException.class, () -> underTest.writeLinesAsJsonl(writer, List.of(TEST_OUTPUT_DATA)));
+        assertThrows(ParserException.class, () -> underTest.writeLinesAsJsonl(writer, TEST_OUTPUT_LIST));
 
         verify(writer, never()).flush();
     }

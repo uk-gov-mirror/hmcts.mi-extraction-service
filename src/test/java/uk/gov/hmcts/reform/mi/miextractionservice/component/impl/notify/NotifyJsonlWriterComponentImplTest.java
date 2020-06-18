@@ -36,6 +36,7 @@ class NotifyJsonlWriterComponentImplTest {
         .id("uuid")
         .createdAt("2000-01-01")
         .build();
+    private static final List<NotificationOutput> TEST_OUTPUT_LIST = Collections.singletonList(TEST_OUTPUT_DATA);
 
     @Spy
     private ObjectMapper objectMapper;
@@ -67,7 +68,7 @@ class NotifyJsonlWriterComponentImplTest {
     void givenExceptionOnClose_whenWriteBeans_thenThrowParserException() throws Exception {
         doThrow(new IOException("Broken close")).when(writer).write(anyString());
 
-        assertThrows(ParserException.class, () -> underTest.writeLinesAsJsonl(writer, List.of(TEST_OUTPUT_DATA)));
+        assertThrows(ParserException.class, () -> underTest.writeLinesAsJsonl(writer, TEST_OUTPUT_LIST));
 
         verify(writer, never()).flush();
     }
