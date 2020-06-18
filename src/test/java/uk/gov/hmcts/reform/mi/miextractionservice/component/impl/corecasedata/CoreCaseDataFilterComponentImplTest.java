@@ -44,7 +44,7 @@ class CoreCaseDataFilterComponentImplTest {
 
     @SuppressWarnings("PMD.JUnitAssertionsShouldIncludeMessage")
     @Test
-    public void givenRangeOfDates_whenFilterByDate_thenReturnDataOnlyWithinDates() {
+    void givenRangeOfDates_whenFilterByDate_thenReturnDataOnlyWithinDates() {
         ReflectionTestUtils.setField(underTest, FILTER_KEY, DEFAULT_FILTER_VALUE);
 
         when(dataParserComponent.parse(TEST_CCD_JSONL)).thenReturn(TEST_CCD_JSONL_AS_CORE_CASE_DATA);
@@ -62,7 +62,7 @@ class CoreCaseDataFilterComponentImplTest {
 
     @SuppressWarnings("PMD.JUnitAssertionsShouldIncludeMessage")
     @Test
-    public void givenRangeOfDatesWithSameDayDates_whenFilterByDate_thenReturnDataOnlyWithinDates() {
+    void givenRangeOfDatesWithSameDayDates_whenFilterByDate_thenReturnDataOnlyWithinDates() {
         ReflectionTestUtils.setField(underTest, FILTER_KEY, DEFAULT_FILTER_VALUE);
 
         when(dataParserComponent.parse(TEST_CCD_JSONL)).thenReturn(TEST_CCD_JSONL_AS_CORE_CASE_DATA);
@@ -86,7 +86,7 @@ class CoreCaseDataFilterComponentImplTest {
 
     @SuppressWarnings("PMD.JUnitAssertionsShouldIncludeMessage")
     @Test
-    public void givenSpecificCaseType_whenFilter_thenReturnDataOnlyWithCaseType() {
+    void givenSpecificCaseType_whenFilter_thenReturnDataOnlyWithCaseType() {
         ReflectionTestUtils.setField(underTest, FILTER_KEY, "NEWCASETYPE");
 
         when(dataParserComponent.parse(TEST_CCD_JSONL)).thenReturn(TEST_CCD_JSONL_AS_CORE_CASE_DATA);

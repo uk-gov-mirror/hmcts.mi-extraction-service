@@ -120,7 +120,7 @@ class NotifyCsvWriterComponentImplTest {
     void givenExceptionOnClose_whenWriteBeans_thenThrowParserException() throws Exception {
         doThrow(new IOException("Broken close")).when(csvWriter).close();
 
-        assertThrows(ParserException.class, () -> underTest.writeBeansWithWriter(writer, Collections.singletonList(TEST_OUTPUT_DATA)));
+        assertThrows(ParserException.class, () -> underTest.writeBeansWithWriter(writer, List.of(TEST_OUTPUT_DATA)));
 
         verify(writer, never()).flush();
     }
@@ -129,7 +129,7 @@ class NotifyCsvWriterComponentImplTest {
     void givenExceptionOnClose_whenWriteBeanToCsv_thenThrowParserException() throws Exception {
         doThrow(new IOException("Broken close")).when(bufferedWriter).close();
 
-        assertThrows(ParserException.class, () -> underTest.writeBeansAsCsvFile(uniqueFileName, Collections.singletonList(TEST_OUTPUT_DATA)));
+        assertThrows(ParserException.class, () -> underTest.writeBeansAsCsvFile(uniqueFileName, List.of(TEST_OUTPUT_DATA)));
 
         // One flush for write header and one flush for write line. Final flush for writer close not called due to exception.
         verify(writer, times(2)).flush();
@@ -147,29 +147,29 @@ class NotifyCsvWriterComponentImplTest {
     }
 
     @Test
-    public void givenExceptionOnWrite_whenWriteBeans_thenExceptionCaughtAndWriterIsClosed() throws Exception {
+    void givenExceptionOnWrite_whenWriteBeans_thenExceptionCaughtAndWriterIsClosed() throws Exception {
         try (CSVWriterThrowExceptionStub csvWriterThrowsException = spy(new CSVWriterThrowExceptionStub(writer))) {
             when(writerWrapper.getCsvWriter(any())).thenReturn(csvWriterThrowsException);
 
-            assertThrows(RuntimeException.class, () -> underTest.writeBeansWithWriter(writer, Collections.singletonList(TEST_OUTPUT_DATA)));
+            assertThrows(RuntimeException.class, () -> underTest.writeBeansWithWriter(writer, List.of(TEST_OUTPUT_DATA)));
 
             verify(csvWriterThrowsException, times(1)).close();
         }
     }
 
     @Test
-    public void givenExceptionOnWrite_whenWriteBeanToCsv_thenExceptionCaughtAndWriterIsClosed() throws Exception {
+    void givenExceptionOnWrite_whenWriteBeanToCsv_thenExceptionCaughtAndWriterIsClosed() throws Exception {
         try (CSVWriterThrowExceptionStub csvWriterThrowsException = spy(new CSVWriterThrowExceptionStub(writer))) {
             when(writerWrapper.getCsvWriter(any())).thenReturn(csvWriterThrowsException);
 
-            assertThrows(RuntimeException.class, () -> underTest.writeBeansAsCsvFile(uniqueFileName, Collections.singletonList(TEST_OUTPUT_DATA)));
+            assertThrows(RuntimeException.class, () -> underTest.writeBeansAsCsvFile(uniqueFileName, List.of(TEST_OUTPUT_DATA)));
 
             verify(csvWriterThrowsException, times(1)).close();
         }
     }
 
     @Test
-    public void givenValidFilePathAndBeans_whenWriteBeanToCsv_thenCsvFileIsCreated() throws Exception {
+    void givenValidFilePathAndBeans_whenWriteBeanToCsv_thenCsvFileIsCreated() throws Exception {
         when(writerWrapper.getCsvWriter(any())).thenCallRealMethod();
         when(writerWrapper.getBufferedWriter(any(Path.class))).thenCallRealMethod();
 
@@ -190,11 +190,11 @@ class NotifyCsvWriterComponentImplTest {
     }
 
     @Test
-    public void givenInvalidFilePath_whenWriteBeanToCsv_thenParserExceptionIsThrown() throws Exception {
+    void givenInvalidFilePath_whenWriteBeanToCsv_thenParserExceptionIsThrown() throws Exception {
         when(writerWrapper.getCsvWriter(any())).thenCallRealMethod();
         when(writerWrapper.getBufferedWriter(any(Path.class))).thenCallRealMethod();
 
-        assertThrows(ParserException.class, () -> underTest.writeBeansAsCsvFile("/", Collections.emptyList()));
+        assertThrows(ParserException.class, () -> underTest.writeBeansAsCsvFile("/", List.of()));
     }
 
     private String wrapStringInQuotes(String inputString) {

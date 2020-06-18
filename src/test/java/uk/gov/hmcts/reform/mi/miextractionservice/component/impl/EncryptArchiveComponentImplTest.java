@@ -13,6 +13,7 @@ import uk.gov.hmcts.reform.mi.miextractionservice.exception.ArchiveException;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -82,7 +83,7 @@ class EncryptArchiveComponentImplTest {
 
     @Test
     void givenNoFilesToZip_whenCreateEncryptedArchive_thenThrowArchiveException() {
-        assertThrows(ArchiveException.class, () -> underTest.createArchive(Collections.emptyList(), uniqueZipName),
+        assertThrows(ArchiveException.class, () -> underTest.createArchive(List.of(), uniqueZipName),
             "Expected exception was not thrown for missing files.");
     }
 
@@ -90,7 +91,7 @@ class EncryptArchiveComponentImplTest {
     void givenPasswordNotSet_whenCreateEncryptedArchive_thenThrowArchiveException() {
         ReflectionTestUtils.setField(underTest, "archivePassword", null);
 
-        assertThrows(ArchiveException.class, () -> underTest.createArchive(Collections.singletonList("/"), uniqueZipName),
+        assertThrows(ArchiveException.class, () -> underTest.createArchive(List.of("/"), uniqueZipName),
             "Expected exception was not thrown for no password.");
     }
 }

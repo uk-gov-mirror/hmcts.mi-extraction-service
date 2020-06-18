@@ -24,7 +24,7 @@ class BlobDownloadComponentImplTest {
     private BlobServiceClient blobServiceClient;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         underTest = new BlobDownloadComponentImpl();
 
         blobServiceClient = mock(BlobServiceClient.class);
@@ -32,7 +32,7 @@ class BlobDownloadComponentImplTest {
 
     @SuppressWarnings({"PMD.CloseResource","PMD.JUnitAssertionsShouldIncludeMessage"})
     @Test
-    public void givenBlobServiceClientAndContainerNameAndBlobName_whenOpenBlobInputStream_thenReturnInputStream() {
+    void givenBlobServiceClientAndContainerNameAndBlobName_whenOpenBlobInputStream_thenReturnInputStream() {
         BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
         when(blobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)).thenReturn(blobContainerClient);
 

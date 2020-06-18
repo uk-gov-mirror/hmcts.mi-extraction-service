@@ -24,7 +24,7 @@ class NotifyParserComponentImplTest {
     private NotifyParserComponentImpl underTest;
 
     @Test
-    public void givenNotificationOutputJsonString_whenParseData_thenReturnNotificationOutputObject() {
+    void givenNotificationOutputJsonString_whenParseData_thenReturnNotificationOutputObject() {
         NotificationOutput expected = NotificationOutput.builder()
             .extractionDate("19700101-1000")
             .createdAt("2000-01-01")
@@ -36,7 +36,7 @@ class NotifyParserComponentImplTest {
     }
 
     @Test
-    public void givenNotificationOutputJsonString_whenParseData_thenThrowParserException() {
+    void givenNotificationOutputJsonString_whenParseData_thenThrowParserException() {
         assertThrows(ParserException.class, () -> underTest.parse("InvalidJsonString"));
     }
 }

@@ -16,6 +16,7 @@ import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -80,7 +81,7 @@ class CoreCaseDataJsonlWriterComponentImplTest {
     void givenExceptionOnClose_whenWriteBeans_thenThrowParserException() throws Exception {
         doThrow(new IOException("Broken close")).when(writer).write(anyString());
 
-        assertThrows(ParserException.class, () -> underTest.writeLinesAsJsonl(writer, Collections.singletonList(TEST_OUTPUT_DATA)));
+        assertThrows(ParserException.class, () -> underTest.writeLinesAsJsonl(writer, List.of(TEST_OUTPUT_DATA)));
 
         verify(writer, never()).flush();
     }

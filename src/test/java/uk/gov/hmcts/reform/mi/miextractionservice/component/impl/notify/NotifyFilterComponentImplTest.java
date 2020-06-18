@@ -19,6 +19,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("PMD.JUnitAssertionsShouldIncludeMessage") // PMD somehow not recognising junit assertion messages.
 @ExtendWith(SpringExtension.class)
 class NotifyFilterComponentImplTest {
 
@@ -42,7 +43,6 @@ class NotifyFilterComponentImplTest {
     @InjectMocks
     private NotifyFilterComponentImpl underTest;
 
-    @SuppressWarnings("PMD.JUnitAssertionsShouldIncludeMessage")
     @Test
     void givenRangeOfDates_whenFilterByDate_thenReturnDataOnlyWithinDates() {
         ReflectionTestUtils.setField(underTest, FILTER_KEY, DEFAULT_FILTER_VALUE);
@@ -60,7 +60,6 @@ class NotifyFilterComponentImplTest {
             "Date filter did not work as expected.");
     }
 
-    @SuppressWarnings("PMD.JUnitAssertionsShouldIncludeMessage")
     @Test
     void givenRangeOfDatesWithSameDayDates_whenFilterByDate_thenReturnDataOnlyWithinDates() {
         ReflectionTestUtils.setField(underTest, FILTER_KEY, DEFAULT_FILTER_VALUE);
@@ -84,7 +83,18 @@ class NotifyFilterComponentImplTest {
             "Date filter with on same day date did not work as expected.");
     }
 
-    @SuppressWarnings("PMD.JUnitAssertionsShouldIncludeMessage")
+    @Test
+    void givenNullNotificationOutputOnDataParse_whenFilterByDate_thenReturnNothing() {
+        ReflectionTestUtils.setField(underTest, FILTER_KEY, DEFAULT_FILTER_VALUE);
+
+        when(dataParserComponent.parse(NOTIFY_JSON)).thenReturn(null);
+
+        List<String> inputData = Collections.singletonList(NOTIFY_JSON);
+
+        assertEquals(Collections.emptyList(), underTest.filterDataInDateRange(inputData, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME),
+            "Date filter did not work as expected.");
+    }
+
     @Test
     void givenSpecificService_whenFilter_thenReturnDataOnlyWithCaseType() {
         ReflectionTestUtils.setField(underTest, FILTER_KEY, "NEWCASETYPE");

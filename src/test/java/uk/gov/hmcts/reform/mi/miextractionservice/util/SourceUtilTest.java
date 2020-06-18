@@ -10,7 +10,7 @@ import uk.gov.hmcts.reform.mi.miextractionservice.domain.SourceEnum;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(SpringExtension.class)
-public class SourceUtilTest {
+class SourceUtilTest {
 
     private SourceUtil underTest;
 

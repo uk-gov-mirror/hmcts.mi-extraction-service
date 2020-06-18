@@ -124,7 +124,7 @@ class ExportBlobDataComponentImplTest {
     private WriteDataComponent writeDataComponent;
 
     @BeforeEach
-    public void setUp() throws IOException {
+    void setUp() throws IOException {
         sourceBlobServiceClient = mock(BlobServiceClient.class);
         targetBlobServiceClient = mock(BlobServiceClient.class);
 
@@ -141,7 +141,7 @@ class ExportBlobDataComponentImplTest {
     }
 
     @Test
-    public void givenBlobServiceClientsAndDatesToExtract_whenExportBlobDataAndGetUrl_thenReturnUrlOfUploadedExtractedDataBlob() throws Exception {
+    void givenBlobServiceClientsAndDatesToExtract_whenExportBlobDataAndGetUrl_thenReturnUrlOfUploadedExtractedDataBlob() throws Exception {
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
         BlobContainerItem notCcdBlobContainerItem = mock(BlobContainerItem.class);
 
@@ -204,23 +204,18 @@ class ExportBlobDataComponentImplTest {
     }
 
     @Test
-    public void givenDataOverMaxLines_whenExportBlobDataAndGetUrl_thenReturnUrlOfUploadedExtractedDataBlob() throws Exception {
+    void givenDataOverMaxLines_whenExportBlobDataAndGetUrl_thenReturnUrlOfUploadedExtractedDataBlob() throws Exception {
         ReflectionTestUtils.setField(underTest, MAX_LINES_FIELD_PROPERTY, "1");
 
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
-
         when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
-
         when(blobContainerItem.getName()).thenReturn(TEST_CONTAINER_NAME);
 
         BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
-
         when(sourceBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)).thenReturn(blobContainerClient);
 
         BlobItem blobItemOne = mock(BlobItem.class);
-
         when(blobContainerClient.listBlobs()).thenReturn(new PagedIterableStub<>(blobItemOne));
-
         when(blobItemOne.getName()).thenReturn(TEST_BLOB_NAME_ONE);
 
         String multiLineData = TEST_CCD_JSONL + "\n" + TEST_CCD_JSONL + "\n" + TEST_CCD_JSONL;
@@ -264,20 +259,16 @@ class ExportBlobDataComponentImplTest {
     }
 
     @Test
-    public void givenNoDataWithLatestDate_whenExportBlobDataAndGetUrl_thenReturnUrlOfUploadedExtractedDataBlob() throws Exception {
+    void givenNoDataWithLatestDate_whenExportBlobDataAndGetUrl_thenReturnUrlOfUploadedExtractedDataBlob() throws Exception {
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
-
         when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
-
         when(blobContainerItem.getName()).thenReturn(TEST_CONTAINER_NAME);
 
         BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
-
         when(sourceBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)).thenReturn(blobContainerClient);
 
         BlobItem blobItemOne = mock(BlobItem.class);
         BlobItem blobItemTwo = mock(BlobItem.class);
-
         when(blobContainerClient.listBlobs()).thenReturn(new PagedIterableStub<>(blobItemOne, blobItemTwo));
 
         when(blobItemOne.getName()).thenReturn(TEST_BLOB_NAME_ONE);
@@ -323,23 +314,18 @@ class ExportBlobDataComponentImplTest {
     }
 
     @Test
-    public void givenDatesToExtractWithNoExistingContainer_whenExportBlobDataAndGetUrl_thenCreateContainerAndReturnUrlOfUploadedExtractedDataBlob()
+    void givenDatesToExtractWithNoExistingContainer_whenExportBlobDataAndGetUrl_thenCreateContainerAndReturnUrlOfUploadedExtractedDataBlob()
         throws Exception {
 
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
-
         when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
-
         when(blobContainerItem.getName()).thenReturn(TEST_CONTAINER_NAME);
 
         BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
-
         when(sourceBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)).thenReturn(blobContainerClient);
 
         BlobItem blobItem = mock(BlobItem.class);
-
         when(blobContainerClient.listBlobs()).thenReturn(new PagedIterableStub<>(blobItem));
-
         when(blobItem.getName()).thenReturn(TEST_BLOB_NAME_ONE);
 
         when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
@@ -374,26 +360,21 @@ class ExportBlobDataComponentImplTest {
     }
 
     @Test
-    public void givenSameFromDate_whenExportBlobDataAndGetUrl_thenCreateContainerAndReturnUrlOfUploadedExtractedDataBlob() throws Exception {
+    void givenSameFromDate_whenExportBlobDataAndGetUrl_thenCreateContainerAndReturnUrlOfUploadedExtractedDataBlob() throws Exception {
         final OffsetDateTime fromDateSameAsEventDate = OffsetDateTime.of(2000, 01, 29, 0, 0, 0, 0, ZoneOffset.UTC);
         final String datePrefix = "2000-01-29-2001-01-01-";
         final String workingFileName = datePrefix + CCD_WORKING_FILE_NAME;
         final String outputName = datePrefix + CCD_WORKING_ARCHIVE;
 
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
-
         when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
-
         when(blobContainerItem.getName()).thenReturn(TEST_CONTAINER_NAME);
 
         BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
-
         when(sourceBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)).thenReturn(blobContainerClient);
 
         BlobItem blobItem = mock(BlobItem.class);
-
         when(blobContainerClient.listBlobs()).thenReturn(new PagedIterableStub<>(blobItem));
-
         when(blobItem.getName()).thenReturn(TEST_BLOB_NAME_ONE);
 
         when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
@@ -429,26 +410,21 @@ class ExportBlobDataComponentImplTest {
     }
 
     @Test
-    public void givenSameToDate_whenExportBlobDataAndGetUrl_thenCreateContainerAndReturnUrlOfUploadedExtractedDataBlob() throws Exception {
+    void givenSameToDate_whenExportBlobDataAndGetUrl_thenCreateContainerAndReturnUrlOfUploadedExtractedDataBlob() throws Exception {
         final OffsetDateTime toDateSameAsEventDate = OffsetDateTime.of(2000, 01, 29, 0, 0, 0, 0, ZoneOffset.UTC);
         final String datePrefix = "1999-12-01-2000-01-29-";
         final String workingFileName = datePrefix + CCD_WORKING_FILE_NAME;
         final String outputName = datePrefix + CCD_WORKING_ARCHIVE;
 
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
-
         when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
-
         when(blobContainerItem.getName()).thenReturn(TEST_CONTAINER_NAME);
 
         BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
-
         when(sourceBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)).thenReturn(blobContainerClient);
 
         BlobItem blobItem = mock(BlobItem.class);
-
         when(blobContainerClient.listBlobs()).thenReturn(new PagedIterableStub<>(blobItem));
-
         when(blobItem.getName()).thenReturn(TEST_BLOB_NAME_ONE);
 
         when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
@@ -484,15 +460,12 @@ class ExportBlobDataComponentImplTest {
     }
 
     @Test
-    public void givenNoWhitelistedContainers_whenExportData_thenReturnNullForBlobName() {
+    void givenNoWhitelistedContainers_whenExportData_thenReturnNullForBlobName() {
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
-
         when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
-
         when(blobContainerItem.getName()).thenReturn(TEST_CONTAINER_NAME);
 
         BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
-
         when(sourceBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)).thenReturn(blobContainerClient);
 
         when(checkWhitelistComponent.isContainerWhitelisted(TEST_CONTAINER_NAME)).thenReturn(false);
@@ -508,7 +481,7 @@ class ExportBlobDataComponentImplTest {
     }
 
     @Test
-    public void givenNoDataToOutput_whenExportBlobData_thenReturnNullForBlobName() {
+    void givenNoDataToOutput_whenExportBlobData_thenReturnNullForBlobName() {
         when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>());
 
         assertEquals(
@@ -522,21 +495,16 @@ class ExportBlobDataComponentImplTest {
     }
 
     @Test
-    public void givenNoDataAtAllInRetrievedBlobs_whenExportBlobDataAndGetUrl_thenReturnNullForBlobName() throws Exception {
+    void givenNoDataAtAllInRetrievedBlobs_whenExportBlobDataAndGetUrl_thenReturnNullForBlobName() throws Exception {
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
-
         when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
-
         when(blobContainerItem.getName()).thenReturn(TEST_CONTAINER_NAME);
 
         BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
-
         when(sourceBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)).thenReturn(blobContainerClient);
 
         BlobItem blobItemOne = mock(BlobItem.class);
-
         when(blobContainerClient.listBlobs()).thenReturn(new PagedIterableStub<>(blobItemOne));
-
         when(blobItemOne.getName()).thenReturn(TEST_BLOB_NAME_ONE);
 
         when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
@@ -555,21 +523,16 @@ class ExportBlobDataComponentImplTest {
     }
 
     @Test
-    public void givenBufferedWriterWithException_whenExportBlobData_thenVerifyWriterIsClosed() throws Exception {
+    void givenBufferedWriterWithException_whenExportBlobData_thenVerifyWriterIsClosed() throws Exception {
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
-
         when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
-
         when(blobContainerItem.getName()).thenReturn(TEST_CONTAINER_NAME);
 
         BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
-
         when(sourceBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)).thenReturn(blobContainerClient);
 
         BlobItem blobItemOne = mock(BlobItem.class);
-
         when(blobContainerClient.listBlobs()).thenReturn(new PagedIterableStub<>(blobItemOne));
-
         when(blobItemOne.getName()).thenReturn(TEST_BLOB_NAME_ONE);
 
         when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
@@ -594,23 +557,18 @@ class ExportBlobDataComponentImplTest {
     }
 
     @Test
-    public void givenExceptionWhenReadingInputStream_whenExportBlobDataAndGetUrl_throwParserException()
+    void givenExceptionWhenReadingInputStream_whenExportBlobDataAndGetUrl_throwParserException()
         throws Exception {
 
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
-
         when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
-
         when(blobContainerItem.getName()).thenReturn(TEST_CONTAINER_NAME);
 
         BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
-
         when(sourceBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)).thenReturn(blobContainerClient);
 
         BlobItem blobItem = mock(BlobItem.class);
-
         when(blobContainerClient.listBlobs()).thenReturn(new PagedIterableStub<>(blobItem));
-
         when(blobItem.getName()).thenReturn(TEST_BLOB_NAME_ONE);
 
         try (InputStream inputStream = mock(InputStream.class)) {
@@ -633,21 +591,16 @@ class ExportBlobDataComponentImplTest {
     }
 
     @Test
-    public void givenBlobMetadataDoesNotPassFilter_whenExportBlobData_thenReturnNull() {
+    void givenBlobMetadataDoesNotPassFilter_whenExportBlobData_thenReturnNull() {
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
-
         when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
-
         when(blobContainerItem.getName()).thenReturn(TEST_CONTAINER_NAME);
 
         BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
-
         when(sourceBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)).thenReturn(blobContainerClient);
 
         BlobItem blobItemOne = mock(BlobItem.class);
-
         when(blobContainerClient.listBlobs()).thenReturn(new PagedIterableStub<>(blobItemOne));
-
         when(blobItemOne.getName()).thenReturn(TEST_BLOB_NAME_ONE);
         when(blobItemOne.getMetadata()).thenReturn(Collections.emptyMap());
 
@@ -664,23 +617,18 @@ class ExportBlobDataComponentImplTest {
     }
 
     @Test
-    public void givenExtractionWithArchiveDisabled_whenExportBlobDataAndGetUrl_thenReturnUrlOfUploadedExtractedDataBlob() throws Exception {
+    void givenExtractionWithArchiveDisabled_whenExportBlobDataAndGetUrl_thenReturnUrlOfUploadedExtractedDataBlob() throws Exception {
         ReflectionTestUtils.setField(underTest, ARCHIVE_FLAG_PROPERTY, "false");
 
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
-
         when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
-
         when(blobContainerItem.getName()).thenReturn(TEST_CONTAINER_NAME);
 
         BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
-
         when(sourceBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)).thenReturn(blobContainerClient);
 
         BlobItem blobItem = mock(BlobItem.class);
-
         when(blobContainerClient.listBlobs()).thenReturn(new PagedIterableStub<>(blobItem));
-
         when(blobItem.getName()).thenReturn(TEST_BLOB_NAME_ONE);
 
         when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_ONE))
@@ -710,5 +658,27 @@ class ExportBlobDataComponentImplTest {
         verify(targetBlobClient).uploadFromFile(WORKING_FILE_NAME, true);
         verify(fileWrapper, times(1)).deleteFileOnExit(WORKING_FILE_NAME);
         verify(bufferedWriter, times(1)).close();
+    }
+
+    @Test
+    void givenBufferedWriterBreaksOnClose_whenExportBlobs_thenThrowParserException() throws IOException {
+        doThrow(IOException.class).when(bufferedWriter).close();
+
+        BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
+        when(sourceBlobServiceClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
+        when(blobContainerItem.getName()).thenReturn(TEST_CONTAINER_NAME);
+
+        BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
+        when(sourceBlobServiceClient.getBlobContainerClient(TEST_CONTAINER_NAME)).thenReturn(blobContainerClient);
+
+        when(blobContainerClient.listBlobs()).thenReturn(new PagedIterableStub<>());
+
+        assertThrows(ParserException.class, () -> {
+            underTest.exportBlobsAndGetOutputName(
+                sourceBlobServiceClient, targetBlobServiceClient,
+                TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME,
+                CCD_WORKING_FILE_NAME, SourceEnum.CORE_CASE_DATA
+            );
+        });
     }
 }
