@@ -10,17 +10,17 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(SpringExtension.class)
-public class ReaderUtilTest {
+class ReaderUtilTest {
 
     private ReaderUtil underTest;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         underTest = new ReaderUtil();
     }
 
     @Test
-    public void givenMultiLineStringAsBytes_whenParseBytesAsString_returnStringList() {
+    void givenMultiLineStringAsBytes_whenParseBytesAsString_returnStringList() {
         String multiLineString = "This String Has\nA Newline";
 
         List<String> result = underTest.readBytesAsStrings(multiLineString.getBytes());
@@ -30,7 +30,7 @@ public class ReaderUtilTest {
     }
 
     @Test
-    public void givenEmptyString_whenParseBytesAsString_returnEmptyList() {
+    void givenEmptyString_whenParseBytesAsString_returnEmptyList() {
         List<String> result = underTest.readBytesAsStrings("".getBytes());
 
         assertEquals(0, result.size(), "Result size is not correct.");

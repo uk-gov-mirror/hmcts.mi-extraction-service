@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.CustomMatchers.deepRefEq;
 
 @ExtendWith(SpringExtension.class)
-public class GenerateSasBlobUrlComponentImplTest {
+class GenerateSasBlobUrlComponentImplTest {
 
     private static final OffsetDateTime MOCK_CURRENT_DATETIME = OffsetDateTime.MIN;
     private static final long TIME_TO_EXPIRY = 24L;
@@ -44,7 +44,7 @@ public class GenerateSasBlobUrlComponentImplTest {
     private GenerateSasBlobUrlComponentImpl underTest;
 
     @Test
-    public void givenBlobServiceClientAndContainerNameAndBlob_whenGenerateSas_thenReturnAssociatedLink() {
+    void givenBlobServiceClientAndContainerNameAndBlob_whenGenerateSas_thenReturnAssociatedLink() {
         // Given
         BlobServiceClient blobServiceClient = mock(BlobServiceClient.class);
         String containerName = "test-container";
@@ -77,7 +77,7 @@ public class GenerateSasBlobUrlComponentImplTest {
     }
 
     @Test
-    public void givenBlobServiceClientAndContainerNameAndBlobWithIpRange_whenGenerateSas_thenReturnAssociatedLink() {
+    void givenBlobServiceClientAndContainerNameAndBlobWithIpRange_whenGenerateSas_thenReturnAssociatedLink() {
         // Given
         BlobServiceClient blobServiceClient = mock(BlobServiceClient.class);
         String containerName = "test-container";

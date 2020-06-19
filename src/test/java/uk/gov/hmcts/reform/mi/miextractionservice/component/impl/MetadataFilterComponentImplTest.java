@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
-public class MetadataFilterComponentImplTest {
+class MetadataFilterComponentImplTest {
 
     private static final String ASSERTION_MESSAGE = "Metadata filter did not return correct boolean.";
 
@@ -24,36 +24,36 @@ public class MetadataFilterComponentImplTest {
     private MetadataFilterComponentImpl underTest;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         underTest = new MetadataFilterComponentImpl();
 
         ReflectionTestUtils.setField(underTest, FILTER_KEY, CORE_CASE_DATA_VALUE);
     }
 
     @Test
-    public void givenMetadataDataSourceIsDefaultValue_whenFilterBySource_thenReturnTrue() {
+    void givenMetadataDataSourceIsDefaultValue_whenFilterBySource_thenReturnTrue() {
         ReflectionTestUtils.setField(underTest, FILTER_KEY, DEFAULT_FILTER_VALUE);
 
         assertTrue(underTest.filterByMetadata(Collections.singletonMap(METADATA_SOURCE_KEY, CORE_CASE_DATA_VALUE)), ASSERTION_MESSAGE);
     }
 
     @Test
-    public void givenMetadataDataSourceDoesNotMatchFilter_whenFilterBySource_thenReturnFalse() {
+    void givenMetadataDataSourceDoesNotMatchFilter_whenFilterBySource_thenReturnFalse() {
         assertFalse(underTest.filterByMetadata(Collections.singletonMap(METADATA_SOURCE_KEY, "NoSet")), ASSERTION_MESSAGE);
     }
 
     @Test
-    public void givenMetadataDataSourceMatchesFilter_whenFilterBySource_thenReturnTrue() {
+    void givenMetadataDataSourceMatchesFilter_whenFilterBySource_thenReturnTrue() {
         assertTrue(underTest.filterByMetadata(Collections.singletonMap(METADATA_SOURCE_KEY, CORE_CASE_DATA_VALUE)), ASSERTION_MESSAGE);
     }
 
     @Test
-    public void givenMetadataDataSourceIsMissing_whenFilterBySource_thenReturnFalse() {
+    void givenMetadataDataSourceIsMissing_whenFilterBySource_thenReturnFalse() {
         assertFalse(underTest.filterByMetadata(Collections.singletonMap("Key", CORE_CASE_DATA_VALUE)), ASSERTION_MESSAGE);
     }
 
     @Test
-    public void givenMetadataIsNull_whenFilterBySource_thenReturnFalse() {
+    void givenMetadataIsNull_whenFilterBySource_thenReturnFalse() {
         assertFalse(underTest.filterByMetadata(null), ASSERTION_MESSAGE);
     }
 }

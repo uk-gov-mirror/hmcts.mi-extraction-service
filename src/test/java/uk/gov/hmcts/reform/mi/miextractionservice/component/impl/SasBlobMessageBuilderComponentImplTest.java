@@ -21,7 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
-public class SasBlobMessageBuilderComponentImplTest {
+class SasBlobMessageBuilderComponentImplTest {
 
     private static final String TEST_CONTAINER_NAME = "testContainerName";
     private static final String TEST_BLOB_NAME = "testBlobName";
@@ -39,7 +39,7 @@ public class SasBlobMessageBuilderComponentImplTest {
     private SasBlobMessageBuilderComponentImpl underTest;
 
     @Test
-    public void givenNoWhitelistedIps_whenBuildMessage_thenReturnMessageWithUrl() {
+    void givenNoWhitelistedIps_whenBuildMessage_thenReturnMessageWithUrl() {
         ReflectionTestUtils.setField(underTest, ENCRYPTION_ENABLED_KEY, "true");
 
         when(sasIpWhitelist.getRange()).thenReturn(Collections.emptyMap());
@@ -54,7 +54,7 @@ public class SasBlobMessageBuilderComponentImplTest {
     }
 
     @Test
-    public void givenListOfWhitelistedIps_whenBuildMessage_thenReturnMessageWitMultipleBlobUrls() {
+    void givenListOfWhitelistedIps_whenBuildMessage_thenReturnMessageWitMultipleBlobUrls() {
         ReflectionTestUtils.setField(underTest, ENCRYPTION_ENABLED_KEY, "true");
 
         String homeOffice = "home.office";
@@ -88,7 +88,7 @@ public class SasBlobMessageBuilderComponentImplTest {
     }
 
     @Test
-    public void givenNoEncryptionSet_whenBuildMessage_thenThrowExportException() {
+    void givenNoEncryptionSet_whenBuildMessage_thenThrowExportException() {
         ReflectionTestUtils.setField(underTest, ENCRYPTION_ENABLED_KEY, "false");
 
         assertThrows(ExportException.class, () -> underTest.buildMessage(mock(BlobServiceClient.class), TEST_CONTAINER_NAME, TEST_BLOB_NAME));

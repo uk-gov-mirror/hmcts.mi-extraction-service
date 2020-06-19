@@ -16,6 +16,7 @@ import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -36,7 +37,7 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConsta
 import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_EXTRACTION_DATE;
 
 @ExtendWith(SpringExtension.class)
-public class CoreCaseDataJsonlWriterComponentImplTest {
+class CoreCaseDataJsonlWriterComponentImplTest {
 
     private static final OutputCoreCaseData TEST_OUTPUT_DATA = OutputCoreCaseData
         .builder()
@@ -49,6 +50,7 @@ public class CoreCaseDataJsonlWriterComponentImplTest {
         .ce_state_id(TEST_CASE_STATE_ID)
         .data(TEST_DATA_JSON_STRING)
         .build();
+    private static final List<OutputCoreCaseData> TEST_OUTPUT_LIST = Collections.singletonList(TEST_OUTPUT_DATA);
 
     @Spy
     private ObjectMapper objectMapper;
@@ -59,28 +61,28 @@ public class CoreCaseDataJsonlWriterComponentImplTest {
     private Writer writer;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         writer = mock(Writer.class);
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    void tearDown() throws Exception {
         writer.close();
     }
 
     @Test
-    public void givenValidWriter_whenWriteBeans_thenLinesAreWritten() throws Exception {
-        underTest.writeLinesAsJsonl(writer, Collections.singletonList(TEST_OUTPUT_DATA));
+    void givenValidWriter_whenWriteBeans_thenLinesAreWritten() throws Exception {
+        underTest.writeLinesAsJsonl(writer, TEST_OUTPUT_LIST);
 
         verify(writer, times(1)).write(getExpectedDataString());
         verify(writer, times(1)).write(NEWLINE_DELIMITER);
     }
 
     @Test
-    public void givenExceptionOnClose_whenWriteBeans_thenThrowParserException() throws Exception {
+    void givenExceptionOnClose_whenWriteBeans_thenThrowParserException() throws Exception {
         doThrow(new IOException("Broken close")).when(writer).write(anyString());
 
-        assertThrows(ParserException.class, () -> underTest.writeLinesAsJsonl(writer, Collections.singletonList(TEST_OUTPUT_DATA)));
+        assertThrows(ParserException.class, () -> underTest.writeLinesAsJsonl(writer, TEST_OUTPUT_LIST));
 
         verify(writer, never()).flush();
     }

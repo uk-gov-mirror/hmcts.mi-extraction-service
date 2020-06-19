@@ -12,10 +12,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(SpringExtension.class)
-public class CsvWriterKeepAliveTest {
+class CsvWriterKeepAliveTest {
 
     @Test
-    public void closingCsvWriterDoesNotCloseInputWriter() throws Exception {
+    void closingCsvWriterDoesNotCloseInputWriter() throws Exception {
         try (Writer writer = mock(Writer.class); CSVWriterKeepAlive underTest = new CSVWriterKeepAlive(writer)) {
             underTest.close();
 

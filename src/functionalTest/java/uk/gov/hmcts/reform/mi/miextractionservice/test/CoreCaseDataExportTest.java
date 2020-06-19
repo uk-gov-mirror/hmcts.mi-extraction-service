@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -37,10 +38,11 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_EXPORT_BLOB;
 
 @SuppressWarnings({"unchecked","PMD.AvoidUsingHardCodedIP","PMD.ExcessiveImports"})
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 @SpringBootTest(classes = TestConfig.class)
 public class CoreCaseDataExportTest {
 
-    private static final String AZURITE_IMAGE = String.format("%s/mi-azurite", System.getenv("AZURE_CONTAINER_REGISTRY"));
+    private static final String AZURITE_IMAGE = "mcr.microsoft.com/azure-storage/azurite";
 
     private static final Integer DEFAULT_PORT = 10_000;
 
@@ -95,6 +97,8 @@ public class CoreCaseDataExportTest {
         exportBlobServiceClient = blobServiceClientFactory
             .getBlobClientWithConnectionString(String.format(DEFAULT_CONN_STRING, DEFAULT_HOST, exportPort));
 
+        ReflectionTestUtils.setField(underTest, "dataSource", "CoreCaseData");
+        ReflectionTestUtils.setField(extractionBlobServiceClientFactory, "clientId", null);
         ReflectionTestUtils.setField(extractionBlobServiceClientFactory,
             "stagingConnString", String.format(DEFAULT_CONN_STRING, DEFAULT_HOST, stagingPort));
         ReflectionTestUtils.setField(extractionBlobServiceClientFactory,

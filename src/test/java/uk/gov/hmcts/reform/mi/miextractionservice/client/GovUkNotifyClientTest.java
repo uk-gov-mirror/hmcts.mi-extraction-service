@@ -7,10 +7,10 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(SpringExtension.class)
-public class GovUkNotifyClientTest {
+class GovUkNotifyClientTest {
 
     @Test
-    public void givenApiKey_whenSetupClient_thenReturnClientWithApiKey() {
+    void givenApiKey_whenSetupClient_thenReturnClientWithApiKey() {
         String testApiKey = "testApiKey";
 
         GovUkNotifyClient underTest = new GovUkNotifyClient(testApiKey);

@@ -25,7 +25,7 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServ
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.TIME_TO_EXPIRY;
 
 @ExtendWith(SpringExtension.class)
-public class SendBlobUrlNotifyEmailComponentImplTest {
+class SendBlobUrlNotifyEmailComponentImplTest {
 
     private static final String TEST_EMAIL = "testEmail@test";
     private static final String TEST_CONTENT = "Test content with blob url https://hello.world";
@@ -38,7 +38,7 @@ public class SendBlobUrlNotifyEmailComponentImplTest {
     private SendBlobUrlNotifyEmailComponentImpl underTest;
 
     @Test
-    public void givenEmailAndContent_whenSendEmailViaNotify_thenCallToClientShouldBeMade() throws Exception {
+    void givenEmailAndContent_whenSendEmailViaNotify_thenCallToClientShouldBeMade() throws Exception {
         ReflectionTestUtils.setField(underTest, "blobUrlTemplateId", BLOB_URL_TEMPLATE_ID);
 
         underTest.sendEmail(TEST_EMAIL, "NotRequired", TEST_CONTENT);
@@ -51,7 +51,7 @@ public class SendBlobUrlNotifyEmailComponentImplTest {
     }
 
     @Test
-    public void givenErrorInNotifyClient_whenSendEmailViaNotify_thenThrowExportException() throws Exception {
+    void givenErrorInNotifyClient_whenSendEmailViaNotify_thenThrowExportException() throws Exception {
         doThrow(new NotificationClientException("Error")).when(govUkNotifyClient).sendEmail(any(), any(), any(), any());
 
         assertThrows(ExportException.class, () -> underTest.sendEmail(TEST_EMAIL, "NotRequired", TEST_CONTENT));

@@ -1,4 +1,4 @@
-package uk.gov.hmcts.reform.mi.miextractionservice.component.impl.corecasedata;
+package uk.gov.hmcts.reform.mi.miextractionservice.component.impl;
 
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
@@ -7,22 +7,19 @@ import com.azure.storage.blob.models.BlobItem;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import uk.gov.hmcts.reform.mi.micore.model.CoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ArchiveComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobDownloadComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.CheckWhitelistComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.component.CoreCaseDataFormatterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.component.FilterComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.component.JsonlWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.MetadataFilterComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
+import uk.gov.hmcts.reform.mi.miextractionservice.domain.SourceEnum;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ParserException;
+import uk.gov.hmcts.reform.mi.miextractionservice.factory.WriteDataFactory;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
+import uk.gov.hmcts.reform.mi.miextractionservice.util.SourceUtil;
 import uk.gov.hmcts.reform.mi.miextractionservice.wrapper.FileWrapper;
 import uk.gov.hmcts.reform.mi.miextractionservice.wrapper.WriterWrapper;
 
@@ -36,18 +33,13 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_DATA_CONTAINER_PREFIX;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_OUTPUT_CONTAINER_NAME;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_WORKING_ARCHIVE;
-import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_WORKING_FILE_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.DOT_DELIMITER;
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NAME_DELIMITER;
 
 @Slf4j
 @Component
-@Qualifier("ccd")
-public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataComponent {
+public class ExportBlobDataComponentImpl implements ExportBlobDataComponent {
 
     @Value("${max-lines-buffer}")
     private String maxLines;
@@ -71,13 +63,7 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
     private BlobDownloadComponent blobDownloadComponent;
 
     @Autowired
-    private FilterComponent<CoreCaseData> filterComponent;
-
-    @Autowired
-    private CoreCaseDataFormatterComponent<OutputCoreCaseData> coreCaseDataFormatterComponent;
-
-    @Autowired
-    private JsonlWriterComponent<OutputCoreCaseData> jsonlWriterComponent;
+    private WriteDataFactory writeDataFactory;
 
     @Autowired
     private ArchiveComponent archiveComponent;
@@ -85,13 +71,17 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
     @Autowired
     private DateTimeUtil dateTimeUtil;
 
+    @Autowired
+    private SourceUtil sourceUtil;
+
     /**
-     * Exports data matching date range provided as a CSV, compressed in an encrypted archive for ease of upload and download and security.
+     * Exports data matching date range provided as a JsonL, compressed in an encrypted archive for ease of upload and download and security.
      *
      * @param sourceBlobServiceClient the blob service client of the source storage account.
      * @param targetBlobServiceClient the blob service client of the target storage account.
      * @param fromDate the first date in yyyy-MM-dd format to pull data for.
      * @param toDate the last date in yyyy-MM-dd format to pull data for.
+     * @param fileName the fileName of the output.
      * @return String name of the generated archive stored as a blob on the storage account.
      */
     @SuppressWarnings("PMD.LawOfDemeter")
@@ -99,19 +89,23 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
     public String exportBlobsAndGetOutputName(BlobServiceClient sourceBlobServiceClient,
                                               BlobServiceClient targetBlobServiceClient,
                                               OffsetDateTime fromDate,
-                                              OffsetDateTime toDate) {
+                                              OffsetDateTime toDate,
+                                              String fileName,
+                                              SourceEnum source) {
 
         String outputDatePrefix = fromDate.format(dateTimeUtil.getDateFormat())
             + NAME_DELIMITER
             + toDate.format(dateTimeUtil.getDateFormat())
             + NAME_DELIMITER;
 
-        String workingFileName = outputDatePrefix + CCD_WORKING_FILE_NAME;
+        String workingFileName = outputDatePrefix + fileName;
 
-        boolean dataFound = readAndWriteData(sourceBlobServiceClient, fromDate, toDate, workingFileName);
+        int dataCount = readAndWriteData(sourceBlobServiceClient, fromDate, toDate, workingFileName, source);
 
-        if (dataFound) {
-            BlobContainerClient blobContainerClient = targetBlobServiceClient.getBlobContainerClient(CCD_OUTPUT_CONTAINER_NAME);
+        if (dataCount > 0) {
+            log.info("Found a total of {} records to write for Notify. About to upload blob.", dataCount);
+
+            BlobContainerClient blobContainerClient = targetBlobServiceClient.getBlobContainerClient(sourceUtil.getContainerName(source));
 
             if (!blobContainerClient.exists()) {
                 blobContainerClient.create();
@@ -120,15 +114,20 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
             String outputBlobName = workingFileName;
 
             if (Boolean.TRUE.equals(Boolean.parseBoolean(archiveFlag))) {
-                outputBlobName = outputDatePrefix + CCD_WORKING_ARCHIVE;
+                String fileExtension = fileName.substring(fileName.lastIndexOf(DOT_DELIMITER));
+                String archiveName = fileName.replace(fileExtension, ".zip");
+
+                outputBlobName = outputDatePrefix + archiveName;
 
                 archiveComponent.createArchive(Collections.singletonList(workingFileName), outputBlobName);
+
+                fileWrapper.deleteFileOnExit(workingFileName);
             }
 
             blobContainerClient.getBlobClient(outputBlobName).uploadFromFile(outputBlobName, true);
 
-            // Clean up files after upload
-            fileWrapper.deleteFileOnExit(workingFileName);
+            log.info("Uploaded blob {} for {}}.", outputBlobName, source.getValue());
+
             fileWrapper.deleteFileOnExit(outputBlobName);
 
             return outputBlobName;
@@ -138,11 +137,12 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
         return null;
     }
 
-    private boolean readAndWriteData(BlobServiceClient sourceBlobServiceClient,
+    private int readAndWriteData(BlobServiceClient sourceBlobServiceClient,
                                      OffsetDateTime fromDate,
                                      OffsetDateTime toDate,
-                                     String workingFileName) {
-        boolean dataFound = false;
+                                     String workingFileName,
+                                     SourceEnum source) {
+        int dataCount = 0;
 
         List<String> blobNameIndexes = dateTimeUtil.getListOfYearsAndMonthsBetweenDates(fromDate, toDate);
 
@@ -151,7 +151,7 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
             for (BlobContainerItem blobContainerItem : sourceBlobServiceClient.listBlobContainers()) {
 
                 if (checkWhitelistComponent.isContainerWhitelisted(blobContainerItem.getName())
-                    && blobContainerItem.getName().startsWith(CCD_DATA_CONTAINER_PREFIX)) {
+                    && blobContainerItem.getName().startsWith(sourceUtil.getContainerName(source))) {
 
                     BlobContainerClient blobContainerClient = sourceBlobServiceClient.getBlobContainerClient(blobContainerItem.getName());
 
@@ -159,15 +159,20 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
                         if (blobNameIndexes.parallelStream().anyMatch(blobItem.getName()::contains)
                             && metadataFilterComponent.filterByMetadata(blobItem.getMetadata())) {
 
-                            // Once dataFound is true, stays true for the rest of the run.
-                            dataFound = parseAndWriteData(
+                            log.info("Container {} with Blob {} meets {} source criteria. Parsing for data.",
+                                blobContainerItem.getName(), blobItem.getName(), source.getValue());
+
+                            int addedRecordsCount = parseAndWriteData(
                                 bufferedWriter,
                                 sourceBlobServiceClient,
                                 blobContainerItem.getName(),
                                 blobItem.getName(),
                                 fromDate,
-                                toDate
-                            ) || dataFound;
+                                toDate,
+                                source
+                            );
+
+                            dataCount = dataCount + addedRecordsCount;
                         }
                     }
                 }
@@ -177,18 +182,19 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
             throw new ParserException("Unable create file for writing.", exception);
         }
 
-        return dataFound;
+        return dataCount;
     }
 
     @SuppressWarnings("PMD.LawOfDemeter")
-    private boolean parseAndWriteData(BufferedWriter bufferedWriter,
+    private int parseAndWriteData(BufferedWriter bufferedWriter,
                                       BlobServiceClient sourceBlobServiceClient,
                                       String blobContainerName,
                                       String blobName,
                                       OffsetDateTime fromDate,
-                                      OffsetDateTime toDate) {
+                                      OffsetDateTime toDate,
+                                      SourceEnum source) {
 
-        boolean dataFound = false;
+        int dataCount = 0;
 
         try (InputStream inputStream = blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, blobContainerName, blobName);
              BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
@@ -200,11 +206,11 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
             while (line != null) {
                 if (StringUtils.isNotBlank(line)) {
                     outputLines.add(line);
-                    dataFound = true;
+                    dataCount = dataCount + 1;
 
                     // Reached max buffer, so write to file chunk and clear
                     if (outputLines.size() >= Integer.parseInt(maxLines)) {
-                        writeData(bufferedWriter, outputLines, fromDate, toDate);
+                        writeData(bufferedWriter, outputLines, fromDate, toDate, source);
                         outputLines.clear();
                     }
                 }
@@ -213,22 +219,17 @@ public class CoreCaseDataExportBlobDataComponentImpl implements ExportBlobDataCo
             }
 
             if (Boolean.FALSE.equals(outputLines.isEmpty())) {
-                writeData(bufferedWriter, outputLines, fromDate, toDate);
+                writeData(bufferedWriter, outputLines, fromDate, toDate, source);
             }
         } catch (IOException exception) {
             log.error("Exception occurred writing data from blob to file.");
             throw new ParserException("Unable to parse or write data to file.", exception);
         }
 
-        return dataFound;
+        return dataCount;
     }
 
-    private void writeData(BufferedWriter writer, List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate) {
-        List<CoreCaseData> filteredData = filterComponent.filterDataInDateRange(data, fromDate, toDate);
-        List<OutputCoreCaseData> formattedData = filteredData.stream()
-            .map(coreCaseDataFormatterComponent::formatData)
-            .collect(Collectors.toList());
-
-        jsonlWriterComponent.writeLinesAsJsonl(writer, formattedData);
+    private void writeData(BufferedWriter writer, List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate, SourceEnum source) {
+        writeDataFactory.getWriteComponent(source).writeData(writer, data, fromDate, toDate);
     }
 }

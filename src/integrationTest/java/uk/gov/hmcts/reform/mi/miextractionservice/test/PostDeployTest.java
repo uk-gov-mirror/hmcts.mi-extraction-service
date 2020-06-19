@@ -13,6 +13,8 @@ import uk.gov.hmcts.reform.mi.miextractionservice.TestConfig;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.CCD_EXPORT_CONTAINER_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.NOTIFY_EXPORT_CONTAINER_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.NOTIFY_TEST_EXPORT_BLOB;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_EXPORT_BLOB;
 import static uk.gov.hmcts.reform.mi.miextractionservice.util.TestUtils.cleanUpSingleBlob;
 
@@ -37,6 +39,7 @@ public class PostDeployTest {
     @AfterEach
     public void tearDown() throws InterruptedException {
         cleanUpSingleBlob(exportBlobServiceClient, CCD_EXPORT_CONTAINER_NAME, TEST_EXPORT_BLOB);
+        cleanUpSingleBlob(exportBlobServiceClient, NOTIFY_EXPORT_CONTAINER_NAME, NOTIFY_TEST_EXPORT_BLOB);
     }
 
     @Test
@@ -46,5 +49,10 @@ public class PostDeployTest {
             .getBlobContainerClient(CCD_EXPORT_CONTAINER_NAME)
             .getBlobClient(TEST_EXPORT_BLOB)
             .exists(), "Blob was not successfully exported over to export storage.");
+
+        assertTrue(exportBlobServiceClient
+            .getBlobContainerClient(NOTIFY_EXPORT_CONTAINER_NAME)
+            .getBlobClient(NOTIFY_TEST_EXPORT_BLOB)
+            .exists(), "Notify blob was not successfully exported over to export storage.");
     }
 }

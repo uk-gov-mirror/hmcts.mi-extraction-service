@@ -13,6 +13,7 @@ import uk.gov.hmcts.reform.mi.miextractionservice.exception.ArchiveException;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -21,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @ExtendWith(SpringExtension.class)
-public class EncryptArchiveComponentImplTest {
+class EncryptArchiveComponentImplTest {
 
     private static final String TEST_FILE_NAME = "test";
     private static final String TEST_ZIP_NAME = "output";
@@ -34,7 +35,7 @@ public class EncryptArchiveComponentImplTest {
     private EncryptArchiveComponentImpl underTest;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         uniqueFileName = TEST_FILE_NAME + UUID.randomUUID().toString();
         uniqueZipName = TEST_ZIP_NAME + UUID.randomUUID().toString();
 
@@ -44,7 +45,7 @@ public class EncryptArchiveComponentImplTest {
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         File testFile = new File(uniqueFileName);
         File testZip = new File(uniqueZipName);
 
@@ -58,7 +59,7 @@ public class EncryptArchiveComponentImplTest {
     }
 
     @Test
-    public void givenInputFilesAndOutputPath_whenCreateEncryptedArchive_thenCreateZip() throws Exception {
+    void givenInputFilesAndOutputPath_whenCreateEncryptedArchive_thenCreateZip() throws Exception {
         File testFile = new File(uniqueFileName);
         testFile.createNewFile();
 
@@ -81,16 +82,18 @@ public class EncryptArchiveComponentImplTest {
     }
 
     @Test
-    public void givenNoFilesToZip_whenCreateEncryptedArchive_thenThrowArchiveException() {
-        assertThrows(ArchiveException.class, () -> underTest.createArchive(Collections.emptyList(), uniqueZipName),
+    void givenNoFilesToZip_whenCreateEncryptedArchive_thenThrowArchiveException() {
+        List<String> emptyList = Collections.emptyList();
+        assertThrows(ArchiveException.class, () -> underTest.createArchive(emptyList, uniqueZipName),
             "Expected exception was not thrown for missing files.");
     }
 
     @Test
-    public void givenPasswordNotSet_whenCreateEncryptedArchive_thenThrowArchiveException() {
+    void givenPasswordNotSet_whenCreateEncryptedArchive_thenThrowArchiveException() {
         ReflectionTestUtils.setField(underTest, "archivePassword", null);
 
-        assertThrows(ArchiveException.class, () -> underTest.createArchive(Collections.singletonList("/"), uniqueZipName),
+        List<String> testList = Collections.singletonList("/");
+        assertThrows(ArchiveException.class, () -> underTest.createArchive(testList, uniqueZipName),
             "Expected exception was not thrown for no password.");
     }
 }

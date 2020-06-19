@@ -16,7 +16,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(SpringExtension.class)
-public class EmailBlobUrlToTargetsComponentImplTest {
+class EmailBlobUrlToTargetsComponentImplTest {
 
     private static final String TEST_BLOB_URL = "testBlobUrl";
 
@@ -27,7 +27,7 @@ public class EmailBlobUrlToTargetsComponentImplTest {
     private EmailBlobUrlToTargetsComponentImpl underTest;
 
     @Test
-    public void givenUrls_whenEmailBlobUrlToTargets_thenCallEmailMethodForEachRecipient() {
+    void givenUrls_whenEmailBlobUrlToTargets_thenCallEmailMethodForEachRecipient() {
         String targetOne = "targetOne";
         String targetTwo = "targetTwo";
         String targets = targetOne + "," + targetTwo;
@@ -41,7 +41,7 @@ public class EmailBlobUrlToTargetsComponentImplTest {
     }
 
     @Test
-    public void givenNoTargets_whenEmailBlobUrlToTargets_thenDoNothing() {
+    void givenNoTargets_whenEmailBlobUrlToTargets_thenDoNothing() {
         ReflectionTestUtils.setField(underTest, "targets", "");
 
         underTest.sendBlobUrl(TEST_BLOB_URL);

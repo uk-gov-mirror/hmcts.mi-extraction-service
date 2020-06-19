@@ -26,7 +26,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
-public class BlobClientGenerateSasUrlFactoryTest {
+class BlobClientGenerateSasUrlFactoryTest {
 
     private static final OffsetDateTime MOCK_CURRENT_DATETIME = OffsetDateTime.MIN;
     private static final long TIME_TO_EXPIRY = 24L;
@@ -40,7 +40,7 @@ public class BlobClientGenerateSasUrlFactoryTest {
     private BlobClientGenerateSasUrlFactory underTest;
 
     @Test
-    public void givenUsingManagedIdentity_whenGetSasUrl_thenReturnSasUrlWithUserDelegationCall() {
+    void givenUsingManagedIdentity_whenGetSasUrl_thenReturnSasUrlWithUserDelegationCall() {
         ReflectionTestUtils.setField(underTest, "clientId", "existingId");
 
         // Given
@@ -75,7 +75,7 @@ public class BlobClientGenerateSasUrlFactoryTest {
     }
 
     @Test
-    public void givenNotUsingManagedIdentity_whenGetSasUrl_thenReturnSasUrlWithNormalSasCall() {
+    void givenNotUsingManagedIdentity_whenGetSasUrl_thenReturnSasUrlWithNormalSasCall() {
         ReflectionTestUtils.setField(underTest, "clientId", "");
 
         // Given

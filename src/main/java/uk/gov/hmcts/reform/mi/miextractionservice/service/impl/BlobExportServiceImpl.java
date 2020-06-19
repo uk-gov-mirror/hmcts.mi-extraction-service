@@ -2,7 +2,6 @@ package uk.gov.hmcts.reform.mi.miextractionservice.service.impl;
 
 import com.azure.storage.blob.BlobServiceClient;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -10,13 +9,22 @@ import org.springframework.util.StringUtils;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobMessageBuilderComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.EmailBlobUrlToTargetsComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.ExportBlobDataComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.domain.SourceEnum;
 import uk.gov.hmcts.reform.mi.miextractionservice.factory.ExtractionBlobServiceClientFactory;
 import uk.gov.hmcts.reform.mi.miextractionservice.service.BlobExportService;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.DateTimeUtil;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_OUTPUT_CONTAINER_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_WORKING_FILE_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NEWLINE_DELIMITER;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NOTIFY_OUTPUT_CONTAINER_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NOTIFY_WORKING_FILE_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NO_FILTER_VALUE;
 
 @Service
 public class BlobExportServiceImpl implements BlobExportService {
@@ -27,12 +35,14 @@ public class BlobExportServiceImpl implements BlobExportService {
     @Value("${retrieve-to-date}")
     private String retrieveToDate;
 
+    @Value("${filter.data-source}")
+    private String dataSource;
+
     @Autowired
     private ExtractionBlobServiceClientFactory extractionBlobServiceClientFactory;
 
     @Autowired
-    @Qualifier("ccd")
-    private ExportBlobDataComponent ccdExportBlobDataComponent;
+    private ExportBlobDataComponent exportBlobDataComponent;
 
     @Autowired
     private BlobMessageBuilderComponent blobMessageBuilderComponent;
@@ -43,6 +53,7 @@ public class BlobExportServiceImpl implements BlobExportService {
     @Autowired
     private DateTimeUtil dateTimeUtil;
 
+    @SuppressWarnings("PMD.LawOfDemeter")
     @Override
     public void exportBlobs() {
         OffsetDateTime fromDate = StringUtils.isEmpty(retrieveFromDate)
@@ -51,19 +62,55 @@ public class BlobExportServiceImpl implements BlobExportService {
         OffsetDateTime toDate  = StringUtils.isEmpty(retrieveToDate)
             ? getEndOfDay(dateTimeUtil.getCurrentDateTime().minusDays(1L)) : getEndOfDay(dateTimeUtil.parseDateString(retrieveToDate));
 
+        BlobServiceClient stagingClient = extractionBlobServiceClientFactory.getStagingClient();
         BlobServiceClient exportClient = extractionBlobServiceClientFactory.getExportClient();
 
-        // Export CCD Blobs
-        String outputBlobName = ccdExportBlobDataComponent.exportBlobsAndGetOutputName(
-            extractionBlobServiceClientFactory.getStagingClient(),
+        List<String> messages = new ArrayList<>();
+
+        if (dataSource.equalsIgnoreCase(NO_FILTER_VALUE) || dataSource.equalsIgnoreCase(SourceEnum.CORE_CASE_DATA.getValue())) {
+            exportCcdData(stagingClient, exportClient, fromDate, toDate, messages);
+        }
+
+        if (dataSource.equalsIgnoreCase(NO_FILTER_VALUE) || dataSource.equalsIgnoreCase(SourceEnum.NOTIFY.getValue())) {
+            exportNotifyData(stagingClient, exportClient, fromDate, toDate, messages);
+        }
+
+        if (!messages.isEmpty()) {
+            sendBlobUrlToTargetsComponent.sendBlobUrl(messages.stream().collect(Collectors.joining(NEWLINE_DELIMITER)));
+        }
+    }
+
+    private void exportCcdData(BlobServiceClient stagingClient, BlobServiceClient exportClient, OffsetDateTime fromDate, OffsetDateTime toDate,
+                               List<String> messages) {
+
+        String outputBlobName = exportBlobDataComponent.exportBlobsAndGetOutputName(
+            stagingClient,
             exportClient,
             fromDate,
-            toDate);
+            toDate,
+            CCD_WORKING_FILE_NAME,
+            SourceEnum.CORE_CASE_DATA
+        );
 
         if (outputBlobName != null) {
-            String message = blobMessageBuilderComponent.buildMessage(exportClient, CCD_OUTPUT_CONTAINER_NAME, outputBlobName);
+            messages.add(blobMessageBuilderComponent.buildMessage(exportClient, CCD_OUTPUT_CONTAINER_NAME, outputBlobName));
+        }
+    }
 
-            sendBlobUrlToTargetsComponent.sendBlobUrl(message);
+    private void exportNotifyData(BlobServiceClient stagingClient, BlobServiceClient exportClient, OffsetDateTime fromDate, OffsetDateTime toDate,
+                                  List<String> messages) {
+
+        String notifyOutputBlobName = exportBlobDataComponent.exportBlobsAndGetOutputName(
+            stagingClient,
+            exportClient,
+            fromDate,
+            toDate,
+            NOTIFY_WORKING_FILE_NAME,
+            SourceEnum.NOTIFY
+        );
+
+        if (notifyOutputBlobName != null) {
+            messages.add(blobMessageBuilderComponent.buildMessage(exportClient, NOTIFY_OUTPUT_CONTAINER_NAME, notifyOutputBlobName));
         }
     }
 
