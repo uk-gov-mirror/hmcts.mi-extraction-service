@@ -53,7 +53,7 @@ public final class TestConstants {
 
     public static final String TEMPLATE = "{ \"extraction_date\": \"19991201-1010\", \"case_metadata_event_id\": 1000001,"
         + " \"ce_case_data_id\": 100001, \"ce_created_date\": %s, \"ce_case_type_id\": \"%s\", \"ce_case_type_version\": 1001,"
-        + " \"ce_state_id\": \"StateId\", \"ce_data\": {} }";
+        + " \"ce_state_id\": \"StatÈId\", \"ce_data\": {} }";
 
     public static final String TEST_CCD_JSONL = String.format(TEMPLATE, "949104000000", TEST_CASE_TYPE_ID);
     public static final String TEST_CCD_JSONL_OUTDATED_FUTURE = String.format(TEMPLATE, "990150800000", TEST_CASE_TYPE_ID);
