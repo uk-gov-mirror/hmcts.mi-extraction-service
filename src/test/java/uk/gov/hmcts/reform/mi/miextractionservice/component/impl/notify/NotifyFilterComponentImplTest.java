@@ -55,7 +55,7 @@ class NotifyFilterComponentImplTest {
             NOTIFY_JSON, NOTIFY_JSON_FUTURE, NOTIFY_JSON_PAST
         );
 
-        List<NotificationOutput> expected = Collections.singletonList(NOTIFY_OUTPUT);
+        List<String> expected = Collections.singletonList(NOTIFY_JSON);
         assertEquals(expected, underTest.filterDataInDateRange(inputData, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME),
             "Date filter did not work as expected.");
     }
@@ -72,8 +72,8 @@ class NotifyFilterComponentImplTest {
             NOTIFY_JSON, NOTIFY_JSON_FUTURE, NOTIFY_JSON_PAST
         );
 
-        List<NotificationOutput> expected = ImmutableList.of(
-            NOTIFY_OUTPUT, NOTIFY_OUTPUT_FUTURE, NOTIFY_OUTPUT_PAST
+        List<String> expected = ImmutableList.of(
+            NOTIFY_JSON, NOTIFY_JSON_FUTURE, NOTIFY_JSON_PAST
         );
 
         OffsetDateTime testFromDate = OffsetDateTime.of(1997, 7, 11, 0, 0, 0, 0, ZoneOffset.UTC);
@@ -81,18 +81,6 @@ class NotifyFilterComponentImplTest {
 
         assertEquals(expected, underTest.filterDataInDateRange(inputData, testFromDate, testToDate),
             "Date filter with on same day date did not work as expected.");
-    }
-
-    @Test
-    void givenNullNotificationOutputOnDataParse_whenFilterByDate_thenReturnNothing() {
-        ReflectionTestUtils.setField(underTest, FILTER_KEY, DEFAULT_FILTER_VALUE);
-
-        when(dataParserComponent.parse(NOTIFY_JSON)).thenReturn(null);
-
-        List<String> inputData = Collections.singletonList(NOTIFY_JSON);
-
-        assertEquals(Collections.emptyList(), underTest.filterDataInDateRange(inputData, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME),
-            "Date filter did not work as expected.");
     }
 
     @Test
@@ -112,7 +100,7 @@ class NotifyFilterComponentImplTest {
             NOTIFY_JSON, notifyJsonWithService
         );
 
-        List<NotificationOutput> expected = Collections.singletonList(notifyOutputWithService);
+        List<String> expected = Collections.singletonList(notifyJsonWithService);
         assertEquals(expected, underTest.filterDataInDateRange(inputData, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME),
             "Case type filter did not work as expected.");
     }

@@ -1,6 +1,9 @@
 package uk.gov.hmcts.reform.mi.miextractionservice;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.microsoft.applicationinsights.TelemetryClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,10 +16,12 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 
 import uk.gov.hmcts.reform.mi.micore.component.HealthCheck;
+import uk.gov.hmcts.reform.mi.micore.parser.MiDateDeserializer;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.SasIpWhitelist;
 import uk.gov.hmcts.reform.mi.miextractionservice.service.BlobExportService;
 
 import java.time.Clock;
+import java.time.OffsetDateTime;
 
 @Slf4j
 @SpringBootApplication(scanBasePackages = "uk.gov.hmcts.reform")
@@ -43,8 +48,13 @@ public class MiExtractionServiceApplication implements ApplicationRunner {
     }
 
     @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
+    public ObjectMapper objectMapper(MiDateDeserializer dateDeserialize) {
+        SimpleModule module = new SimpleModule("CustomCarDeserializer");
+        module.addDeserializer(OffsetDateTime.class, dateDeserialize);
+        return new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .registerModule(module)
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
     public static void main(final String[] args) {
@@ -75,4 +85,6 @@ public class MiExtractionServiceApplication implements ApplicationRunner {
     private void waitTelemetryGracefulPeriod() throws InterruptedException {
         Thread.sleep(waitPeriod);
     }
+
+
 }

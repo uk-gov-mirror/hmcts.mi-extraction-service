@@ -6,5 +6,5 @@ import java.util.List;
 
 public interface WriteDataComponent {
 
-    void writeData(BufferedWriter writer, List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate);
+    int writeData(BufferedWriter writer, List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate);
 }

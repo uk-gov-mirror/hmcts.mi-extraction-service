@@ -7,10 +7,8 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import uk.gov.hmcts.reform.mi.micore.model.CoreCaseData;
-import uk.gov.hmcts.reform.mi.miextractionservice.component.CoreCaseDataFormatterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.FilterComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.component.JsonlWriterComponent;
-import uk.gov.hmcts.reform.mi.miextractionservice.domain.OutputCoreCaseData;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.LineWriterComponent;
 
 import java.io.BufferedWriter;
 import java.time.OffsetDateTime;
@@ -20,6 +18,7 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -28,8 +27,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.hamcrest.MockitoHamcrest.argThat;
 import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CCD_JSONL;
-import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CCD_JSONL_AS_CORE_CASE_DATA;
-import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA;
 import static uk.gov.hmcts.reform.mi.miextractionservice.test.helpers.TestConstants.TEST_CCD_JSONL_OUTDATED_FUTURE;
 
 @ExtendWith(SpringExtension.class)
@@ -42,10 +39,7 @@ class CoreCaseDataWriteDataComponentImplTest {
     private FilterComponent<CoreCaseData> filterComponent;
 
     @Mock
-    private CoreCaseDataFormatterComponent<OutputCoreCaseData> coreCaseDataFormatterComponent;
-
-    @Mock
-    private JsonlWriterComponent<OutputCoreCaseData> jsonlWriterComponent;
+    private LineWriterComponent lineWriterComponent;
 
     @InjectMocks
     private CoreCaseDataWriteDataComponentImpl underTest;
@@ -55,15 +49,14 @@ class CoreCaseDataWriteDataComponentImplTest {
         when(filterComponent
             .filterDataInDateRange(argThat(allOf(hasItem(TEST_CCD_JSONL), hasItem(TEST_CCD_JSONL_OUTDATED_FUTURE))),
                 eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME)))
-            .thenReturn(Collections.singletonList(TEST_CCD_JSONL_AS_CORE_CASE_DATA));
-
-        when(coreCaseDataFormatterComponent.formatData(TEST_CCD_JSONL_AS_CORE_CASE_DATA)).thenReturn(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA);
+            .thenReturn(Collections.singletonList(TEST_CCD_JSONL));
 
         List<String> dataInput = List.of(TEST_CCD_JSONL, TEST_CCD_JSONL_OUTDATED_FUTURE);
 
-        underTest.writeData(mock(BufferedWriter.class), dataInput, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME);
+        assertEquals(1, underTest.writeData(mock(BufferedWriter.class), dataInput, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME),
+                     "Expected number of records written to be 1.");
 
-        verify(jsonlWriterComponent, times(1))
-            .writeLinesAsJsonl(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL_AS_OUTPUT_CORE_CASE_DATA)));
+        verify(lineWriterComponent, times(1))
+            .writeLines(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL)));
     }
 }

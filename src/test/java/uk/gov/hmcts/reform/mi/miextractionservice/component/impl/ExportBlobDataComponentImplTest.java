@@ -137,6 +137,8 @@ class ExportBlobDataComponentImplTest {
         when(metadataFilterComponent.filterByMetadata(anyMap())).thenReturn(true);
 
         writeDataComponent = mock(WriteDataComponent.class);
+        when(writeDataComponent.writeData(any(), anyList(), any(), any())).thenReturn(1);
+
         when(writeDataFactory.getWriteComponent(SourceEnum.CORE_CASE_DATA)).thenReturn(writeDataComponent);
     }
 
@@ -232,11 +234,11 @@ class ExportBlobDataComponentImplTest {
 
         when(targetBlobContainerClient.getBlobClient(OUTPUT_NAME)).thenReturn(targetBlobClient);
 
-        doAnswer((Answer<Void>) invocation -> {
+        doAnswer((Answer<Integer>) invocation -> {
             // Mockito verifies by reference to list, so this is to ensure the correct args are used at time of invocation.
             assertEquals(Collections.singletonList(TEST_CCD_JSONL), invocation.getArgument(1),
                 "Expected test data to be written on write data.");
-            return null;
+            return 1;
         }).when(writeDataComponent).writeData(any(BufferedWriter.class), anyList(), any(), any());
 
         String result = underTest.exportBlobsAndGetOutputName(
@@ -280,9 +282,6 @@ class ExportBlobDataComponentImplTest {
             .thenReturn(new ByteArrayInputStream(dataInPresentAndFuture.getBytes()));
         when(blobDownloadComponent.openBlobInputStream(sourceBlobServiceClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME_TWO))
             .thenReturn(new ByteArrayInputStream("".getBytes()));
-
-        WriteDataComponent writeDataComponent = mock(WriteDataComponent.class);
-        when(writeDataFactory.getWriteComponent(SourceEnum.CORE_CASE_DATA)).thenReturn(writeDataComponent);
 
         BlobContainerClient targetBlobContainerClient = mock(BlobContainerClient.class);
 

@@ -5,5 +5,5 @@ import java.util.List;
 
 public interface FilterComponent<T> {
 
-    List<T> filterDataInDateRange(List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate);
+    List<String> filterDataInDateRange(List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate);
 }

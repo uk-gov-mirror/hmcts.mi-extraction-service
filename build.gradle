@@ -86,7 +86,7 @@ checkstyle {
 }
 
 pmd {
-  toolVersion = "6.18.0"
+  toolVersion = "6.21.0"
   sourceSets = [sourceSets.main, sourceSets.test, sourceSets.functionalTest, sourceSets.integrationTest, sourceSets.smokeTest]
   reportsDir = file("$project.buildDir/reports/pmd")
   // https://github.com/pmd/pmd/issues/876
@@ -175,7 +175,7 @@ def versions = [
   dumbster         : '1.7.1',
   hmctsNotify      : '3.15.1-RELEASE',
   junit            : '5.5.0',
-  miCoreLib        : '3.4.0',
+  miCoreLib        : '3.4.4',
   reformLogging    : '5.1.5',
   openCsv          : '5.1',
   piTest           : '1.5.0',

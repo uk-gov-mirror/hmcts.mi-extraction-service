@@ -12,7 +12,7 @@ public final class TestConstants {
     public static final String TEST_EXPORT_BLOB = "1970-01-01-1970-01-02-CCD_EXTRACT.zip";
 
     public static final String TEST_CCD_JSONL = "{\"extraction_date\":\"19991201-1010\","
-        + "\"case_metadata_event_id\":1000001,\"ce_case_data_id\":100001,\"ce_created_date\":1001,"
+        + "\"ce_id\":1000001,\"ce_case_data_id\":100001,\"ce_created_date\":1001,"
         + "\"ce_case_type_id\":\"CASETYPE\",\"ce_case_type_version\":1001,\"ce_state_id\":\"StateId\",\"ce_data\":{}}";
 
     public static final String NOTIFY_TEST_CONTAINER_NAME = "notify-testcontainer-" + TEST_ID;

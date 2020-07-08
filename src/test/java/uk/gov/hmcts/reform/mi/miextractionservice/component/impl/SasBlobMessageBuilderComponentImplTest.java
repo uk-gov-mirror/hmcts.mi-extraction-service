@@ -90,7 +90,7 @@ class SasBlobMessageBuilderComponentImplTest {
     @Test
     void givenNoEncryptionSet_whenBuildMessage_thenThrowExportException() {
         ReflectionTestUtils.setField(underTest, ENCRYPTION_ENABLED_KEY, "false");
-
-        assertThrows(ExportException.class, () -> underTest.buildMessage(mock(BlobServiceClient.class), TEST_CONTAINER_NAME, TEST_BLOB_NAME));
+        BlobServiceClient mockClient = mock(BlobServiceClient.class);
+        assertThrows(ExportException.class, () -> underTest.buildMessage(mockClient, TEST_CONTAINER_NAME, TEST_BLOB_NAME));
     }
 }

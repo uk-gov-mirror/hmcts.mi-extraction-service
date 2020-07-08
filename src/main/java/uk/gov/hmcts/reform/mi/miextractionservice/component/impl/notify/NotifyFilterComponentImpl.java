@@ -14,7 +14,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NOTIFY_TIMESTAMP_FORMAT;
@@ -30,40 +29,33 @@ public class NotifyFilterComponentImpl implements FilterComponent<NotificationOu
     private DataParserComponent<NotificationOutput> dataParserComponent;
 
     @Override
-    public List<NotificationOutput> filterDataInDateRange(List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate) {
+    public List<String> filterDataInDateRange(List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate) {
+        return data.stream()
+            .filter(line -> {
+                NotificationOutput notification = dataParserComponent.parse(line);
 
-        List<NotificationOutput> filteredData = data.stream()
-            .map(dataRow -> dataParserComponent.parse(dataRow))
-            .filter(notification -> {
-                if (Objects.isNull(notification)) {
-                    return false;
-                }
-
-                LocalDate notificationCreatedDate =
-                    LocalDateTime.parse(notification.getCreatedAt(), DateTimeFormatter.ofPattern(NOTIFY_TIMESTAMP_FORMAT))
-                        .atZone(ZoneId.of("UTC"))
-                        .withZoneSameInstant(ZoneId.of("Europe/London"))// Notify data is in BST
-                        .toLocalDate();
-
-                // Minus and plus 1 day to account to include same day events
-                return notificationCreatedDate.isAfter(fromDate.toLocalDate().minusDays(1L))
-                    && notificationCreatedDate.isBefore(toDate.toLocalDate().plusDays(1L));
+                return filterByDate(notification, fromDate, toDate) && filterByService(notification);
             })
             .collect(Collectors.toList());
-
-        filteredData = filterByService(filteredData);
-
-        return filteredData;
     }
 
-    private List<NotificationOutput> filterByService(List<NotificationOutput> data) {
-        return data.stream()
-            .filter(notification -> {
-                if (filterService.equalsIgnoreCase(NO_FILTER_VALUE)) {
-                    return true;
-                } else {
-                    return filterService.equalsIgnoreCase(notification.getService());
-                }
-            }).collect(Collectors.toList());
+    private boolean filterByDate(NotificationOutput notificationOutput, OffsetDateTime fromDate, OffsetDateTime toDate) {
+        LocalDate notificationCreatedDate =
+            LocalDateTime.parse(notificationOutput.getCreatedAt(), DateTimeFormatter.ofPattern(NOTIFY_TIMESTAMP_FORMAT))
+                .atZone(ZoneId.of("UTC"))
+                .withZoneSameInstant(ZoneId.of("Europe/London"))// Notify data is in BST
+                .toLocalDate();
+
+        // Minus and plus 1 day to account to include same day events
+        return notificationCreatedDate.isAfter(fromDate.toLocalDate().minusDays(1L))
+            && notificationCreatedDate.isBefore(toDate.toLocalDate().plusDays(1L));
+    }
+
+    private boolean filterByService(NotificationOutput notificationOutput) {
+        if (filterService.equalsIgnoreCase(NO_FILTER_VALUE)) {
+            return true;
+        }
+
+        return filterService.equalsIgnoreCase(notificationOutput.getService());
     }
 }
