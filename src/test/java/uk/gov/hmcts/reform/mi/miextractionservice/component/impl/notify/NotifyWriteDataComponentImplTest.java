@@ -6,7 +6,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import uk.gov.hmcts.reform.mi.micore.model.NotificationOutput;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.FilterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.LineWriterComponent;
 
@@ -37,7 +36,7 @@ class NotifyWriteDataComponentImplTest {
     private static final String NOTIFY_JSON_FUTURE = "{\"created_at\":\"2002-01-01T10:00:00.000000Z\"}";
 
     @Mock
-    private FilterComponent<NotificationOutput> filterComponent;
+    private FilterComponent filterComponent;
 
     @Mock
     private LineWriterComponent lineWriterComponent;

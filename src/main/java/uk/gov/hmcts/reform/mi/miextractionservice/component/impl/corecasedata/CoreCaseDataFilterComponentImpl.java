@@ -1,6 +1,7 @@
 package uk.gov.hmcts.reform.mi.miextractionservice.component.impl.corecasedata;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +17,8 @@ import java.util.stream.Collectors;
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NO_FILTER_VALUE;
 
 @Component
-public class CoreCaseDataFilterComponentImpl implements FilterComponent<CoreCaseData> {
+@Qualifier("ccd")
+public class CoreCaseDataFilterComponentImpl implements FilterComponent {
 
     @Value("${filter.ccd.case-type}")
     private String filterCaseType;

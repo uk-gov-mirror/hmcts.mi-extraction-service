@@ -6,7 +6,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import uk.gov.hmcts.reform.mi.micore.model.CoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.FilterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.LineWriterComponent;
 
@@ -36,7 +35,7 @@ class CoreCaseDataWriteDataComponentImplTest {
     private static final OffsetDateTime TEST_TO_DATE_TIME = OffsetDateTime.of(2001, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
 
     @Mock
-    private FilterComponent<CoreCaseData> filterComponent;
+    private FilterComponent filterComponent;
 
     @Mock
     private LineWriterComponent lineWriterComponent;
