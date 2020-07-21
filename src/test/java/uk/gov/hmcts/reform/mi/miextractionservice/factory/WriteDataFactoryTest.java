@@ -23,6 +23,9 @@ class WriteDataFactoryTest {
     @Mock
     private WriteDataComponent notifyWriteDataComponent;
 
+    @Mock
+    private WriteDataComponent paymentWriteDataComponent;
+
     @InjectMocks
     private WriteDataFactory underTest;
 
@@ -38,6 +41,34 @@ class WriteDataFactoryTest {
         WriteDataComponent result = underTest.getWriteComponent(SourceEnum.NOTIFY);
 
         assertEquals(notifyWriteDataComponent, result, "Expected factory to return a notify write component.");
+    }
+
+    @Test
+    void givenPaymentHistorySource_whenGetWriteDataComponent_thenReturnPaymentWriteComponent() {
+        WriteDataComponent result = underTest.getWriteComponent(SourceEnum.PAYMENT_HISTORY);
+
+        assertEquals(paymentWriteDataComponent, result, "Expected factory to return a payment write component for history.");
+    }
+
+    @Test
+    void givenPaymentAllocationSource_whenGetWriteDataComponent_thenReturnPaymentWriteComponent() {
+        WriteDataComponent result = underTest.getWriteComponent(SourceEnum.PAYMENT_ALLOCATION);
+
+        assertEquals(paymentWriteDataComponent, result, "Expected factory to return a payment write component for allocation.");
+    }
+
+    @Test
+    void givenPaymentRemissionSource_whenGetWriteDataComponent_thenReturnPaymentWriteComponent() {
+        WriteDataComponent result = underTest.getWriteComponent(SourceEnum.PAYMENT_REMISSION);
+
+        assertEquals(paymentWriteDataComponent, result, "Expected factory to return a payment write component for remission.");
+    }
+
+    @Test
+    void givenPaymentFeeSource_whenGetWriteDataComponent_thenReturnPaymentWriteComponent() {
+        WriteDataComponent result = underTest.getWriteComponent(SourceEnum.PAYMENT_FEE);
+
+        assertEquals(paymentWriteDataComponent, result, "Expected factory to return a payment write component for fee.");
     }
 
     @Test

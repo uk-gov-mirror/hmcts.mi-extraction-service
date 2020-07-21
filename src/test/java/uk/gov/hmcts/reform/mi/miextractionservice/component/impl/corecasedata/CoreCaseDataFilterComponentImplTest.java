@@ -10,6 +10,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import uk.gov.hmcts.reform.mi.micore.model.CoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.DataParserComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.domain.SourceEnum;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -55,7 +56,7 @@ class CoreCaseDataFilterComponentImplTest {
         );
 
         List<String> expected = Collections.singletonList(TEST_CCD_JSONL);
-        assertEquals(expected, underTest.filterDataInDateRange(inputData, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME),
+        assertEquals(expected, underTest.filterDataInDateRange(inputData, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME, SourceEnum.CORE_CASE_DATA),
             "Date filter did not work as expected.");
     }
 
@@ -78,7 +79,7 @@ class CoreCaseDataFilterComponentImplTest {
         OffsetDateTime testFromDate = OffsetDateTime.of(1998, 7, 11, 0, 0, 0, 0, ZoneOffset.UTC);
         OffsetDateTime testToDate = OffsetDateTime.of(2001, 5, 18, 23, 59, 59, 999, ZoneOffset.UTC);
 
-        assertEquals(expected, underTest.filterDataInDateRange(inputData, testFromDate, testToDate),
+        assertEquals(expected, underTest.filterDataInDateRange(inputData, testFromDate, testToDate, SourceEnum.CORE_CASE_DATA),
             "Date filter with on same day date did not work as expected.");
     }
 
@@ -94,7 +95,7 @@ class CoreCaseDataFilterComponentImplTest {
         );
 
         List<String> expected = Collections.singletonList(TEST_CCD_JSONL_NEW_CASETYPE);
-        assertEquals(expected, underTest.filterDataInDateRange(inputData, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME),
+        assertEquals(expected, underTest.filterDataInDateRange(inputData, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME, SourceEnum.CORE_CASE_DATA),
             "Case type filter did not work as expected.");
     }
 }

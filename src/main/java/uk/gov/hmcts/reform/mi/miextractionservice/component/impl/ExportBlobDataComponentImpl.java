@@ -232,6 +232,6 @@ public class ExportBlobDataComponentImpl implements ExportBlobDataComponent {
 
     private int writeData(BufferedWriter writer, List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate, SourceEnum source) {
         WriteDataComponent writeDataComponent = writeDataFactory.getWriteComponent(source);
-        return writeDataComponent.writeData(writer, data, fromDate, toDate);
+        return writeDataComponent.writeData(writer, data, fromDate, toDate, source);
     }
 }

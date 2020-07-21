@@ -8,6 +8,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import uk.gov.hmcts.reform.mi.miextractionservice.component.FilterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.LineWriterComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.domain.SourceEnum;
 
 import java.io.BufferedWriter;
 import java.time.OffsetDateTime;
@@ -44,16 +45,18 @@ class NotifyWriteDataComponentImplTest {
     @InjectMocks
     private NotifyWriteDataComponentImpl underTest;
 
+    private final BufferedWriter mockWriter = mock(BufferedWriter.class);
+
     @Test
     void givenListOfCoreCaseData_whenWriteData_thenVerifyDataWasWritten() {
         when(filterComponent
             .filterDataInDateRange(argThat(allOf(hasItem(NOTIFY_JSON), hasItem(NOTIFY_JSON_FUTURE))),
-                eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME)))
+                eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME), eq(SourceEnum.NOTIFY)))
             .thenReturn(Collections.singletonList(NOTIFY_JSON));
 
         List<String> dataInput = List.of(NOTIFY_JSON, NOTIFY_JSON_FUTURE);
 
-        assertEquals(1, underTest.writeData(mock(BufferedWriter.class), dataInput, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME),
+        assertEquals(1, underTest.writeData(mockWriter, dataInput, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME, SourceEnum.NOTIFY),
                      "Expected number of records written to be 1.");
 
         verify(lineWriterComponent, times(1))

@@ -100,12 +100,50 @@ class BlobExportServiceImplTest {
             eq(SourceEnum.NOTIFY)
         )).thenReturn(TEST_BLOB_NAME);
 
+        when(exportBlobDataComponent.exportBlobsAndGetOutputName(
+            eq(stagingClient),
+            eq(exportClient),
+            eq(FIXED_DATETIME.minusDays(1L)),
+            eq(FIXED_DATETIME.minusDays(1L).plusHours(23L).plusMinutes(59L).plusSeconds(59L).plusNanos(999L)),
+            eq("payment-history-extract.jsonl"),
+            eq(SourceEnum.PAYMENT_HISTORY)
+        )).thenReturn(TEST_BLOB_NAME);
+
+        when(exportBlobDataComponent.exportBlobsAndGetOutputName(
+            eq(stagingClient),
+            eq(exportClient),
+            eq(FIXED_DATETIME.minusDays(1L)),
+            eq(FIXED_DATETIME.minusDays(1L).plusHours(23L).plusMinutes(59L).plusSeconds(59L).plusNanos(999L)),
+            eq("payment-allocation-extract.jsonl"),
+            eq(SourceEnum.PAYMENT_ALLOCATION)
+        )).thenReturn(TEST_BLOB_NAME);
+
+        when(exportBlobDataComponent.exportBlobsAndGetOutputName(
+            eq(stagingClient),
+            eq(exportClient),
+            eq(FIXED_DATETIME.minusDays(1L)),
+            eq(FIXED_DATETIME.minusDays(1L).plusHours(23L).plusMinutes(59L).plusSeconds(59L).plusNanos(999L)),
+            eq("payment-remission-extract.jsonl"),
+            eq(SourceEnum.PAYMENT_REMISSION)
+        )).thenReturn(TEST_BLOB_NAME);
+
+        when(exportBlobDataComponent.exportBlobsAndGetOutputName(
+            eq(stagingClient),
+            eq(exportClient),
+            eq(FIXED_DATETIME.minusDays(1L)),
+            eq(FIXED_DATETIME.minusDays(1L).plusHours(23L).plusMinutes(59L).plusSeconds(59L).plusNanos(999L)),
+            eq("payment-fee-extract.jsonl"),
+            eq(SourceEnum.PAYMENT_FEE)
+        )).thenReturn(TEST_BLOB_NAME);
+
         when(blobMessageBuilderComponent.buildMessage(exportClient, CCD_OUTPUT_CONTAINER_NAME, TEST_BLOB_NAME)).thenReturn(TEST_BLOB_URL);
         when(blobMessageBuilderComponent.buildMessage(exportClient, NOTIFY_OUTPUT_CONTAINER_NAME, TEST_BLOB_NAME)).thenReturn(TEST_BLOB_URL);
+        when(blobMessageBuilderComponent.buildMessage(exportClient, "payment", TEST_BLOB_NAME)).thenReturn(TEST_BLOB_URL);
 
         underTest.exportBlobs();
 
-        verify(emailBlobUrlToTargetsComponent).sendBlobUrl(TEST_BLOB_URL + "\n" + TEST_BLOB_URL);
+        verify(emailBlobUrlToTargetsComponent).sendBlobUrl(TEST_BLOB_URL + "\n" + TEST_BLOB_URL + "\n" + TEST_BLOB_URL + "\n"
+                                                               + TEST_BLOB_URL + "\n" + TEST_BLOB_URL + "\n" + TEST_BLOB_URL);
     }
 
     @Test
@@ -186,6 +224,53 @@ class BlobExportServiceImplTest {
 
         verify(exportBlobDataComponent, never()).exportBlobsAndGetOutputName(any(), any(), any(), any(), any(), eq(SourceEnum.CORE_CASE_DATA));
         verify(emailBlobUrlToTargetsComponent).sendBlobUrl(TEST_BLOB_URL);
+    }
+
+    @Test
+    void givenDataSourceFilterToPayment_whenExportPaymentsData_thenSendEmailWithBlobUrlForDailyData() {
+        ReflectionTestUtils.setField(underTest, DATA_SOURCE_FILTER_KEY, "Payment");
+
+        when(exportBlobDataComponent.exportBlobsAndGetOutputName(
+            eq(stagingClient),
+            eq(exportClient),
+            eq(FIXED_DATETIME.minusDays(1L)),
+            eq(FIXED_DATETIME.minusDays(1L).plusHours(23L).plusMinutes(59L).plusSeconds(59L).plusNanos(999L)),
+            eq("payment-history-extract.jsonl"),
+            eq(SourceEnum.PAYMENT_HISTORY)
+        )).thenReturn(TEST_BLOB_NAME);
+
+        when(exportBlobDataComponent.exportBlobsAndGetOutputName(
+            eq(stagingClient),
+            eq(exportClient),
+            eq(FIXED_DATETIME.minusDays(1L)),
+            eq(FIXED_DATETIME.minusDays(1L).plusHours(23L).plusMinutes(59L).plusSeconds(59L).plusNanos(999L)),
+            eq("payment-allocation-extract.jsonl"),
+            eq(SourceEnum.PAYMENT_ALLOCATION)
+        )).thenReturn(TEST_BLOB_NAME);
+
+        when(exportBlobDataComponent.exportBlobsAndGetOutputName(
+            eq(stagingClient),
+            eq(exportClient),
+            eq(FIXED_DATETIME.minusDays(1L)),
+            eq(FIXED_DATETIME.minusDays(1L).plusHours(23L).plusMinutes(59L).plusSeconds(59L).plusNanos(999L)),
+            eq("payment-remission-extract.jsonl"),
+            eq(SourceEnum.PAYMENT_REMISSION)
+        )).thenReturn(TEST_BLOB_NAME);
+
+        when(exportBlobDataComponent.exportBlobsAndGetOutputName(
+            eq(stagingClient),
+            eq(exportClient),
+            eq(FIXED_DATETIME.minusDays(1L)),
+            eq(FIXED_DATETIME.minusDays(1L).plusHours(23L).plusMinutes(59L).plusSeconds(59L).plusNanos(999L)),
+            eq("payment-fee-extract.jsonl"),
+            eq(SourceEnum.PAYMENT_FEE)
+        )).thenReturn(TEST_BLOB_NAME);
+
+        when(blobMessageBuilderComponent.buildMessage(exportClient, "payment", TEST_BLOB_NAME)).thenReturn(TEST_BLOB_URL);
+
+        underTest.exportBlobs();
+
+        verify(emailBlobUrlToTargetsComponent).sendBlobUrl(TEST_BLOB_URL + "\n" + TEST_BLOB_URL + "\n" + TEST_BLOB_URL + "\n" + TEST_BLOB_URL);
     }
 
     @Test

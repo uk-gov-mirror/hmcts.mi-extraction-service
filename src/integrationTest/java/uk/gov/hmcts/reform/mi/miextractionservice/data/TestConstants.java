@@ -23,6 +23,23 @@ public final class TestConstants {
         + "\"id\":\"id\",\"service\":\"service\",\"reference\":\"reference\","
         + "\"type\":\"type\",\"status\":\"status\",\"created_at\":\"1970-01-01T01:00:00.000000Z\"}";
 
+    public static final String PAYMENT_HISTORY_TEST_CONTAINER_NAME = "payment-history-testcontainer-" + TEST_ID;
+    public static final String PAYMENT_ALLOCATION_TEST_CONTAINER_NAME = "payment-allocation-testcontainer-" + TEST_ID;
+    public static final String PAYMENT_REMISSION_TEST_CONTAINER_NAME = "payment-remission-testcontainer-" + TEST_ID;
+    public static final String PAYMENT_FEE_TEST_CONTAINER_NAME = "payment-fee-testcontainer-" + TEST_ID;
+    public static final String PAYMENT_HISTORY_EXPORT_CONTAINER_NAME = "payment-history";
+    public static final String PAYMENT_ALLOCATION_EXPORT_CONTAINER_NAME = "payment-allocation";
+    public static final String PAYMENT_REMISSION_EXPORT_CONTAINER_NAME = "payment-remission";
+    public static final String PAYMENT_FEE_EXPORT_CONTAINER_NAME = "payment-fee";
+    public static final String PAYMENT_HISTORY_TEST_EXPORT_BLOB = "1970-01-01-1970-01-02-payment-history-extract.zip";
+    public static final String PAYMENT_ALLOCATION_TEST_EXPORT_BLOB = "1970-01-01-1970-01-02-payment-allocation-extract.zip";
+    public static final String PAYMENT_REMISSION_TEST_EXPORT_BLOB = "1970-01-01-1970-01-02-payment-remission-extract.zip";
+    public static final String PAYMENT_FEE_TEST_EXPORT_BLOB = "1970-01-01-1970-01-02-payment-fee-extract.zip";
+
+    public static final String TEST_PAYMENT_JSONL = "{\"extraction_date\":\"19991201-1010\","
+        + "\"id\":\"id\",\"date_created\":\"1970-01-01T01:00:00.000000Z\",\"date_updated\":\"1970-01-01T01:00:00.000000Z\","
+        + "\"sh_date_updated\":\"1970-01-01T01:00:00.000000Z\"}";
+
     private TestConstants() {
         // Private constructor
     }

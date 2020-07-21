@@ -1,6 +1,6 @@
-package uk.gov.hmcts.reform.mi.miextractionservice.component.impl.corecasedata;
+package uk.gov.hmcts.reform.mi.miextractionservice.component.impl.payment;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
@@ -13,16 +13,15 @@ import java.io.BufferedWriter;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+@AllArgsConstructor
 @Component
-@Qualifier("ccd")
-public class CoreCaseDataWriteDataComponentImpl implements WriteDataComponent {
+@Qualifier("payment")
+public class PaymentWriteDataComponentImpl implements WriteDataComponent {
 
-    @Autowired
-    @Qualifier("ccd")
-    private FilterComponent filterComponent;
+    @Qualifier("payment")
+    private final FilterComponent filterComponent;
 
-    @Autowired
-    private LineWriterComponent lineWriterComponent;
+    private final LineWriterComponent lineWriterComponent;
 
     @Override
     public int writeData(BufferedWriter writer, List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate, SourceEnum source) {

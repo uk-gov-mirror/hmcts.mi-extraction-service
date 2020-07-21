@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.FilterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.LineWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.WriteDataComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.domain.SourceEnum;
 
 import java.io.BufferedWriter;
 import java.time.OffsetDateTime;
@@ -24,8 +25,8 @@ public class NotifyWriteDataComponentImpl implements WriteDataComponent {
     private LineWriterComponent lineWriterComponent;
 
     @Override
-    public int writeData(BufferedWriter writer, List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate) {
-        List<String> filteredData = filterComponent.filterDataInDateRange(data, fromDate, toDate);
+    public int writeData(BufferedWriter writer, List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate, SourceEnum source) {
+        List<String> filteredData = filterComponent.filterDataInDateRange(data, fromDate, toDate, source);
 
         lineWriterComponent.writeLines(writer, filteredData);
 

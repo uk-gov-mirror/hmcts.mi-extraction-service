@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.reform.mi.micore.model.NotificationOutput;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.DataParserComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.FilterComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.domain.SourceEnum;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,7 +32,7 @@ public class NotifyFilterComponentImpl implements FilterComponent {
     private DataParserComponent<NotificationOutput> dataParserComponent;
 
     @Override
-    public List<String> filterDataInDateRange(List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate) {
+    public List<String> filterDataInDateRange(List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate, SourceEnum source) {
         return data.stream()
             .filter(line -> {
                 NotificationOutput notification = dataParserComponent.parse(line);

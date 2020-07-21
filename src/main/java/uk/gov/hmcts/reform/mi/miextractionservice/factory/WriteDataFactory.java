@@ -19,13 +19,22 @@ public class WriteDataFactory {
     @Qualifier("notify")
     private WriteDataComponent notifyWriteDataComponent;
 
+    @Autowired
+    @Qualifier("payment")
+    private WriteDataComponent paymentWriteDataComponent;
+
     @SuppressWarnings("PMD.TooFewBranchesForASwitchStatement")
     public WriteDataComponent getWriteComponent(SourceEnum source) {
         switch (source) {
-            case CORE_CASE_DATA :
+            case CORE_CASE_DATA:
                 return ccdWriteDataComponent;
-            case NOTIFY :
+            case NOTIFY:
                 return notifyWriteDataComponent;
+            case PAYMENT_HISTORY:
+            case PAYMENT_ALLOCATION:
+            case PAYMENT_REMISSION:
+            case PAYMENT_FEE:
+                return paymentWriteDataComponent;
             default :
                 throw new ParserException("Unable to determine how to write data.");
         }

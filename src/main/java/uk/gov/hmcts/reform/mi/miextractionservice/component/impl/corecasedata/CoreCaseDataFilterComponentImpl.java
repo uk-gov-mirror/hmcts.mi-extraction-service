@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.reform.mi.micore.model.CoreCaseData;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.DataParserComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.FilterComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.domain.SourceEnum;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -27,7 +28,7 @@ public class CoreCaseDataFilterComponentImpl implements FilterComponent {
     private DataParserComponent<CoreCaseData> dataParserComponent;
 
     @Override
-    public List<String> filterDataInDateRange(List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate) {
+    public List<String> filterDataInDateRange(List<String> data, OffsetDateTime fromDate, OffsetDateTime toDate, SourceEnum source) {
         return data.stream()
             .filter(ccdString -> {
                 CoreCaseData coreCaseData = dataParserComponent.parse(ccdString);

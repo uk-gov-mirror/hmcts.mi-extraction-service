@@ -137,7 +137,7 @@ class ExportBlobDataComponentImplTest {
         when(metadataFilterComponent.filterByMetadata(anyMap())).thenReturn(true);
 
         writeDataComponent = mock(WriteDataComponent.class);
-        when(writeDataComponent.writeData(any(), anyList(), any(), any())).thenReturn(1);
+        when(writeDataComponent.writeData(any(), anyList(), any(), any(), any())).thenReturn(1);
 
         when(writeDataFactory.getWriteComponent(SourceEnum.CORE_CASE_DATA)).thenReturn(writeDataComponent);
     }
@@ -193,10 +193,10 @@ class ExportBlobDataComponentImplTest {
         verify(targetBlobContainerClient, never()).create();
         verify(writeDataComponent, times(1))
             .writeData(any(BufferedWriter.class), eq(List.of(TEST_CCD_JSONL, TEST_CCD_JSONL_OUTDATED_FUTURE)),
-                eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME));
+                eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME), eq(SourceEnum.CORE_CASE_DATA));
         verify(writeDataComponent, times(1))
             .writeData(any(BufferedWriter.class), eq(List.of(TEST_CCD_JSONL_OUTDATED_PAST)),
-                eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME));
+                eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME), eq(SourceEnum.CORE_CASE_DATA));
         verify(archiveComponent)
             .createArchive(Collections.singletonList(WORKING_FILE_NAME), OUTPUT_NAME);
         verify(targetBlobClient).uploadFromFile(OUTPUT_NAME, true);
@@ -239,7 +239,7 @@ class ExportBlobDataComponentImplTest {
             assertEquals(Collections.singletonList(TEST_CCD_JSONL), invocation.getArgument(1),
                 "Expected test data to be written on write data.");
             return 1;
-        }).when(writeDataComponent).writeData(any(BufferedWriter.class), anyList(), any(), any());
+        }).when(writeDataComponent).writeData(any(BufferedWriter.class), anyList(), any(), any(), any());
 
         String result = underTest.exportBlobsAndGetOutputName(
             sourceBlobServiceClient, targetBlobServiceClient,
@@ -251,7 +251,7 @@ class ExportBlobDataComponentImplTest {
 
         verify(targetBlobContainerClient, never()).create();
         verify(writeDataComponent, times(3))
-            .writeData(any(BufferedWriter.class), anyList(), eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME));
+            .writeData(any(BufferedWriter.class), anyList(), eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME), eq(SourceEnum.CORE_CASE_DATA));
         verify(archiveComponent)
             .createArchive(Collections.singletonList(WORKING_FILE_NAME), OUTPUT_NAME);
         verify(targetBlobClient).uploadFromFile(OUTPUT_NAME, true);
@@ -303,7 +303,7 @@ class ExportBlobDataComponentImplTest {
         verify(targetBlobContainerClient, never()).create();
         verify(writeDataComponent, times(1))
             .writeData(any(BufferedWriter.class), eq(List.of(TEST_CCD_JSONL, TEST_CCD_JSONL_OUTDATED_FUTURE)),
-                eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME));
+                eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME), eq(SourceEnum.CORE_CASE_DATA));
         verify(archiveComponent)
             .createArchive(Collections.singletonList(WORKING_FILE_NAME), OUTPUT_NAME);
         verify(targetBlobClient).uploadFromFile(OUTPUT_NAME, true);
@@ -349,7 +349,8 @@ class ExportBlobDataComponentImplTest {
 
         verify(targetBlobContainerClient, times(1)).create();
         verify(writeDataComponent, times(1))
-            .writeData(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL)), eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME));
+            .writeData(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL)),
+                       eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME), eq(SourceEnum.CORE_CASE_DATA));
         verify(archiveComponent)
             .createArchive(Collections.singletonList(WORKING_FILE_NAME), OUTPUT_NAME);
         verify(targetBlobClient).uploadFromFile(OUTPUT_NAME, true);
@@ -399,7 +400,7 @@ class ExportBlobDataComponentImplTest {
         verify(targetBlobContainerClient, times(1)).create();
         verify(writeDataComponent, times(1))
             .writeData(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL)),
-                eq(fromDateSameAsEventDate), eq(TEST_TO_DATE_TIME));
+                eq(fromDateSameAsEventDate), eq(TEST_TO_DATE_TIME), eq(SourceEnum.CORE_CASE_DATA));
         verify(archiveComponent)
             .createArchive(Collections.singletonList(workingFileName), outputName);
         verify(targetBlobClient).uploadFromFile(outputName, true);
@@ -449,7 +450,7 @@ class ExportBlobDataComponentImplTest {
         verify(targetBlobContainerClient, times(1)).create();
         verify(writeDataComponent, times(1))
             .writeData(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL)),
-                eq(TEST_FROM_DATE_TIME), eq(toDateSameAsEventDate));
+                eq(TEST_FROM_DATE_TIME), eq(toDateSameAsEventDate), eq(SourceEnum.CORE_CASE_DATA));
         verify(archiveComponent)
             .createArchive(Collections.singletonList(workingFileName), outputName);
         verify(targetBlobClient).uploadFromFile(outputName, true);
@@ -543,7 +544,7 @@ class ExportBlobDataComponentImplTest {
             Writer writer = invocation.getArgument(0);
             writer.write("Should throw IOException");
             return null;
-        }).when(writeDataComponent).writeData(any(), any(), any(), any());
+        }).when(writeDataComponent).writeData(any(), any(), any(), any(), any());
 
         assertThrows(ParserException.class, () ->
             underTest.exportBlobsAndGetOutputName(
@@ -652,7 +653,8 @@ class ExportBlobDataComponentImplTest {
 
         verify(targetBlobContainerClient, never()).create();
         verify(writeDataComponent, times(1))
-            .writeData(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL)), eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME));
+            .writeData(any(BufferedWriter.class), eq(Collections.singletonList(TEST_CCD_JSONL)),
+                       eq(TEST_FROM_DATE_TIME), eq(TEST_TO_DATE_TIME), eq(SourceEnum.CORE_CASE_DATA));
         verify(archiveComponent, never()).createArchive(anyList(), anyString());
         verify(targetBlobClient).uploadFromFile(WORKING_FILE_NAME, true);
         verify(fileWrapper, times(1)).deleteFileOnExit(WORKING_FILE_NAME);

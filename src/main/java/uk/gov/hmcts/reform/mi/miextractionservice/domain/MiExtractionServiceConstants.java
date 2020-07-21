@@ -32,6 +32,13 @@ public final class MiExtractionServiceConstants {
 
     public static final String NOTIFY_TIMESTAMP_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'";
 
+    public static final String PAYMENT_HISTORY_NAME = "payment-history";
+    public static final String PAYMENT_ALLOCATION_NAME = "payment-allocation";
+    public static final String PAYMENT_REMISSION_NAME = "payment-remission";
+    public static final String PAYMENT_FEE_NAME = "payment-fee";
+
+    public static final String EXTRACT_FILE_NAME_SUFFIX = "-extract.jsonl";
+
     private MiExtractionServiceConstants() {
         // Private Constructor
     }

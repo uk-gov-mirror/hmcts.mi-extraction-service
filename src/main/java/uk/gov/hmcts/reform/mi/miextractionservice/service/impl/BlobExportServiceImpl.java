@@ -1,10 +1,10 @@
 package uk.gov.hmcts.reform.mi.miextractionservice.service.impl;
 
 import com.azure.storage.blob.BlobServiceClient;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import uk.gov.hmcts.reform.mi.miextractionservice.component.BlobMessageBuilderComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.EmailBlobUrlToTargetsComponent;
@@ -21,10 +21,18 @@ import java.util.stream.Collectors;
 
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_OUTPUT_CONTAINER_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.CCD_WORKING_FILE_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.EXTRACT_FILE_NAME_SUFFIX;
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NEWLINE_DELIMITER;
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NOTIFY_OUTPUT_CONTAINER_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NOTIFY_WORKING_FILE_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.NO_FILTER_VALUE;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.PAYMENT_ALLOCATION_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.PAYMENT_FEE_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.PAYMENT_HISTORY_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.MiExtractionServiceConstants.PAYMENT_REMISSION_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.SourceEnum.CORE_CASE_DATA;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.SourceEnum.NOTIFY;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.SourceEnum.PAYMENT;
 
 @Service
 public class BlobExportServiceImpl implements BlobExportService {
@@ -67,16 +75,26 @@ public class BlobExportServiceImpl implements BlobExportService {
 
         List<String> messages = new ArrayList<>();
 
-        if (dataSource.equalsIgnoreCase(NO_FILTER_VALUE) || dataSource.equalsIgnoreCase(SourceEnum.CORE_CASE_DATA.getValue())) {
-            exportCcdData(stagingClient, exportClient, fromDate, toDate, messages);
-        }
-
-        if (dataSource.equalsIgnoreCase(NO_FILTER_VALUE) || dataSource.equalsIgnoreCase(SourceEnum.NOTIFY.getValue())) {
-            exportNotifyData(stagingClient, exportClient, fromDate, toDate, messages);
-        }
+        exportData(stagingClient, exportClient, fromDate, toDate, messages);
 
         if (!messages.isEmpty()) {
             sendBlobUrlToTargetsComponent.sendBlobUrl(messages.stream().collect(Collectors.joining(NEWLINE_DELIMITER)));
+        }
+    }
+
+    private void exportData(BlobServiceClient stagingClient, BlobServiceClient exportClient, OffsetDateTime fromDate, OffsetDateTime toDate,
+                            List<String> messages) {
+
+        if (dataSource.equalsIgnoreCase(NO_FILTER_VALUE) || dataSource.equalsIgnoreCase(CORE_CASE_DATA.getValue())) {
+            exportCcdData(stagingClient, exportClient, fromDate, toDate, messages);
+        }
+
+        if (dataSource.equalsIgnoreCase(NO_FILTER_VALUE) || dataSource.equalsIgnoreCase(NOTIFY.getValue())) {
+            exportNotifyData(stagingClient, exportClient, fromDate, toDate, messages);
+        }
+
+        if (dataSource.equalsIgnoreCase(NO_FILTER_VALUE) || dataSource.equalsIgnoreCase(PAYMENT.getValue())) {
+            exportPaymentData(stagingClient, exportClient, fromDate, toDate, messages);
         }
     }
 
@@ -89,7 +107,7 @@ public class BlobExportServiceImpl implements BlobExportService {
             fromDate,
             toDate,
             CCD_WORKING_FILE_NAME,
-            SourceEnum.CORE_CASE_DATA
+            CORE_CASE_DATA
         );
 
         if (outputBlobName != null) {
@@ -106,12 +124,59 @@ public class BlobExportServiceImpl implements BlobExportService {
             fromDate,
             toDate,
             NOTIFY_WORKING_FILE_NAME,
-            SourceEnum.NOTIFY
+            NOTIFY
         );
 
         if (notifyOutputBlobName != null) {
             messages.add(blobMessageBuilderComponent.buildMessage(exportClient, NOTIFY_OUTPUT_CONTAINER_NAME, notifyOutputBlobName));
         }
+    }
+
+    private void exportPaymentData(BlobServiceClient stagingClient, BlobServiceClient exportClient, OffsetDateTime fromDate, OffsetDateTime toDate,
+                                   List<String> messages) {
+
+        List<String> blobNames = new ArrayList<>();
+
+        blobNames.add(exportBlobDataComponent.exportBlobsAndGetOutputName(
+            stagingClient,
+            exportClient,
+            fromDate,
+            toDate,
+            PAYMENT_HISTORY_NAME + EXTRACT_FILE_NAME_SUFFIX,
+            SourceEnum.PAYMENT_HISTORY
+        ));
+
+        blobNames.add(exportBlobDataComponent.exportBlobsAndGetOutputName(
+            stagingClient,
+            exportClient,
+            fromDate,
+            toDate,
+            PAYMENT_ALLOCATION_NAME + EXTRACT_FILE_NAME_SUFFIX,
+            SourceEnum.PAYMENT_ALLOCATION
+        ));
+
+        blobNames.add(exportBlobDataComponent.exportBlobsAndGetOutputName(
+            stagingClient,
+            exportClient,
+            fromDate,
+            toDate,
+            PAYMENT_REMISSION_NAME + EXTRACT_FILE_NAME_SUFFIX,
+            SourceEnum.PAYMENT_REMISSION
+        ));
+
+        blobNames.add(exportBlobDataComponent.exportBlobsAndGetOutputName(
+            stagingClient,
+            exportClient,
+            fromDate,
+            toDate,
+            PAYMENT_FEE_NAME + EXTRACT_FILE_NAME_SUFFIX,
+            SourceEnum.PAYMENT_FEE
+        ));
+
+        blobNames.stream()
+            .filter(StringUtils::isNotEmpty)
+            .forEach(blobName -> messages.add(blobMessageBuilderComponent.buildMessage(exportClient, "payment", blobName)));
+
     }
 
     @SuppressWarnings("squid:S899")

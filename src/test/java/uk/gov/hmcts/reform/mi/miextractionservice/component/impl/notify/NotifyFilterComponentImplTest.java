@@ -10,6 +10,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import uk.gov.hmcts.reform.mi.micore.model.NotificationOutput;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.DataParserComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.domain.SourceEnum;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -56,7 +57,7 @@ class NotifyFilterComponentImplTest {
         );
 
         List<String> expected = Collections.singletonList(NOTIFY_JSON);
-        assertEquals(expected, underTest.filterDataInDateRange(inputData, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME),
+        assertEquals(expected, underTest.filterDataInDateRange(inputData, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME, SourceEnum.NOTIFY),
             "Date filter did not work as expected.");
     }
 
@@ -79,7 +80,7 @@ class NotifyFilterComponentImplTest {
         OffsetDateTime testFromDate = OffsetDateTime.of(1997, 7, 11, 0, 0, 0, 0, ZoneOffset.UTC);
         OffsetDateTime testToDate = OffsetDateTime.of(2003, 5, 18, 23, 59, 59, 999, ZoneOffset.UTC);
 
-        assertEquals(expected, underTest.filterDataInDateRange(inputData, testFromDate, testToDate),
+        assertEquals(expected, underTest.filterDataInDateRange(inputData, testFromDate, testToDate, SourceEnum.NOTIFY),
             "Date filter with on same day date did not work as expected.");
     }
 
@@ -101,7 +102,7 @@ class NotifyFilterComponentImplTest {
         );
 
         List<String> expected = Collections.singletonList(notifyJsonWithService);
-        assertEquals(expected, underTest.filterDataInDateRange(inputData, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME),
+        assertEquals(expected, underTest.filterDataInDateRange(inputData, TEST_FROM_DATE_TIME, TEST_TO_DATE_TIME, SourceEnum.NOTIFY),
             "Case type filter did not work as expected.");
     }
 }
