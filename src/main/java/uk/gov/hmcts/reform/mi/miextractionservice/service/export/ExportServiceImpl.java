@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import uk.gov.hmcts.reform.mi.miextractionservice.component.archive.ArchiveComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.compression.CompressionComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.notification.NotifyTargetsComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.writer.DataWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.ExportProperties;
@@ -34,6 +35,7 @@ import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.parseBoolean;
 import static java.time.format.DateTimeFormatter.ISO_DATE;
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.Constants.DASH_DELIMITER;
+import static uk.gov.hmcts.reform.mi.miextractionservice.domain.Constants.GZIP_EXTENSION;
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.Constants.JSONL_EXTENSION;
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.Constants.NEWLINE_DELIMITER;
 import static uk.gov.hmcts.reform.mi.miextractionservice.domain.Constants.ZIP_EXTENSION;
@@ -43,7 +45,8 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.domain.Constants.ZIP_EX
 @Service
 public class ExportServiceImpl implements ExportService {
 
-    private final @Value("${archive.compression.enabled}") String archiveEnabled;
+    private final @Value("${compression.enabled}") String compressionEnabled;
+    private final @Value("${archive.enabled}") String archiveEnabled;
     private final @Value("${mail.enabled}") String mailEnabled;
     private final @Value("${container-whitelist}") List<String> containerWhitelist;
     private final @Value("${retrieve-from-date}") String retrieveFromDate;
@@ -51,6 +54,7 @@ public class ExportServiceImpl implements ExportService {
     private final ExtractionBlobServiceClientFactory extractionBlobServiceClientFactory;
     private final ExportProperties exportProperties;
     private final DataWriterComponent dataWriterComponent;
+    private final CompressionComponent compressionComponent;
     private final ArchiveComponent archiveComponent;
     private final NotifyTargetsComponent notifyTargetsComponent;
 
@@ -166,13 +170,20 @@ public class ExportServiceImpl implements ExportService {
                                        LocalDate toDate) {
 
         String fileName = getExportName(source, fromDate, toDate, JSONL_EXTENSION);
+        String gzipName = getExportName(source, fromDate, toDate, GZIP_EXTENSION);
         String zipName = getExportName(source, fromDate, toDate, ZIP_EXTENSION);
 
-        if (parseBoolean(archiveEnabled)) {
-            archiveComponent.createArchive(Collections.singletonList(fileName), zipName);
+        if (parseBoolean(compressionEnabled)) {
+            compressionComponent.compressFile(fileName, gzipName);
         }
 
-        String blobName = parseBoolean(archiveEnabled) ? zipName : fileName;
+        String workingFileName = parseBoolean(compressionEnabled) ? gzipName : fileName;
+
+        if (parseBoolean(archiveEnabled)) {
+            archiveComponent.createArchive(Collections.singletonList(workingFileName), zipName);
+        }
+
+        String blobName = parseBoolean(archiveEnabled) ? zipName : workingFileName;
 
         BlobContainerClient blobContainerClient = blobServiceClient.getBlobContainerClient(getExportContainerName(source, properties));
         if (FALSE.equals(blobContainerClient.exists())) {
@@ -185,6 +196,7 @@ public class ExportServiceImpl implements ExportService {
 
         // Clean up
         FileUtils.deleteFile(fileName);
+        FileUtils.deleteFile(gzipName);
         FileUtils.deleteFile(zipName);
     }
 

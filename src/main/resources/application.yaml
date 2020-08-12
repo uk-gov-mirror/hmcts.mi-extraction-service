@@ -84,10 +84,13 @@ container-whitelist: ${CONTAINER_WHITELIST:}#{T(java.util.Collections).emptyList
 retrieve-from-date: ${RETRIEVE_FROM_DATE:}
 retrieve-to-date: ${RETRIEVE_TO_DATE:}
 
+# Compression
+compression:
+  enabled: true
+
 # Archiving
 archive:
-  compression:
-    enabled: true
+  enabled: false
   encryption:
     enabled: false
     password:
