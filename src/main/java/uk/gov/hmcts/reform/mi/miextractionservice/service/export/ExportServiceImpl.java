@@ -170,7 +170,7 @@ public class ExportServiceImpl implements ExportService {
                                        LocalDate toDate) {
 
         String fileName = getExportName(source, fromDate, toDate, JSONL_EXTENSION);
-        String gzipName = getExportName(source, fromDate, toDate, GZIP_EXTENSION);
+        String gzipName = getExportName(source, fromDate, toDate, JSONL_EXTENSION + GZIP_EXTENSION);
         String zipName = getExportName(source, fromDate, toDate, ZIP_EXTENSION);
 
         if (parseBoolean(compressionEnabled)) {

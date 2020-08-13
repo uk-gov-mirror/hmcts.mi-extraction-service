@@ -49,7 +49,7 @@ class ExportServiceImplTest {
     private static final String BLOB_IN_DATE = "blob-2000-01.jsonl";
     private static final String BLOB_OUT_DATE = "blob-2000-02.jsonl";
     private static final String OUTPUT_BLOB_NAME = "enabled1-2000-01-01-2000-01-01.jsonl";
-    private static final String OUTPUT_GZIP_NAME = "enabled1-2000-01-01-2000-01-01.gz";
+    private static final String OUTPUT_GZIP_NAME = "enabled1-2000-01-01-2000-01-01.jsonl.gz";
     private static final String OUTPUT_ZIP_NAME = "enabled1-2000-01-01-2000-01-01.zip";
     private static final String TRUE_VALUE = "true";
     private static final String FALSE_VALUE = "false";

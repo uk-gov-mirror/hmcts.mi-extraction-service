@@ -42,7 +42,7 @@ class ArchiveComponentImplTest {
     }
 
     @Test
-    void givenInputFilesAndOutputPath_whenCreateEncryptedArchive_thenCreateZip() throws Exception {
+    void givenInputFilesAndOutputPath_whenCreateArchive_thenCreateZip() throws Exception {
         Files.createFile(Paths.get(TEST_FILE_NAME));
 
         classToTest.createArchive(Collections.singletonList(TEST_FILE_NAME), TEST_ZIP_NAME);
@@ -52,7 +52,7 @@ class ArchiveComponentImplTest {
     }
 
     @Test
-    void givenNoFilesToZip_whenCreateEncryptedArchive_thenThrowArchiveException() {
+    void givenNoFilesToZip_whenCreateArchive_thenThrowArchiveException() {
         List<String> emptyList = Collections.emptyList();
         assertThrows(ArchiveException.class, () -> classToTest.createArchive(emptyList, TEST_ZIP_NAME),
                      "ArchiveException should be thrown when nothing to archive.");

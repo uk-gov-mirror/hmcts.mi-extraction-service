@@ -46,10 +46,13 @@ container-whitelist: ^.*test.*
 retrieve-from-date: 1970-01-01
 retrieve-to-date: 1970-01-02
 
+# Compression
+compression:
+  enabled: true
+
 # Archiving
 archive:
-  compression:
-    enabled: true
+  enabled: true
   encryption:
     enabled: false
     password:
