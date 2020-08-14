@@ -22,7 +22,7 @@ bin/main/application.yaml
 .DS_Store
 
 ### Generated Files
-*_EXTRACT.csv
-*_EXTRACT.jsonl
-*_EXTRACT.zip
+*.csv
+*.jsonl
+*.zip
 unit-test-*

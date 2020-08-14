@@ -1,0 +1,69 @@
+# Spring
+spring:
+  application:
+    name: mi-extraction-service
+
+info:
+  app:
+    name: ${spring.application.name}
+
+# Application Insights
+application-insights:
+  default:
+    modules:
+      WebSyntheticRequestTelemetryInitializer:
+        enabled: false
+
+# Azure
+azure:
+  application-insights:
+    instrumentation-key: ""
+  managed-identity:
+    client-id: "clientId"
+  storage-account:
+    staging:
+      name: "staging"
+      connection-string: "connString"
+    export:
+      name: "export"
+      connection-string: "connString"
+
+# Export
+export:
+  sources:
+    test:
+      enabled: true
+      date-field: date_updated
+      type: prefix
+    extraction-test:
+      enabled: true
+      date-field: extraction_date
+
+# Whitelist
+container-whitelist: ^.*test.*
+
+# Dates
+retrieve-from-date: 1970-01-01
+retrieve-to-date: 1970-01-02
+
+# Archiving
+archive:
+  compression:
+    enabled: true
+  encryption:
+    enabled: false
+    password:
+
+# Mail
+mail:
+  enabled: false
+  targets: "TestMailAddress"
+  gov-uk:
+    api-key: "testApiKey"
+    templates:
+      blob-url: "testTemplate"
+
+# Smoke Test
+smoke:
+  test:
+    enabled: false

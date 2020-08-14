@@ -63,6 +63,9 @@ stages:
       preIntegrationTest: true
       functionalTest: true
       mutationTest: false
+      envMapping:
+        - key: BUILD_VERSION
+          value: Build.BuildId
       promEnv: $(env.prom)
       azureVault: $(vault)
       azureSecreKeys: 'mi-staging-storage-connection-string,mi-export-storage-connection-string,gov-uk-notify-api-key,mailing-targets'

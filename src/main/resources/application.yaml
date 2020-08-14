@@ -1,0 +1,107 @@
+# Spring
+spring:
+  application:
+    name: mi-extraction-service
+
+info:
+  app:
+    name: ${spring.application.name}
+
+# Application Insights
+application-insights:
+  default:
+    modules:
+      WebSyntheticRequestTelemetryInitializer:
+        enabled: false
+
+# Azure
+azure:
+  application-insights:
+    instrumentation-key: ${APPINSIGHTS_INSTRUMENTATIONKEY:""}
+  managed-identity:
+    client-id: ${MI_CLIENT_ID:}
+  storage-account:
+    staging:
+      name: ${STORAGE_STAGING_NAME:}
+      connection-string: ${STORAGE_STAGING_CONNECTION_STRING:}
+    export:
+      name: ${STORAGE_EXPORT_NAME:}
+      connection-string: ${STORAGE_EXPORT_CONNECTION_STRING:}
+
+# Export
+export:
+  sources:
+    ccd:
+      enabled: true
+      date-field: ce_created_date
+      type: prefix
+    notify:
+      enabled: true
+      date-field: created_at
+      timezone: Europe/London # Dates are stored in UTC but processed by Notify in BST
+      type: prefix
+    payment-payment-history:
+      enabled: true
+      date-field: paymentDateUpdated
+    payment-payment-remission:
+      enabled: true
+      date-field: date_updated
+    payment-payment-fee:
+      enabled: true
+      date-field: paymentFeeLinkDateUpdated
+    payment-bs-envelope:
+      enabled: true
+      date-field: date_updated
+    payment-bs-envelope-case:
+      enabled: true
+      date-field: date_updated
+    payment-bs-envelope-history:
+      enabled: true
+      date-field: date_updated
+    payment-bs-envelope-metadata:
+      enabled: true
+      date-field: date_updated
+    payment-bs-envelope-payment:
+      enabled: true
+      date-field: date_updated
+    payment-fees-fee:
+      enabled: true
+      date-field: feeLastUpdated
+    payment-bar-case:
+      enabled: true
+      date-field: extraction_date
+    payment-bar-payment:
+      enabled: true
+      date-field: paymentInstructionStatusUpdateTime
+    payment-bar-site:
+      enabled: true
+      date-field: extraction_date
+
+# Whitelist
+container-whitelist: ${CONTAINER_WHITELIST:}#{T(java.util.Collections).emptyList()}
+
+# Dates
+retrieve-from-date: ${RETRIEVE_FROM_DATE:}
+retrieve-to-date: ${RETRIEVE_TO_DATE:}
+
+# Archiving
+archive:
+  compression:
+    enabled: true
+  encryption:
+    enabled: false
+    password:
+
+# Mail
+mail:
+  enabled: false
+  targets: ${MAIL_TARGETS:}
+  gov-uk:
+    api-key: ${GOV_UK_NOTIFY_API_KEY:}
+    templates:
+      blob-url: ${GOV_UK_NOTIFY_BLOB_URL_TEMPLATE_ID:de8b6fb6-8737-46f3-9c16-a1e79a3c781d}
+
+# Smoke Test
+smoke:
+  test:
+    enabled: false
