@@ -12,6 +12,7 @@ public final class Constants {
 
     // File Constants
     public static final String JSONL_EXTENSION = ".jsonl";
+    public static final String GZIP_EXTENSION = ".gz";
     public static final String ZIP_EXTENSION = ".zip";
 
     // Email Constants

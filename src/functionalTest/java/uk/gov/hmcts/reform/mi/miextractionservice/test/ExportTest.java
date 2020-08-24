@@ -21,9 +21,12 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.zip.GZIPInputStream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -51,7 +54,7 @@ public class ExportTest {
         + "BlobEndpoint=http://%s:%d/devstoreaccount1;";
 
     private static final String DEFAULT_HOST = "127.0.0.1";
-    private static final String EXTRACT_FILE_NAME = "test-1970-01-01-1970-01-02.jsonl";
+    private static final String EXTRACT_FILE_NAME = "test-1970-01-01-1970-01-02.jsonl.gz";
 
     @Autowired
     private BlobServiceClientFactory blobServiceClientFactory;
@@ -154,6 +157,14 @@ public class ExportTest {
         zipFile.extractFile(EXTRACT_FILE_NAME, ".");
 
         assertTrue(new File(EXTRACT_FILE_NAME).exists(), "Expected archived file to be extracted.");
+
+        try (InputStream inputStream = Files.newInputStream(Paths.get(EXTRACT_FILE_NAME));
+             GZIPInputStream gzipInputStream = new GZIPInputStream(inputStream)) {
+
+            // Newline gets appended to end of file when exporting.
+            assertEquals(TEST_JSONL + "\n", new String(gzipInputStream.readAllBytes(), StandardCharsets.UTF_8),
+                         "Data for decompressed gzip file should match input string.");
+        }
     }
 
     @Test
