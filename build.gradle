@@ -272,10 +272,12 @@ integrationPostTest {
   }
 }
 
+// Ignoring components consisting mainly of try-with-resource until Java 11+ pitest filter is fixed.
 pitest {
   pitestVersion = '1.5.0'
   targetClasses = ['uk.gov.hmcts.reform.mi.miextractionservice.*']
   excludedClasses = ['uk.gov.hmcts.reform.mi.miextractionservice.MiExtractionServiceApplication*',
+                     'uk.gov.hmcts.reform.mi.miextractionservice.component.compression.GzipCompressionComponentImpl*',
                      'uk.gov.hmcts.reform.mi.miextractionservice.config.*',
                      'uk.gov.hmcts.reform.mi.miextractionservice.domain.*',
                      'uk.gov.hmcts.reform.mi.miextractionservice.exception.*',

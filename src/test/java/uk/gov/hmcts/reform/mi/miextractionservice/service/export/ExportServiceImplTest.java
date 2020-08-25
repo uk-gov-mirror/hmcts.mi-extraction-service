@@ -27,7 +27,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -37,6 +39,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("PMD.TooManyMethods")
 @ExtendWith(SpringExtension.class)
 class ExportServiceImplTest {
 
@@ -78,6 +81,32 @@ class ExportServiceImplTest {
     }
 
     @Test
+    void givenIssueWithStagingClientListBlobContainers_whenExportData_thenThrowExceptionOnCheckConnectivity() {
+        when(stagingClient.listBlobContainers()).thenReturn(null);
+
+        classToTest = new ExportServiceImpl(FALSE_VALUE, FALSE_VALUE, FALSE_VALUE, Collections.emptyList(),
+                                            TEST_DATE, TEST_DATE,
+                                            extractionBlobServiceClientFactory, exportProperties,
+                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent);
+
+        assertThrows(Exception.class, () -> classToTest.exportData());
+        verify(exportProperties, never()).getSources();
+    }
+
+    @Test
+    void givenIssueWithExportClientListBlobContainers_whenExportData_thenThrowExceptionOnCheckConnectivity() {
+        when(exportClient.listBlobContainers()).thenReturn(null);
+
+        classToTest = new ExportServiceImpl(FALSE_VALUE, FALSE_VALUE, FALSE_VALUE, Collections.emptyList(),
+                                            TEST_DATE, TEST_DATE,
+                                            extractionBlobServiceClientFactory, exportProperties,
+                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent);
+
+        assertThrows(Exception.class, () -> classToTest.exportData());
+        verify(exportProperties, never()).getSources();
+    }
+
+    @Test
     void givenExportServicesWithWhitelist_whenExportData_thenUploadBlobForEachEnabledService() {
         Map<String, SourceProperties> sourcePropertiesMap = new ConcurrentHashMap<>();
         sourcePropertiesMap.put(ENABLED_SOURCE_1, SourceProperties.builder().enabled(true).build());
@@ -88,7 +117,7 @@ class ExportServiceImplTest {
         BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
         when(blobContainerItem.getName()).thenReturn(ENABLED_CONTAINER_1);
         BlobContainerItem blobContainerItem2 = mock(BlobContainerItem.class);
-        when(blobContainerItem2.getName()).thenReturn("enabled2-container");
+        when(blobContainerItem2.getName()).thenReturn(ENABLED_SOURCE_2);
         when(stagingClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem, blobContainerItem2));
         BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
         when(stagingClient.getBlobContainerClient(ENABLED_CONTAINER_1)).thenReturn(blobContainerClient);
@@ -121,8 +150,99 @@ class ExportServiceImplTest {
 
         classToTest.exportData();
 
+        verify(stagingClient, never()).getBlobContainerClient(ENABLED_SOURCE_2);
         verify(exportContainer, times(1)).create();
         verify(exportBlob, times(1)).uploadFromFile(OUTPUT_BLOB_NAME, true);
+        verify(compressionComponent, never()).compressFile(anyString(), anyString());
+        verify(archiveComponent, never()).createArchive(anyList(), anyString());
+        verify(notifyTargetsComponent, never()).sendMessage(anyString());
+    }
+
+    @Test
+    void givenExportServicesWithMultipleContainersToCheck_whenExportData_thenUploadBlobForEachEnabledService() {
+        Map<String, SourceProperties> sourcePropertiesMap = new ConcurrentHashMap<>();
+        sourcePropertiesMap.put(ENABLED_SOURCE_1, SourceProperties.builder().enabled(true).build());
+        when(exportProperties.getSources()).thenReturn(sourcePropertiesMap);
+
+        BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
+        when(blobContainerItem.getName()).thenReturn(ENABLED_CONTAINER_1);
+        BlobContainerItem blobContainerItem2 = mock(BlobContainerItem.class);
+        when(blobContainerItem2.getName()).thenReturn(ENABLED_SOURCE_2);
+        when(stagingClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem, blobContainerItem2));
+        BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
+        when(stagingClient.getBlobContainerClient(ENABLED_CONTAINER_1)).thenReturn(blobContainerClient);
+
+        BlobItem blobItem = mock(BlobItem.class);
+        when(blobItem.getName()).thenReturn(BLOB_IN_DATE);
+        BlobItem outOfDateBlobItem = mock(BlobItem.class);
+        when(outOfDateBlobItem.getName()).thenReturn(BLOB_OUT_DATE);
+        when(blobContainerClient.listBlobs()).thenReturn(new PagedIterableStub<>(blobItem, outOfDateBlobItem));
+
+        BlobClient blobClient = mock(BlobClient.class);
+        when(blobContainerClient.getBlobClient(BLOB_IN_DATE)).thenReturn(blobClient);
+
+        when(dataWriterComponent.writeRecordsForDateRange(any(BufferedWriter.class),
+                                                          eq(blobClient),
+                                                          any(SourceProperties.class),
+                                                          eq(TEST_DATE_AS_LOCALDATE),
+                                                          eq(TEST_DATE_AS_LOCALDATE))).thenReturn(1);
+
+        BlobContainerClient exportContainer = mock(BlobContainerClient.class);
+        when(exportClient.getBlobContainerClient(eq(ENABLED_SOURCE_1))).thenReturn(exportContainer);
+        when(exportContainer.exists()).thenReturn(false);
+        BlobClient exportBlob = mock(BlobClient.class);
+        when(exportContainer.getBlobClient(eq(OUTPUT_BLOB_NAME))).thenReturn(exportBlob);
+
+        classToTest = new ExportServiceImpl(FALSE_VALUE, FALSE_VALUE, FALSE_VALUE, Collections.emptyList(),
+                                            TEST_DATE, TEST_DATE,
+                                            extractionBlobServiceClientFactory, exportProperties,
+                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent);
+
+        classToTest.exportData();
+
+        verify(stagingClient, never()).getBlobContainerClient(ENABLED_SOURCE_2);
+        verify(exportContainer, times(1)).create();
+        verify(exportBlob, times(1)).uploadFromFile(OUTPUT_BLOB_NAME, true);
+        verify(compressionComponent, never()).compressFile(anyString(), anyString());
+        verify(archiveComponent, never()).createArchive(anyList(), anyString());
+        verify(notifyTargetsComponent, never()).sendMessage(anyString());
+    }
+
+    @Test
+    void givenExportServicesWithNoRecordsToExport_whenExportData_thenDoNoUploads() {
+        Map<String, SourceProperties> sourcePropertiesMap = new ConcurrentHashMap<>();
+        sourcePropertiesMap.put(ENABLED_SOURCE_1, SourceProperties.builder().enabled(true).build());
+        when(exportProperties.getSources()).thenReturn(sourcePropertiesMap);
+
+        BlobContainerItem blobContainerItem = mock(BlobContainerItem.class);
+        when(blobContainerItem.getName()).thenReturn(ENABLED_CONTAINER_1);
+        when(stagingClient.listBlobContainers()).thenReturn(new PagedIterableStub<>(blobContainerItem));
+        BlobContainerClient blobContainerClient = mock(BlobContainerClient.class);
+        when(stagingClient.getBlobContainerClient(ENABLED_CONTAINER_1)).thenReturn(blobContainerClient);
+
+        BlobItem blobItem = mock(BlobItem.class);
+        when(blobItem.getName()).thenReturn(BLOB_IN_DATE);
+        when(blobContainerClient.listBlobs()).thenReturn(new PagedIterableStub<>(blobItem));
+
+        BlobClient blobClient = mock(BlobClient.class);
+        when(blobContainerClient.getBlobClient(BLOB_IN_DATE)).thenReturn(blobClient);
+
+        when(dataWriterComponent.writeRecordsForDateRange(any(BufferedWriter.class),
+                                                          eq(blobClient),
+                                                          any(SourceProperties.class),
+                                                          eq(TEST_DATE_AS_LOCALDATE),
+                                                          eq(TEST_DATE_AS_LOCALDATE))).thenReturn(0);
+
+        classToTest = new ExportServiceImpl(FALSE_VALUE, FALSE_VALUE, FALSE_VALUE, Collections.emptyList(),
+                                            TEST_DATE, TEST_DATE,
+                                            extractionBlobServiceClientFactory, exportProperties,
+                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent);
+
+        classToTest.exportData();
+
+        verify(exportClient, never()).getBlobContainerClient(anyString());
+        verify(compressionComponent, never()).compressFile(anyString(), anyString());
+        verify(archiveComponent, never()).createArchive(anyList(), anyString());
         verify(notifyTargetsComponent, never()).sendMessage(anyString());
     }
 
@@ -167,6 +287,8 @@ class ExportServiceImplTest {
 
         verify(exportContainer, never()).create();
         verify(exportBlob, times(1)).uploadFromFile(OUTPUT_GZIP_NAME, true);
+        verify(compressionComponent, times(1)).compressFile(anyString(), anyString());
+        verify(archiveComponent, never()).createArchive(anyList(), anyString());
         verify(notifyTargetsComponent, never()).sendMessage(anyString());
     }
 
@@ -211,6 +333,8 @@ class ExportServiceImplTest {
 
         verify(exportContainer, never()).create();
         verify(exportBlob, times(1)).uploadFromFile(OUTPUT_ZIP_NAME, true);
+        verify(compressionComponent, never()).compressFile(anyString(), anyString());
+        verify(archiveComponent, times(1)).createArchive(anyList(), anyString());
         verify(notifyTargetsComponent, never()).sendMessage(anyString());
     }
 
@@ -255,6 +379,8 @@ class ExportServiceImplTest {
 
         verify(exportContainer, never()).create();
         verify(exportBlob, times(1)).uploadFromFile(OUTPUT_ZIP_NAME, true);
+        verify(compressionComponent, times(1)).compressFile(anyString(), anyString());
+        verify(archiveComponent, times(1)).createArchive(anyList(), anyString());
         verify(notifyTargetsComponent, never()).sendMessage(anyString());
     }
 
@@ -299,6 +425,8 @@ class ExportServiceImplTest {
 
         verify(exportContainer, never()).create();
         verify(exportBlob, times(1)).uploadFromFile(OUTPUT_BLOB_NAME, true);
+        verify(compressionComponent, never()).compressFile(anyString(), anyString());
+        verify(archiveComponent, never()).createArchive(anyList(), anyString());
         verify(notifyTargetsComponent).sendMessage(eq("Blob enabled1-2000-01-01-2000-01-01.jsonl uploaded to container enabled1."));
     }
 
@@ -344,6 +472,8 @@ class ExportServiceImplTest {
 
         verify(exportContainer, never()).create();
         verify(exportBlob, times(1)).uploadFromFile(OUTPUT_BLOB_NAME, true);
+        verify(compressionComponent, never()).compressFile(anyString(), anyString());
+        verify(archiveComponent, never()).createArchive(anyList(), anyString());
         verify(notifyTargetsComponent, never()).sendMessage(anyString());
     }
 
@@ -384,6 +514,8 @@ class ExportServiceImplTest {
 
         verify(exportClient, never()).getBlobContainerClient(anyString());
 
+        verify(compressionComponent, never()).compressFile(anyString(), anyString());
+        verify(archiveComponent, never()).createArchive(anyList(), anyString());
         verify(notifyTargetsComponent, never()).sendMessage(anyString());
     }
 }
