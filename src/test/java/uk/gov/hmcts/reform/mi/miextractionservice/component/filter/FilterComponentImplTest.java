@@ -56,6 +56,7 @@ class FilterComponentImplTest {
     @Test
     void givenInvalidFilter_whenFilter_thenThrowParserException() {
         final List<String> filters = ImmutableList.of("broken=filter=is");
-        assertThrows(ParserException.class, () -> classToTest.filter(null, SourceProperties.builder().filters(filters).build()));
+        SourceProperties sourceProperties = SourceProperties.builder().filters(filters).build();
+        assertThrows(ParserException.class, () -> classToTest.filter(null, sourceProperties));
     }
 }
