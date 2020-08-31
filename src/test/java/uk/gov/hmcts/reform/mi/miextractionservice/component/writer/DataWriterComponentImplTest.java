@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import uk.gov.hmcts.reform.mi.miextractionservice.component.filter.DateFilterComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.filter.FilterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.parser.DataParserComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.SourceProperties;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ExportException;
@@ -44,12 +45,14 @@ class DataWriterComponentImplTest {
     private DataParserComponent dataParserComponent;
     @Mock
     private DateFilterComponent dateFilterComponent;
+    @Mock
+    private FilterComponent filterComponent;
 
     DataWriterComponentImpl classToTest;
 
     @BeforeEach
     void setUp() {
-        classToTest = new DataWriterComponentImpl(dataParserComponent, dateFilterComponent);
+        classToTest = new DataWriterComponentImpl(dataParserComponent, dateFilterComponent, filterComponent);
     }
 
     @Test
@@ -73,6 +76,7 @@ class DataWriterComponentImplTest {
             .thenReturn(true);
         when(dateFilterComponent.filterByDate(not(eq(inDateJsonNode)), any(), any(), any()))
             .thenReturn(false);
+        when(filterComponent.filter(any(), any())).thenReturn(true);
 
         int actual = classToTest.writeRecordsForDateRange(bufferedWriter, blobClient, SOURCE_PROPERTIES, FROM_DATE, TO_DATE);
 
@@ -80,6 +84,39 @@ class DataWriterComponentImplTest {
 
         verify(bufferedWriter, times(3)).write(anyString());
         verify(bufferedWriter, times(3)).newLine();
+    }
+
+    @Test
+    void givenBlobClient_whenWriteRecordsWithFilters_writeDataAndReturnCountOfRecordsWithinDateRangeThatPassFilters() throws Exception {
+        final BufferedWriter bufferedWriter = mock(BufferedWriter.class);
+        final BlobClient blobClient = mock(BlobClient.class);
+
+        final String data = "inDate\ninDate\n\nnotInDate\ninDate";
+        final ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(data.getBytes());
+        final BlobInputStream blobInputStream = mock(BlobInputStream.class, delegatesTo(byteArrayInputStream));
+
+        final JsonNode inDateJsonNode = mock(JsonNode.class);
+        final JsonNode notInDateJsonNode = mock(JsonNode.class);
+
+        when(blobClient.openInputStream()).thenReturn(blobInputStream);
+
+        when(dataParserComponent.parseJsonString(eq("inDate"))).thenReturn(inDateJsonNode);
+        when(dataParserComponent.parseJsonString(eq("notInDate"))).thenReturn(notInDateJsonNode);
+
+        when(dateFilterComponent.filterByDate(eq(inDateJsonNode), eq(SOURCE_PROPERTIES), eq(FROM_DATE), eq(TO_DATE)))
+            .thenReturn(true);
+        when(dateFilterComponent.filterByDate(not(eq(inDateJsonNode)), any(), any(), any()))
+            .thenReturn(false);
+        when(filterComponent.filter(eq(inDateJsonNode), any()))
+            .thenReturn(true) // Only pass first in date data node.
+            .thenReturn(false);
+
+        int actual = classToTest.writeRecordsForDateRange(bufferedWriter, blobClient, SOURCE_PROPERTIES, FROM_DATE, TO_DATE);
+
+        assertEquals(1, actual, "Three records should be written for date range.");
+
+        verify(bufferedWriter, times(1)).write(anyString());
+        verify(bufferedWriter, times(1)).newLine();
     }
 
     @Test

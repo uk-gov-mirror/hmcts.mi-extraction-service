@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import uk.gov.hmcts.reform.mi.miextractionservice.component.filter.DateFilterComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.filter.FilterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.parser.DataParserComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.SourceProperties;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ExportException;
@@ -25,6 +26,7 @@ public class DataWriterComponentImpl implements DataWriterComponent {
 
     private final DataParserComponent dataParserComponent;
     private final DateFilterComponent dateFilterComponent;
+    private final FilterComponent filterComponent;
 
     @Override
     public int writeRecordsForDateRange(BufferedWriter bufferedWriter,
@@ -43,7 +45,9 @@ public class DataWriterComponentImpl implements DataWriterComponent {
             while (line != null) {
                 if (StringUtils.isNotEmpty(line)) {
                     JsonNode jsonNode = dataParserComponent.parseJsonString(line);
-                    if (dateFilterComponent.filterByDate(jsonNode, sourceProperties, fromDate, toDate)) {
+                    if (dateFilterComponent.filterByDate(jsonNode, sourceProperties, fromDate, toDate)
+                        && filterComponent.filter(jsonNode, sourceProperties)) {
+
                         bufferedWriter.write(line);
                         bufferedWriter.newLine();
                         recordsCount++;

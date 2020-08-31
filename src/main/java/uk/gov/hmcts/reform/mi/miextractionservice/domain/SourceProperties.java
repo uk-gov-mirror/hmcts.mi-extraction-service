@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Value;
 import org.springframework.boot.context.properties.ConstructorBinding;
 
+import java.util.List;
+
 @Builder
 @Value
 @ConstructorBinding
@@ -14,4 +16,5 @@ public class SourceProperties {
     String dateField;
     String timezone;
     SourceTypeEnum type;
+    List<String> filters;
 }

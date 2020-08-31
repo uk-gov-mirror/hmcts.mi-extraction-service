@@ -32,11 +32,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.EXPORT_CONTAINER_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.EXPORT_EXTRACTION_CONTAINER_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.EXPORT_FILTER_CONTAINER_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.EXTRACT_FILE_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.EXTRACT_FILTER_FILE_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_BLOB_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_CONTAINER_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_EXPORT_BLOB;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_EXTRACTION_CONTAINER_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_EXTRACTION_EXPORT_BLOB;
+import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_FILTER_CONTAINER_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_FILTER_EXPORT_BLOB;
+import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_FILTER_FAIL_JSONL;
+import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_FILTER_PASS_JSONL;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_JSONL;
 
 @SuppressWarnings({"unchecked","PMD.AvoidUsingHardCodedIP","PMD.ExcessiveImports"})
@@ -54,7 +61,6 @@ public class ExportTest {
         + "BlobEndpoint=http://%s:%d/devstoreaccount1;";
 
     private static final String DEFAULT_HOST = "127.0.0.1";
-    private static final String EXTRACT_FILE_NAME = "test-1970-01-01-1970-01-02.jsonl.gz";
 
     @Autowired
     private BlobServiceClientFactory blobServiceClientFactory;
@@ -137,6 +143,16 @@ public class ExportTest {
             .getBlockBlobClient()
             .upload(extractionStream, inputData.length);
 
+        String filterTestData = TEST_FILTER_PASS_JSONL + "\n" + TEST_FILTER_FAIL_JSONL;
+        byte[] filterData = filterTestData.getBytes();
+        InputStream filterStream = new ByteArrayInputStream(filterData);
+
+        stagingBlobServiceClient
+            .createBlobContainer(TEST_FILTER_CONTAINER_NAME)
+            .getBlobClient(TEST_BLOB_NAME)
+            .getBlockBlobClient()
+            .upload(filterStream, filterTestData.length());
+
         classToTest.exportData();
 
         assertTrue(exportBlobServiceClient.getBlobContainerClient(EXPORT_CONTAINER_NAME).exists(),
@@ -148,6 +164,11 @@ public class ExportTest {
         assertTrue(exportBlobServiceClient.getBlobContainerClient(EXPORT_EXTRACTION_CONTAINER_NAME)
                        .getBlobClient(TEST_EXTRACTION_EXPORT_BLOB).exists(),
                    "Test extraction date blob should have been created.");
+        assertTrue(exportBlobServiceClient.getBlobContainerClient(EXPORT_FILTER_CONTAINER_NAME).exists(),
+                   "Export filter container should have been created.");
+        assertTrue(exportBlobServiceClient.getBlobContainerClient(EXPORT_FILTER_CONTAINER_NAME)
+                       .getBlobClient(TEST_FILTER_EXPORT_BLOB).exists(),
+                   "Test filter blob should have been created.");
 
         try (OutputStream outputStream = Files.newOutputStream(Paths.get(TEST_EXPORT_BLOB))) {
             exportBlobServiceClient.getBlobContainerClient(EXPORT_CONTAINER_NAME).getBlobClient(TEST_EXPORT_BLOB).download(outputStream);
@@ -164,6 +185,25 @@ public class ExportTest {
             // Newline gets appended to end of file when exporting.
             assertEquals(TEST_JSONL + "\n", new String(gzipInputStream.readAllBytes(), StandardCharsets.UTF_8),
                          "Data for decompressed gzip file should match input string.");
+        }
+
+        try (OutputStream outputStream = Files.newOutputStream(Paths.get(TEST_FILTER_EXPORT_BLOB))) {
+            exportBlobServiceClient.getBlobContainerClient(EXPORT_FILTER_CONTAINER_NAME)
+                .getBlobClient(TEST_FILTER_EXPORT_BLOB)
+                .download(outputStream);
+        }
+
+        ZipFile filterZipFile = new ZipFile(TEST_FILTER_EXPORT_BLOB);
+        filterZipFile.extractFile(EXTRACT_FILTER_FILE_NAME, ".");
+
+        assertTrue(new File(EXTRACT_FILTER_FILE_NAME).exists(), "Expected archived filter file to be extracted.");
+
+        try (InputStream inputStream = Files.newInputStream(Paths.get(EXTRACT_FILTER_FILE_NAME));
+             GZIPInputStream gzipInputStream = new GZIPInputStream(inputStream)) {
+
+            // Newline gets appended to end of file when exporting.
+            assertEquals(TEST_FILTER_PASS_JSONL + "\n", new String(gzipInputStream.readAllBytes(), StandardCharsets.UTF_8),
+                         "Data for decompressed gzip file should only contain filter passing data.");
         }
     }
 

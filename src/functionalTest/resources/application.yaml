@@ -38,6 +38,11 @@ export:
     extraction-test:
       enabled: true
       date-field: extraction_date
+    filter-test:
+      enabled: true
+      date-field: extraction_date
+      filters:
+        - test=pass
 
 # Whitelist
 container-whitelist: ^.*test.*
