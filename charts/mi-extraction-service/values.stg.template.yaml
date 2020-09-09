@@ -1,5 +1,6 @@
 mi-job:
   image: ${IMAGE_NAME}
+  keyVaultsUsepodidentity: false
   environment:
     APPINSIGHTS_INSTRUMENTATIONKEY: 482eb1b8-a656-41e6-b2e8-8351d7986b2c
     CONTAINER_WHITELIST: ^exp-testcontainer-${BUILD_VERSION}.*
