@@ -77,6 +77,91 @@ export:
       enabled: true
       date-field: extraction_date
 
+    eightbyeight-agents-activities:
+      enabled: true
+      date-field: trans-accept-time
+    eightbyeight-agents-interactions:
+      enabled: true
+      date-field: accept-timestamp
+    eightbyeight-agents-outboundcalls:
+      enabled: true
+      date-field: start-time
+    eightbyeight-agents-skills:
+      enabled: true
+      date-field: extraction_date
+    eightbyeight-agents-statistics:
+      enabled: true
+      date-field: time-stamp
+    eightbyeight-agents-statuses:
+      enabled: true
+      date-field: event-time
+    eightbyeight-interactions:
+      enabled: true
+      date-field: create-timestamp
+    eightbyeight-allinteractions:
+      enabled: true
+      date-field: create-timestamp
+    eightbyeight-campaigns-interactions:
+      enabled: true
+      date-field: accept-timestamp
+    eightbyeight-channels-interactions:
+      enabled: true
+      date-field: create-timestamp
+    eightbyeight-channels-online-slas:
+      enabled: true
+      date-field: time-stamp
+    eightbyeight-channels-statistics:
+      enabled: true
+      date-field: time-stamp
+    eightbyeight-groups:
+      enabled: true
+      date-field: extraction_date
+    eightbyeight-groups-activities:
+      enabled: true
+      date-field: trans-accept-time
+    eightbyeight-groups-agents:
+      enabled: true
+      date-field: extraction_date
+    eightbyeight-groups-interactions:
+      enabled: true
+      date-field: accept-timestamp
+    eightbyeight-groups-outboundcalls:
+      enabled: true
+      date-field: start-time
+    eightbyeight-groups-statuses:
+      enabled: true
+      date-field: event-time
+    eightbyeight-queues-interactions:
+      enabled: true
+      date-field: create-timestamp
+    eightbyeight-queues-offline-slas:
+      enabled: true
+      date-field: time-stamp
+    eightbyeight-queues-online-slas:
+      enabled: true
+      date-field: time-stamp
+    eightbyeight-queues-skills:
+      enabled: true
+      date-field: extraction_date
+    eightbyeight-queues-statistics:
+      enabled: true
+      date-field: time-stamp
+    eightbyeight-scls:
+      enabled: true
+      date-field: extraction_date
+    eightbyeight-tcls:
+      enabled: true
+      date-field: extraction_date
+    eightbyeight-queues:
+      enabled: true
+      date-field: extraction_date
+    eightbyeight-channels:
+      enabled: true
+      date-field: extraction_date
+    eightbyeight-agents:
+      enabled: true
+      date-field: extraction_date
+
 # Whitelist
 container-whitelist: ${CONTAINER_WHITELIST:}#{T(java.util.Collections).emptyList()}
 
