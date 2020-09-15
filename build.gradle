@@ -3,12 +3,12 @@ plugins {
   id 'checkstyle'
   id 'pmd'
   id 'jacoco'
-  id 'io.spring.dependency-management' version '1.0.9.RELEASE'
-  id 'org.springframework.boot' version '2.3.0.RELEASE'
-  id 'org.owasp.dependencycheck' version '5.3.2.1'
-  id 'com.github.ben-manes.versions' version '0.28.0'
-  id 'org.sonarqube' version '2.8'
-  id 'info.solidsoft.pitest' version '1.5.1'
+  id 'io.spring.dependency-management' version '1.0.10.RELEASE'
+  id 'org.springframework.boot' version '2.3.3.RELEASE'
+  id 'org.owasp.dependencycheck' version '6.0.1'
+  id 'com.github.ben-manes.versions' version '0.33.0'
+  id 'org.sonarqube' version '3.0'
+  id 'info.solidsoft.pitest' version '1.5.2'
 }
 
 group = 'uk.gov.hmcts.reform'
@@ -147,7 +147,7 @@ dependencyCheck {
 
 dependencyManagement {
   dependencies {
-    dependency group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.65'
+    dependency group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.66'
     // CVE-2018-10237 - Unbounded memory allocation
     dependencySet(group: 'com.google.guava', version: '29.0-jre') {
       entry 'guava'
@@ -179,8 +179,8 @@ def versions = [
   miCoreLib        : '3.4.4',
   reformLogging    : '5.1.5',
   openCsv          : '5.1',
-  piTest           : '1.5.0',
-  piTestGradle     : '1.4.5',
+  piTest           : '1.5.2',
+  piTestGradle     : '1.5.2',
   piTestSonar      : '0.5',
   springBootMail   : '2.2.2.RELEASE',
   springfoxSwagger : '2.9.2',
@@ -201,7 +201,7 @@ dependencies {
 
   implementation group: 'uk.gov.hmcts.reform', name: 'logging', version: versions.reformLogging
   implementation group: 'uk.gov.hmcts.reform', name: 'logging-appinsights', version: versions.reformLogging
-  implementation('uk.gov.hmcts.reform:properties-volume-spring-boot-starter:0.0.4') {
+  implementation('uk.gov.hmcts.reform:properties-volume-spring-boot-starter:0.1.0') {
     exclude group: 'org.springframework.boot', module: 'spring-boot-starter-web'
   }
 
