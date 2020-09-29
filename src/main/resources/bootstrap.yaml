@@ -9,4 +9,6 @@ spring:
         mi-staging-storage-connection-string: azure.storage-account.staging.connection-string
         mi-export-storage-connection-string: azure.storage-account.export.connection-string
         gov-uk-notify-api-key: mail.gov-uk.api-key
+        sftp-remote-user: sftp.remote.user
+        sftp-remote-password: sftp.remote.password
         mailing-targets: mail.targets

@@ -14,6 +14,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.archive.ArchiveComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.compression.CompressionComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.notification.NotifyTargetsComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.sftp.SftpExportComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.writer.DataWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.ExportProperties;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.SourceProperties;
@@ -63,6 +64,8 @@ class ExportServiceImplTest {
     @Mock private CompressionComponent compressionComponent;
     @Mock private ArchiveComponent archiveComponent;
     @Mock private NotifyTargetsComponent notifyTargetsComponent;
+    @Mock private SftpExportComponent sftpExportComponent;
+
 
     private ExportServiceImpl classToTest;
 
@@ -87,7 +90,8 @@ class ExportServiceImplTest {
         classToTest = new ExportServiceImpl(FALSE_VALUE, FALSE_VALUE, FALSE_VALUE, Collections.emptyList(),
                                             TEST_DATE, TEST_DATE,
                                             extractionBlobServiceClientFactory, exportProperties,
-                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent);
+                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent,
+                                            sftpExportComponent);
 
         assertThrows(Exception.class, () -> classToTest.exportData());
         verify(exportProperties, never()).getSources();
@@ -100,7 +104,8 @@ class ExportServiceImplTest {
         classToTest = new ExportServiceImpl(FALSE_VALUE, FALSE_VALUE, FALSE_VALUE, Collections.emptyList(),
                                             TEST_DATE, TEST_DATE,
                                             extractionBlobServiceClientFactory, exportProperties,
-                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent);
+                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent,
+                                            sftpExportComponent);
 
         assertThrows(Exception.class, () -> classToTest.exportData());
         verify(exportProperties, never()).getSources();
@@ -146,7 +151,8 @@ class ExportServiceImplTest {
         classToTest = new ExportServiceImpl(FALSE_VALUE, FALSE_VALUE, FALSE_VALUE, Collections.singletonList(ENABLED_CONTAINER_1),
                                             TEST_DATE, TEST_DATE,
                                             extractionBlobServiceClientFactory, exportProperties,
-                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent);
+                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent,
+                                            sftpExportComponent);
 
         classToTest.exportData();
 
@@ -196,7 +202,8 @@ class ExportServiceImplTest {
         classToTest = new ExportServiceImpl(FALSE_VALUE, FALSE_VALUE, FALSE_VALUE, Collections.emptyList(),
                                             TEST_DATE, TEST_DATE,
                                             extractionBlobServiceClientFactory, exportProperties,
-                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent);
+                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent,
+                                            sftpExportComponent);
 
         classToTest.exportData();
 
@@ -236,7 +243,8 @@ class ExportServiceImplTest {
         classToTest = new ExportServiceImpl(FALSE_VALUE, FALSE_VALUE, FALSE_VALUE, Collections.emptyList(),
                                             TEST_DATE, TEST_DATE,
                                             extractionBlobServiceClientFactory, exportProperties,
-                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent);
+                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent,
+                                            sftpExportComponent);
 
         classToTest.exportData();
 
@@ -281,7 +289,8 @@ class ExportServiceImplTest {
         classToTest = new ExportServiceImpl(TRUE_VALUE, FALSE_VALUE, FALSE_VALUE, Collections.emptyList(),
                                             TEST_DATE, TEST_DATE,
                                             extractionBlobServiceClientFactory, exportProperties,
-                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent);
+                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent,
+                                            sftpExportComponent);
 
         classToTest.exportData();
 
@@ -327,7 +336,8 @@ class ExportServiceImplTest {
         classToTest = new ExportServiceImpl(FALSE_VALUE, TRUE_VALUE, FALSE_VALUE, Collections.emptyList(),
                                             TEST_DATE, TEST_DATE,
                                             extractionBlobServiceClientFactory, exportProperties,
-                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent);
+                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent,
+                                            sftpExportComponent);
 
         classToTest.exportData();
 
@@ -373,7 +383,8 @@ class ExportServiceImplTest {
         classToTest = new ExportServiceImpl(TRUE_VALUE, TRUE_VALUE, FALSE_VALUE, Collections.emptyList(),
                                             TEST_DATE, TEST_DATE,
                                             extractionBlobServiceClientFactory, exportProperties,
-                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent);
+                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent,
+                                            sftpExportComponent);
 
         classToTest.exportData();
 
@@ -419,7 +430,8 @@ class ExportServiceImplTest {
         classToTest = new ExportServiceImpl(FALSE_VALUE, FALSE_VALUE, TRUE_VALUE, Collections.emptyList(),
                                             TEST_DATE, TEST_DATE,
                                             extractionBlobServiceClientFactory, exportProperties,
-                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent);
+                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent,
+                                            sftpExportComponent);
 
         classToTest.exportData();
 
@@ -466,7 +478,8 @@ class ExportServiceImplTest {
         classToTest = new ExportServiceImpl(FALSE_VALUE, FALSE_VALUE, FALSE_VALUE, Collections.emptyList(),
                                             TEST_DATE, TEST_DATE,
                                             extractionBlobServiceClientFactory, exportProperties,
-                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent);
+                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent,
+                                            sftpExportComponent);
 
         classToTest.exportData();
 
@@ -508,7 +521,8 @@ class ExportServiceImplTest {
         classToTest = new ExportServiceImpl(FALSE_VALUE, FALSE_VALUE, FALSE_VALUE, Collections.emptyList(),
                                             TEST_DATE, TEST_DATE,
                                             extractionBlobServiceClientFactory, exportProperties,
-                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent);
+                                            dataWriterComponent, compressionComponent, archiveComponent, notifyTargetsComponent,
+                                            sftpExportComponent);
 
         classToTest.exportData();
 

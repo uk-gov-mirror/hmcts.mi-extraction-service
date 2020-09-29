@@ -185,7 +185,8 @@ def versions = [
   springBootMail   : '2.2.2.RELEASE',
   springfoxSwagger : '2.9.2',
   testContainers   : '1.12.3',
-  zip4j            : '2.3.1'
+  zip4j            : '2.3.1',
+  jcraft           : '0.1.55'
 ]
 
 dependencies {
@@ -199,14 +200,15 @@ dependencies {
   implementation group: 'com.opencsv', name: 'opencsv', version: versions.openCsv
   implementation group: 'net.lingala.zip4j', name: 'zip4j', version: versions.zip4j
 
+  // Reform libraries
   implementation group: 'uk.gov.hmcts.reform', name: 'logging', version: versions.reformLogging
   implementation group: 'uk.gov.hmcts.reform', name: 'logging-appinsights', version: versions.reformLogging
   implementation('uk.gov.hmcts.reform:properties-volume-spring-boot-starter:0.1.0') {
     exclude group: 'org.springframework.boot', module: 'spring-boot-starter-web'
   }
-
+  implementation group: 'com.jcraft', name: 'jsch', version: versions.jcraft
+  
   implementation group: 'uk.gov.hmcts.reform.mi', name: 'mi-core-lib', version: versions.miCoreLib
-
   implementation group: 'uk.gov.hmcts.reform', name: 'logging', version: versions.reformLogging
   implementation group: 'uk.gov.hmcts.reform', name: 'logging-appinsights', version: versions.reformLogging
   implementation group: 'uk.gov.service.notify', name: 'notifications-java-client', version: versions.hmctsNotify
@@ -232,6 +234,7 @@ dependencies {
   functionalTestImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: versions.junit
   functionalTestImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: versions.junit
   functionalTestRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: versions.junit
+  functionalTestImplementation group: 'com.jcraft', name: 'jsch', version: versions.jcraft
 
   functionalTestImplementation group: 'org.testcontainers', name: 'junit-jupiter', version: versions.testContainers
   functionalTestImplementation group: 'com.opencsv', name: 'opencsv', version: versions.openCsv
@@ -244,6 +247,7 @@ dependencies {
 
   integrationTestImplementation 'org.projectlombok:lombok'
   integrationTestAnnotationProcessor 'org.projectlombok:lombok'
+  integrationTestImplementation group: 'com.jcraft', name: 'jsch', version: versions.jcraft
 
   integrationTestImplementation group: 'uk.gov.hmcts.reform.mi', name: 'mi-core-lib', version: versions.miCoreLib
 

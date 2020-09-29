@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import uk.gov.hmcts.reform.mi.micore.exception.ServiceNotAvailableException;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.sftp.SftpExportComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.service.export.ExportService;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -17,13 +18,17 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 class HealthServiceTest {
 
-    @Mock private ExportService exportService;
+    @Mock
+    private ExportService exportService;
+
+    @Mock
+    private SftpExportComponent sftpExportComponent;
 
     private HealthService classToTest;
 
     @BeforeEach
     void setUp() {
-        classToTest = new HealthService(exportService);
+        classToTest = new HealthService(exportService, sftpExportComponent);
     }
 
     @Test
@@ -31,6 +36,7 @@ class HealthServiceTest {
         classToTest.check();
 
         verify(exportService, times(1)).checkStorageConnection();
+        verify(sftpExportComponent, times(1)).checkConnection();
     }
 
     @Test
@@ -39,5 +45,11 @@ class HealthServiceTest {
 
         assertThrows(ServiceNotAvailableException.class, () -> classToTest.check(),
                      "Should throw ServiceNotAvailableException when health check fails.");
+    }
+
+    @Test
+    void testExceptionOnSftpComponentFail() {
+        doThrow(new RuntimeException()).when(sftpExportComponent).checkConnection();
+        assertThrows(ServiceNotAvailableException.class, () -> classToTest.check());
     }
 }

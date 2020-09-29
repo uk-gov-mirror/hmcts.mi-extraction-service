@@ -19,8 +19,8 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.EXPO
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_BLOB_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_CONTAINER_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_JSONL;
-import static uk.gov.hmcts.reform.mi.miextractionservice.util.TestUtils.cleanUpTestFiles;
-import static uk.gov.hmcts.reform.mi.miextractionservice.util.TestUtils.createTestBlob;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.util.TestUtils.cleanUpTestFiles;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.util.TestUtils.createTestBlob;
 
 @SpringBootTest(classes = TestConfig.class)
 public class PreDeployTest {

@@ -1,4 +1,4 @@
-package uk.gov.hmcts.reform.mi.miextractionservice.util;
+package uk.gov.hmcts.reform.mi.miextractionservice.test.util;
 
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;

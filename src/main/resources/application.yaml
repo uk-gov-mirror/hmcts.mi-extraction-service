@@ -193,3 +193,12 @@ mail:
 smoke:
   test:
     enabled: false
+
+sftp:
+  remote:
+    host: localhost
+    user: testUser
+    password: testPassword
+    port: 22
+    folder: /files/mi-platform-export/
+  enabled: false

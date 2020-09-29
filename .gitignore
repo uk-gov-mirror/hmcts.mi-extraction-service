@@ -26,3 +26,5 @@ bin/main/application.yaml
 *.jsonl
 *.zip
 unit-test-*
+
+*-default.properties

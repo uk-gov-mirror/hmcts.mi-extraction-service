@@ -12,6 +12,8 @@ mi-job:
   environment:
     STORAGE_STAGING_NAME: mipersistent{{ .Values.global.environment }}
     STORAGE_EXPORT_NAME: miexport{{ .Values.global.environment }}
+    SFTP_REMOTE_HOST: staging.hmcts.cloudgateway.co.uk
+    SFTP_REMOTE_FOLDER: /files/mi-platform-export-{{ .Values.global.environment }}/
   keyVaults:
     "mi-vault":
       excludeEnvironmentSuffix: false
@@ -19,7 +21,8 @@ mi-job:
       secrets:
         - gov-uk-notify-api-key
         - mailing-targets
-
+        - sftp-remote-user
+        - sftp-remote-password
 global:
   enableKeyVaults: true
   usepodidentity: true

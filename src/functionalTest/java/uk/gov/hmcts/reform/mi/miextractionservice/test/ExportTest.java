@@ -2,18 +2,21 @@ package uk.gov.hmcts.reform.mi.miextractionservice.test;
 
 import com.azure.storage.blob.BlobServiceClient;
 import net.lingala.zip4j.ZipFile;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 
 import uk.gov.hmcts.reform.mi.micore.factory.BlobServiceClientFactory;
 import uk.gov.hmcts.reform.mi.miextractionservice.TestConfig;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.sftp.SftpExportComponentImpl;
 import uk.gov.hmcts.reform.mi.miextractionservice.factory.azure.ExtractionBlobServiceClientFactory;
 import uk.gov.hmcts.reform.mi.miextractionservice.service.export.ExportService;
 
@@ -42,11 +45,14 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST
 @SuppressWarnings({"unchecked","PMD.AvoidUsingHardCodedIP","PMD.ExcessiveImports"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 @SpringBootTest(classes = TestConfig.class)
+@TestPropertySource(locations = "classpath:application.properties")
 public class ExportTest {
 
     private static final String AZURITE_IMAGE = "mcr.microsoft.com/azure-storage/azurite";
 
+    private static final String SFTP_SERVER_IMAGE = "atmoz/sftp:alpine";
     private static final Integer DEFAULT_PORT = 10_000;
+    private static final Integer SFTP_PORT = 22;
 
     private static final String DEFAULT_COMMAND = "azurite -l /data --blobHost 0.0.0.0 --loose";
     private static final String DEFAULT_CONN_STRING = "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;"
@@ -55,6 +61,7 @@ public class ExportTest {
 
     private static final String DEFAULT_HOST = "127.0.0.1";
     private static final String EXTRACT_FILE_NAME = "test-1970-01-01-1970-01-02.jsonl.gz";
+    private static final String TEST_VERIFICATION_FILENAME = "tmp_" + TEST_EXPORT_BLOB;
 
     @Autowired
     private BlobServiceClientFactory blobServiceClientFactory;
@@ -64,6 +71,14 @@ public class ExportTest {
         new GenericContainer(AZURITE_IMAGE)
             .withCommand(DEFAULT_COMMAND)
             .withExposedPorts(DEFAULT_PORT);
+
+
+    @Container
+    private static final GenericContainer SFTP_SERVER_CONTAINER =
+        new GenericContainer(SFTP_SERVER_IMAGE)
+            .withCommand("user:password:::upload")
+            .withExposedPorts(SFTP_PORT);
+
 
     @Container
     private static final GenericContainer EXPORT_CONTAINER =
@@ -80,13 +95,18 @@ public class ExportTest {
     @Autowired
     private ExportService classToTest;
 
+    @Autowired
+    private SftpExportComponentImpl sftpExportComponent;
+
     @BeforeEach
     public void setUp() throws Exception {
         STAGING_CONTAINER.start();
         EXPORT_CONTAINER.start();
+        SFTP_SERVER_CONTAINER.start();
 
         Integer stagingPort = STAGING_CONTAINER.getMappedPort(DEFAULT_PORT);
         Integer exportPort = EXPORT_CONTAINER.getMappedPort(DEFAULT_PORT);
+        Integer sftpPort = SFTP_SERVER_CONTAINER.getMappedPort(SFTP_PORT);
 
         stagingBlobServiceClient = blobServiceClientFactory
             .getBlobClientWithConnectionString(String.format(DEFAULT_CONN_STRING, DEFAULT_HOST, stagingPort));
@@ -94,6 +114,7 @@ public class ExportTest {
         exportBlobServiceClient = blobServiceClientFactory
             .getBlobClientWithConnectionString(String.format(DEFAULT_CONN_STRING, DEFAULT_HOST, exportPort));
 
+        ReflectionTestUtils.setField(sftpExportComponent, "port", sftpPort);
         ReflectionTestUtils.setField(extractionBlobServiceClientFactory, "clientId", null);
         ReflectionTestUtils.setField(extractionBlobServiceClientFactory,
             "stagingConnString", String.format(DEFAULT_CONN_STRING, DEFAULT_HOST, stagingPort));
@@ -105,10 +126,11 @@ public class ExportTest {
     public void tearDown() {
         STAGING_CONTAINER.stop();
         EXPORT_CONTAINER.stop();
-
+        SFTP_SERVER_CONTAINER.stop();
         // Cleanup local created files
         File exportZip = new File(TEST_EXPORT_BLOB);
         File exportFile = new File(EXTRACT_FILE_NAME);
+        File verificationZip  = new File(TEST_VERIFICATION_FILENAME);
 
         if (exportZip.exists()) {
             exportZip.delete();
@@ -116,6 +138,10 @@ public class ExportTest {
 
         if (exportFile.exists()) {
             exportFile.delete();
+        }
+
+        if (verificationZip.exists()) {
+            verificationZip.delete();
         }
     }
 
@@ -165,6 +191,10 @@ public class ExportTest {
             assertEquals(TEST_JSONL + "\n", new String(gzipInputStream.readAllBytes(), StandardCharsets.UTF_8),
                          "Data for decompressed gzip file should match input string.");
         }
+        sftpExportComponent.loadFile(TEST_EXPORT_BLOB, TEST_VERIFICATION_FILENAME);
+
+        File verificationFile = new File(TEST_VERIFICATION_FILENAME);
+        assertTrue(FileUtils.contentEquals(verificationFile, new File(TEST_EXPORT_BLOB)), "Should send file to sftp server");
     }
 
     @Test

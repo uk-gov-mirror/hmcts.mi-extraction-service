@@ -70,3 +70,12 @@ mail:
 smoke:
   test:
     enabled: false
+
+sftp:
+  enabled: true
+  remote:
+    host: 127.0.0.1
+    user: user
+    password: password
+    port: 22
+    folder: /upload/

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.archive.ArchiveComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.compression.CompressionComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.notification.NotifyTargetsComponent;
+import uk.gov.hmcts.reform.mi.miextractionservice.component.sftp.SftpExportComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.writer.DataWriterComponent;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.ExportProperties;
 import uk.gov.hmcts.reform.mi.miextractionservice.domain.SourceProperties;
@@ -57,6 +58,7 @@ public class ExportServiceImpl implements ExportService {
     private final CompressionComponent compressionComponent;
     private final ArchiveComponent archiveComponent;
     private final NotifyTargetsComponent notifyTargetsComponent;
+    private final SftpExportComponent sftpExportComponent;
 
     @Override
     public void exportData() {
@@ -193,6 +195,7 @@ public class ExportServiceImpl implements ExportService {
         BlobClient blobClient = blobContainerClient.getBlobClient(blobName);
 
         blobClient.uploadFromFile(blobName, true);
+        sftpExportComponent.copyFile(blobName);
 
         // Clean up
         FileUtils.deleteFile(fileName);
