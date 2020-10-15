@@ -12,3 +12,4 @@ spring:
         sftp-remote-user: sftp.remote.user
         sftp-remote-password: sftp.remote.password
         mailing-targets: mail.targets
+        encryption-publicKey: sftp.file.encryption.publicKey

@@ -8,11 +8,11 @@ import com.jcraft.jsch.SftpException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import uk.gov.hmcts.reform.mi.miextractionservice.component.encryption.PgpEncryptionComponentImpl;
 import uk.gov.hmcts.reform.mi.miextractionservice.component.sftp.SftpExportComponentImpl;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ExportException;
 
@@ -39,9 +39,9 @@ class SftpExportComponentImplTest {
     private static final String SFTP_DESTINY_FOLDER = "upload/";
     private static final String FILE_NAME = "file.txt";
 
-    @InjectMocks
     private SftpExportComponentImpl classToTest;
-
+    @Mock
+    private PgpEncryptionComponentImpl pgpEncryptionComponentImpl;
     @Mock
     private Session session;
     @Mock
@@ -50,13 +50,18 @@ class SftpExportComponentImplTest {
     private ChannelSftp channelSftp;
 
     @BeforeEach
-    void setUp() throws JSchException {
-        ReflectionTestUtils.setField(classToTest,"port", SFTP_PORT);
-        ReflectionTestUtils.setField(classToTest,"remoteUser", SFTP_USER);
-        ReflectionTestUtils.setField(classToTest,"remotePassword", SFTP_PASSWORD);
-        ReflectionTestUtils.setField(classToTest,"destinyFolder", SFTP_DESTINY_FOLDER);
-        ReflectionTestUtils.setField(classToTest,"remoteHost", SFTP_HOST);
-        ReflectionTestUtils.setField(classToTest, FIELD_ENABLED, true);
+    void setUp() {
+        classToTest = SftpExportComponentImpl.builder()
+            .port(SFTP_PORT)
+            .destinyFolder(SFTP_DESTINY_FOLDER)
+            .remoteUser(SFTP_USER)
+            .remotePassword(SFTP_PASSWORD)
+            .remoteHost(SFTP_HOST)
+            .enabled(true)
+            .jsch(jsch)
+            .pgpEncryptionComponentImpl(pgpEncryptionComponentImpl)
+            .build();
+
     }
 
     @Test
@@ -71,6 +76,7 @@ class SftpExportComponentImplTest {
     void testCopyFile() throws SftpException, JSchException {
         when(jsch.getSession(SFTP_USER, SFTP_HOST, SFTP_PORT)).thenReturn(session);
         when(session.openChannel(CHANNEL_TYPE)).thenReturn(channelSftp);
+        when(pgpEncryptionComponentImpl.encryptDataToFile(FILE_NAME)).thenReturn(FILE_NAME);
 
         classToTest.copyFile(FILE_NAME);
         verify(channelSftp, times(1)).put(FILE_NAME, SFTP_DESTINY_FOLDER + FILE_NAME);
@@ -83,6 +89,7 @@ class SftpExportComponentImplTest {
     void testCopyFileException() throws SftpException, JSchException {
         when(jsch.getSession(SFTP_USER, SFTP_HOST, SFTP_PORT)).thenReturn(session);
         when(session.openChannel(CHANNEL_TYPE)).thenReturn(channelSftp);
+        when(pgpEncryptionComponentImpl.encryptDataToFile(FILE_NAME)).thenReturn(FILE_NAME);
 
         doThrow(new SftpException(1, "TestError")).when(channelSftp).put(FILE_NAME, SFTP_DESTINY_FOLDER + FILE_NAME);
         assertThrows(ExportException.class, () -> classToTest.copyFile(FILE_NAME));
@@ -164,7 +171,11 @@ class SftpExportComponentImplTest {
     void testCopyFileWhenFolderNotExist() throws SftpException, JSchException {
         when(jsch.getSession(SFTP_USER, SFTP_HOST, SFTP_PORT)).thenReturn(session);
         when(session.openChannel(CHANNEL_TYPE)).thenReturn(channelSftp);
-        when(channelSftp.stat(SFTP_DESTINY_FOLDER)).thenThrow(new SftpException(ChannelSftp.SSH_FX_NO_SUCH_FILE, "Error"));
+        when(channelSftp.stat(SFTP_DESTINY_FOLDER)).thenThrow(new SftpException(
+            ChannelSftp.SSH_FX_NO_SUCH_FILE,
+            "Error"
+        ));
+        when(pgpEncryptionComponentImpl.encryptDataToFile(FILE_NAME)).thenReturn(FILE_NAME);
 
         classToTest.copyFile(FILE_NAME);
         verify(channelSftp, times(1)).put(FILE_NAME, SFTP_DESTINY_FOLDER + FILE_NAME);
@@ -176,7 +187,11 @@ class SftpExportComponentImplTest {
     void testErrorCreatingFolderPropagateException() throws SftpException, JSchException {
         when(jsch.getSession(SFTP_USER, SFTP_HOST, SFTP_PORT)).thenReturn(session);
         when(session.openChannel(CHANNEL_TYPE)).thenReturn(channelSftp);
-        when(channelSftp.stat(SFTP_DESTINY_FOLDER)).thenThrow(new SftpException(ChannelSftp.SSH_FX_BAD_MESSAGE, "Error"));
+        when(channelSftp.stat(SFTP_DESTINY_FOLDER)).thenThrow(new SftpException(
+            ChannelSftp.SSH_FX_BAD_MESSAGE,
+            "Error"
+        ));
+        when(pgpEncryptionComponentImpl.encryptDataToFile(FILE_NAME)).thenReturn(FILE_NAME);
 
         assertThrows(ExportException.class, () -> classToTest.copyFile(FILE_NAME));
 

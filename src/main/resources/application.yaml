@@ -202,3 +202,7 @@ sftp:
     port: 22
     folder: /files/mi-platform-export/
   enabled: false
+  file:
+    encryption:
+      enabled: false
+      publicKey:

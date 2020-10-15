@@ -175,32 +175,37 @@ public class ExportServiceImpl implements ExportService {
         String gzipName = getExportName(source, fromDate, toDate, JSONL_EXTENSION + GZIP_EXTENSION);
         String zipName = getExportName(source, fromDate, toDate, ZIP_EXTENSION);
 
-        if (parseBoolean(compressionEnabled)) {
-            compressionComponent.compressFile(fileName, gzipName);
+        try {
+            if (parseBoolean(compressionEnabled)) {
+                compressionComponent.compressFile(fileName, gzipName);
+            }
+
+            String workingFileName = parseBoolean(compressionEnabled) ? gzipName : fileName;
+
+            if (parseBoolean(archiveEnabled)) {
+                archiveComponent.createArchive(Collections.singletonList(workingFileName), zipName);
+            }
+
+            String blobName = parseBoolean(archiveEnabled) ? zipName : workingFileName;
+
+            BlobContainerClient blobContainerClient = blobServiceClient.getBlobContainerClient(getExportContainerName(
+                source,
+                properties
+            ));
+            if (FALSE.equals(blobContainerClient.exists())) {
+                blobContainerClient.create();
+            }
+
+            BlobClient blobClient = blobContainerClient.getBlobClient(blobName);
+
+            blobClient.uploadFromFile(blobName, true);
+            sftpExportComponent.copyFile(blobName);
+        } finally {
+            // Clean up
+            FileUtils.deleteFile(fileName);
+            FileUtils.deleteFile(gzipName);
+            FileUtils.deleteFile(zipName);
         }
-
-        String workingFileName = parseBoolean(compressionEnabled) ? gzipName : fileName;
-
-        if (parseBoolean(archiveEnabled)) {
-            archiveComponent.createArchive(Collections.singletonList(workingFileName), zipName);
-        }
-
-        String blobName = parseBoolean(archiveEnabled) ? zipName : workingFileName;
-
-        BlobContainerClient blobContainerClient = blobServiceClient.getBlobContainerClient(getExportContainerName(source, properties));
-        if (FALSE.equals(blobContainerClient.exists())) {
-            blobContainerClient.create();
-        }
-
-        BlobClient blobClient = blobContainerClient.getBlobClient(blobName);
-
-        blobClient.uploadFromFile(blobName, true);
-        sftpExportComponent.copyFile(blobName);
-
-        // Clean up
-        FileUtils.deleteFile(fileName);
-        FileUtils.deleteFile(gzipName);
-        FileUtils.deleteFile(zipName);
     }
 
     private String getExportName(String source, LocalDate fromDate, LocalDate toDate, String extension) {

@@ -5,57 +5,65 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
+import lombok.Builder;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import uk.gov.hmcts.reform.mi.miextractionservice.component.encryption.PgpEncryptionComponentImpl;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ExportException;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
+@Builder
 public class SftpExportComponentImpl implements SftpExportComponent {
 
     private static final String PROTOCOL = "sftp";
-    private static final int CONNECTION_TIMEOUT_MILLIS =  60_000;
+    private static final int CONNECTION_TIMEOUT_MILLIS = 60_000;
 
     @Value("${sftp.remote.host}")
-    private String remoteHost;
+    private final String remoteHost;
     @Value("${sftp.remote.user}")
-    private String remoteUser;
+    private final String remoteUser;
     @Value("${sftp.remote.password}")
-    private String remotePassword;
+    private final String remotePassword;
     @Value("${sftp.remote.port:22}")
-    private int port;
+    private final int port;
     @Value("${sftp.remote.folder}")
-    private String destinyFolder;
+    private final String destinyFolder;
     @Value("${sftp.enabled:false}")
-    private boolean enabled;
-
-    @Autowired
-    private JSch jsch;
+    private final boolean enabled;
+    private final PgpEncryptionComponentImpl pgpEncryptionComponentImpl;
+    private final JSch jsch;
 
     @Override
     public void copyFile(String file) {
         if (enabled) {
+            String fileToCopy = getEncryptedFileName(file);
             Session session = null;
             try {
                 session = getJshSession();
                 setupStpChannel(session);
                 ChannelSftp sftpChannel = setupStpChannel(session);
                 checkFolder(sftpChannel);
-                sftpChannel.put(file, destinyFolder + file);
+                sftpChannel.put(fileToCopy, destinyFolder + fileToCopy);
             } catch (JSchException | SftpException e) {
-                throw new ExportException("Unable to send file to sftp server", e);
+                throw new ExportException("Unable to send file to sftp server " + fileToCopy, e);
             } finally {
                 if (session != null) {
                     session.disconnect();
                 }
             }
-            log.info("File {} send to sftp server", file);
+            log.info("File {} send to sftp server", fileToCopy);
         } else {
             log.info("SFTP component is disabled");
         }
+    }
+
+    private String getEncryptedFileName(String fileName) {
+        return pgpEncryptionComponentImpl.encryptDataToFile(fileName);
     }
 
     private void checkFolder(ChannelSftp sftpChannel) throws SftpException {
@@ -107,7 +115,7 @@ public class SftpExportComponentImpl implements SftpExportComponent {
     }
 
     private ChannelSftp setupStpChannel(Session session) throws JSchException {
-        ChannelSftp channelSftp =  (ChannelSftp) session.openChannel(PROTOCOL);
+        ChannelSftp channelSftp = (ChannelSftp) session.openChannel(PROTOCOL);
         channelSftp.connect(CONNECTION_TIMEOUT_MILLIS);
         return channelSftp;
     }
