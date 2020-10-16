@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -97,7 +98,7 @@ class PgpEncryptionComponentImplTest {
 
         File in = new File(testFilePath);
 
-        when(fileUtil.newInputStream(in.getName() + ".tmp")).thenThrow(new IOException());
+        doThrow(new IOException()).when(fileUtil).newInputStream(in.getName() + ".tmp");
         assertThrows(UnableToPgpEncryptZipFileException.class, () -> classToTest.encryptDataToFile(testFilePath));
     }
 

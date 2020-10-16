@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import uk.gov.hmcts.reform.mi.miextractionservice.component.encryption.PgpEncryptionComponentImpl;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ExportException;
+import uk.gov.hmcts.reform.mi.miextractionservice.util.FileUtils;
 
 @Component
 @Slf4j
@@ -49,12 +50,14 @@ public class SftpExportComponentImpl implements SftpExportComponent {
                 ChannelSftp sftpChannel = setupStpChannel(session);
                 checkFolder(sftpChannel);
                 sftpChannel.put(fileToCopy, destinyFolder + fileToCopy);
+
             } catch (JSchException | SftpException e) {
                 throw new ExportException("Unable to send file to sftp server " + fileToCopy, e);
             } finally {
                 if (session != null) {
                     session.disconnect();
                 }
+                FileUtils.deleteFile(fileToCopy);
             }
             log.info("File {} send to sftp server", fileToCopy);
         } else {

@@ -141,6 +141,7 @@ public class ExportServiceImpl implements ExportService {
         } else {
             log.info("Nothing to upload for source {} in date range {} to {}", source, fromDate.format(ISO_DATE), toDate.format(ISO_DATE));
         }
+        FileUtils.deleteFile(fileName);
     }
 
     private int parseContainerForData(BlobServiceClient serviceClient,

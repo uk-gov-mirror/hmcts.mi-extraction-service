@@ -23,6 +23,8 @@ mi-job:
         - mailing-targets
         - sftp-remote-user
         - sftp-remote-password
+        - encryption-publicKey
+
 global:
   enableKeyVaults: true
   usepodidentity: true

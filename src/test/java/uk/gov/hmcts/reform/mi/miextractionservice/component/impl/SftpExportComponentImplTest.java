@@ -98,6 +98,8 @@ class SftpExportComponentImplTest {
 
     @Test
     void testCopySessionNonCreated() throws SftpException, JSchException {
+        when(pgpEncryptionComponentImpl.encryptDataToFile(FILE_NAME)).thenReturn(FILE_NAME);
+
         doThrow(new JSchException()).when(jsch).getSession(SFTP_USER, SFTP_HOST, SFTP_PORT);
         assertThrows(ExportException.class, () -> classToTest.copyFile(FILE_NAME));
         verify(channelSftp, never()).connect(anyInt());

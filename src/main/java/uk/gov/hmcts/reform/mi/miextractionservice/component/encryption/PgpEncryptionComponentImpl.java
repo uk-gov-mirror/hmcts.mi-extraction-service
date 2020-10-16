@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import uk.gov.hmcts.reform.mi.miextractionservice.util.FileUtil;
+import uk.gov.hmcts.reform.mi.miextractionservice.util.FileUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -139,6 +140,7 @@ public class PgpEncryptionComponentImpl {
         }
 
         String encodedFileName = fileName + ENCODED_FILE_EXTENSION;
+
         PGPEncryptedDataGenerator encryptedDataGenerator = prepareDataEncryptor(pgpPublicKey);
         try (InputStream inputStream = fileUtil.newInputStream(tmpFileName);
              OutputStream outputStream = encryptedDataGenerator
@@ -147,6 +149,9 @@ public class PgpEncryptionComponentImpl {
         } catch (IOException | PGPException e) {
             throw new UnableToPgpEncryptZipFileException(e);
         }
+
+        FileUtils.deleteFile(tmpFileName);
+
         return encodedFileName;
     }
 
