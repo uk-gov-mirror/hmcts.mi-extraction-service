@@ -26,7 +26,7 @@ variables:
   #  group: pipeline-env-variables
   ${{ if startsWith( variables['Build.SourceBranch'], 'refs/pull/') }}:
     environment: 'test'
-    env.upper: 'TESTS'
+    env.upper: 'TEST'
     azure.aks.resourcegroup: 'ss-$(env)-00-rg'
     azure.aks.cluster: 'ss-$(env)-00-aks'
   ${{ if not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')) }}:
