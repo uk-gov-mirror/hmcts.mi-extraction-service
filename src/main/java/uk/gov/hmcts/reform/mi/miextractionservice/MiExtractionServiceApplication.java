@@ -51,7 +51,7 @@ public class MiExtractionServiceApplication implements ApplicationRunner {
         try {
             healthCheck.check();
         } catch (Exception e) {
-            log.warn("Health check failed");
+            log.warn("Health check failed", e);
         }
     }
 

@@ -132,7 +132,20 @@ class SftpExportComponentImplTest {
     }
 
     @Test
-    void testCheckConnection() throws SftpException, JSchException {
+    void testCheckConnection() throws JSchException {
+        when(jsch.getSession(SFTP_USER, SFTP_HOST, SFTP_PORT)).thenReturn(session);
+        when(session.openChannel(CHANNEL_TYPE)).thenReturn(channelSftp);
+
+        classToTest.checkConnection();
+        verify(channelSftp, times(1)).connect(anyInt());
+        verify(session, times(1)).disconnect();
+    }
+
+    @Test
+    void testForceCheckConnection() throws JSchException {
+        ReflectionTestUtils.setField(classToTest, FIELD_ENABLED, false);
+        ReflectionTestUtils.setField(classToTest, "forceCheck", true);
+
         when(jsch.getSession(SFTP_USER, SFTP_HOST, SFTP_PORT)).thenReturn(session);
         when(session.openChannel(CHANNEL_TYPE)).thenReturn(channelSftp);
 

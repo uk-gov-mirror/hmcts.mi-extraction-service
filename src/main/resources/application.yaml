@@ -195,6 +195,7 @@ smoke:
     enabled: false
 
 sftp:
+  forceCheck: false
   remote:
     host: localhost
     user: testUser
