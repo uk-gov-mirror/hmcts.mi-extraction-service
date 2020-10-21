@@ -25,6 +25,8 @@ bin/main/application.yaml
 *.csv
 *.jsonl
 *.zip
+*.gpg
+*.tmp
 unit-test-*
 
 *-default.properties

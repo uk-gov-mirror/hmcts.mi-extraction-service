@@ -34,7 +34,7 @@ class MiExtractionServiceApplicationTest {
         classToTest.run(null);
 
         verify(exportService, times(1)).exportData();
-        verify(healthCheck, never()).check();
+        verify(healthCheck,  times(1)).check();
         verify(client, times(1)).flush();
     }
 

@@ -15,7 +15,7 @@ public class PagedIterableStub<T> extends PagedIterable<T> {
     private final List<T> target;
 
     public PagedIterableStub(T... target) {
-        super(mock(PagedFlux.class));
+        super((PagedFlux<T>)mock(PagedFlux.class));
         this.target = Arrays.asList(target);
     }
 

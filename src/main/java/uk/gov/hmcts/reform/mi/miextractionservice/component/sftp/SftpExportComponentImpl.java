@@ -36,6 +36,8 @@ public class SftpExportComponentImpl implements SftpExportComponent {
     private final String destinyFolder;
     @Value("${sftp.enabled:false}")
     private final boolean enabled;
+    @Value("${sftp.forceCheck:false}")
+    private final boolean forceCheck;
     private final PgpEncryptionComponentImpl pgpEncryptionComponentImpl;
     private final JSch jsch;
 
@@ -84,7 +86,7 @@ public class SftpExportComponentImpl implements SftpExportComponent {
 
     @Override
     public void checkConnection() {
-        if (enabled) {
+        if (enabled || forceCheck) {
             Session session = null;
             try {
                 session = getJshSession();
