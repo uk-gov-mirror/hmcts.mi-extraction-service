@@ -33,6 +33,7 @@ public class MiExtractionServiceApplication implements ApplicationRunner {
             if (smokeTest) {
                 healthCheck.check();
             } else {
+                runSilentCheck();
                 log.info("Starting application runner.");
                 exportService.exportData();
                 log.info("Finished application runner.");
@@ -43,6 +44,14 @@ public class MiExtractionServiceApplication implements ApplicationRunner {
         } finally {
             client.flush();
             waitTelemetryGracefulPeriod();
+        }
+    }
+
+    private void runSilentCheck() {
+        try {
+            healthCheck.check();
+        } catch (Exception e) {
+            log.warn("Health check failed");
         }
     }
 
