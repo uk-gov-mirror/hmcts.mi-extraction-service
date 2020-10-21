@@ -54,9 +54,7 @@ public final class PgpDecryptionHelper {
 
         PGPEncryptedDataList encryptedDataList = getPgpEncryptedDataList(in);
 
-        //
         // find the secret key
-        //
         Iterator<PGPPublicKeyEncryptedData> it = encryptedDataList.getEncryptedDataObjects();
         PGPPrivateKey pgpPrivateKey = null;
         PGPPublicKeyEncryptedData pbe = null;
