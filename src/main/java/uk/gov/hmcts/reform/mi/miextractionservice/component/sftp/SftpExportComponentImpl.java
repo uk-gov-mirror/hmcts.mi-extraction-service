@@ -92,6 +92,7 @@ public class SftpExportComponentImpl implements SftpExportComponent {
                 session = getJshSession();
                 setupStpChannel(session);
             } catch (JSchException e) {
+                log.warn("Error connecting SFTP server [{}]", remoteHost);
                 throw new ExportException("Unable to connect file to sftp server", e);
             } finally {
                 if (session != null) {
