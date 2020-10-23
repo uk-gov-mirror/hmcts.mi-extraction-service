@@ -14,6 +14,7 @@ public final class Constants {
     public static final String JSONL_EXTENSION = ".jsonl";
     public static final String GZIP_EXTENSION = ".gz";
     public static final String ZIP_EXTENSION = ".zip";
+    public static final String ENCODED_FILE_EXTENSION = ".gpg";
 
     // Email Constants
     public static final long EMAIL_TIME_TO_EXPIRY = 24L; // In hours.

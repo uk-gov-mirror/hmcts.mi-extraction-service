@@ -186,7 +186,9 @@ def versions = [
   springfoxSwagger : '2.9.2',
   testContainers   : '1.12.3',
   zip4j            : '2.3.1',
-  jcraft           : '0.1.55'
+  jcraft           : '0.1.55',
+  bouncycastle     : '1.64'
+
 ]
 
 dependencies {
@@ -217,6 +219,11 @@ dependencies {
   implementation group: 'info.solidsoft.gradle.pitest', name: 'gradle-pitest-plugin', version: versions.piTestGradle
   implementation group: 'org.codehaus.sonar-plugins', name: 'sonar-pitest-plugin', version: versions.piTestSonar
 
+  implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: versions.bouncycastle
+  implementation group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: versions.bouncycastle
+  implementation group: 'org.bouncycastle', name: 'bcpg-jdk15on', version: versions.bouncycastle
+
+
   testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: versions.junit
   testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: versions.junit
   testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: versions.junit
@@ -240,6 +247,10 @@ dependencies {
   functionalTestImplementation group: 'com.opencsv', name: 'opencsv', version: versions.openCsv
   functionalTestImplementation group: 'net.lingala.zip4j', name: 'zip4j', version: versions.zip4j
   functionalTestImplementation group: 'com.github.kirviq', name: 'dumbster', version: versions.dumbster
+
+  functionalTestImplementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: versions.bouncycastle
+  functionalTestImplementation group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: versions.bouncycastle
+  functionalTestImplementation group: 'org.bouncycastle', name: 'bcpg-jdk15on', version: versions.bouncycastle
 
   functionalTestImplementation('org.springframework.boot:spring-boot-starter-test') {
     exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'

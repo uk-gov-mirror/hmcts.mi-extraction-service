@@ -15,11 +15,12 @@ public class DataParserComponentImpl implements DataParserComponent {
     private final ObjectMapper objectMapper;
 
     @Override
+    @SuppressWarnings("PMD.PreserveStackTrace") //To avoid print sensible information
     public JsonNode parseJsonString(String data) {
         try {
             return objectMapper.readValue(data, JsonNode.class);
         } catch (JsonProcessingException e) {
-            throw new ParserException("Unable to map given data to JsonNode.", e);
+            throw new ParserException("Unable to map given data to JsonNode.");
         }
     }
 }

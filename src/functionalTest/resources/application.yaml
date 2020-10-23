@@ -79,3 +79,6 @@ sftp:
     password: password
     port: 22
     folder: /upload/
+  file:
+    encryption:
+      enabled: false
