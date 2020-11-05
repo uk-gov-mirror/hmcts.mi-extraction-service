@@ -28,5 +28,6 @@ bin/main/application.yaml
 *.gpg
 *.tmp
 unit-test-*
+tmpFile.*
 
 *-default.properties
