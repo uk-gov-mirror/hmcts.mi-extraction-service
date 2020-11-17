@@ -14,14 +14,13 @@ import java.io.ByteArrayInputStream;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.CCD_EXPORT_CONTAINER_NAME;
+import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.DASH_DELIMITER;
+import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.EXPORT_CONTAINER_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_BLOB_NAME;
-import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_CCD_JSONL;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_CONTAINER_NAME;
-import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_EXPORT_BLOB;
-import static uk.gov.hmcts.reform.mi.miextractionservice.util.TestUtils.cleanUpSingleBlob;
-import static uk.gov.hmcts.reform.mi.miextractionservice.util.TestUtils.cleanUpTestFiles;
-import static uk.gov.hmcts.reform.mi.miextractionservice.util.TestUtils.createTestBlob;
+import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_JSONL;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.util.TestUtils.cleanUpTestFiles;
+import static uk.gov.hmcts.reform.mi.miextractionservice.test.util.TestUtils.createTestBlob;
 
 @SpringBootTest(classes = TestConfig.class)
 public class PreDeployTest {
@@ -32,11 +31,15 @@ public class PreDeployTest {
     @Value("${azure.storage-account.export.connection-string}")
     private String exportConnectionString;
 
+    @Value("${build.version}")
+    private String buildVersion;
+
     @Autowired
     private BlobServiceClientFactory blobServiceClientFactory;
 
     private BlobServiceClient stagingBlobServiceClient;
-    private BlobServiceClient exportBlobServiceClient;
+
+    private String testContainer;
 
     @BeforeEach
     public void setUp() throws InterruptedException {
@@ -44,40 +47,37 @@ public class PreDeployTest {
         stagingBlobServiceClient = blobServiceClientFactory
             .getBlobClientWithConnectionString(stagingConnectionString);
 
-        exportBlobServiceClient = blobServiceClientFactory
+        BlobServiceClient exportBlobServiceClient = blobServiceClientFactory
             .getBlobClientWithConnectionString(exportConnectionString);
 
+        testContainer = TEST_CONTAINER_NAME + DASH_DELIMITER + buildVersion;
+
         // Clean any previous leftover test data.
-        cleanUpTestFiles(stagingBlobServiceClient, TEST_CONTAINER_NAME);
-        cleanUpSingleBlob(exportBlobServiceClient, CCD_EXPORT_CONTAINER_NAME, TEST_EXPORT_BLOB);
+        cleanUpTestFiles(stagingBlobServiceClient, testContainer);
+        cleanUpTestFiles(exportBlobServiceClient, buildVersion + DASH_DELIMITER + EXPORT_CONTAINER_NAME);
     }
 
     @Test
     public void preDeploySetup() throws InterruptedException {
         // Setup throwaway test data.
-        byte[] testData = TEST_CCD_JSONL.getBytes();
+        byte[] testData = TEST_JSONL.getBytes();
         ByteArrayInputStream inputStreamOne = new ByteArrayInputStream(testData);
 
         assertFalse(stagingBlobServiceClient
-            .getBlobContainerClient(TEST_CONTAINER_NAME)
+            .getBlobContainerClient(testContainer)
             .getBlobClient(TEST_BLOB_NAME)
             .exists(), "Test blob should not exist in staging storage.");
 
         // Upload to landing service storage account.
-        createTestBlob(stagingBlobServiceClient, TEST_BLOB_NAME)
+        createTestBlob(stagingBlobServiceClient, testContainer, TEST_BLOB_NAME)
             .getBlockBlobClient()
             .upload(inputStreamOne, testData.length);
 
         // Verify blobs exists in source storage account.
         assertTrue(stagingBlobServiceClient
-            .getBlobContainerClient(TEST_CONTAINER_NAME)
+            .getBlobContainerClient(testContainer)
             .getBlobClient(TEST_BLOB_NAME)
             .getBlockBlobClient()
             .exists(), "Blob was not successfully created on staging storage.");
-
-        assertFalse(exportBlobServiceClient
-            .getBlobContainerClient(CCD_EXPORT_CONTAINER_NAME)
-            .getBlobClient(TEST_EXPORT_BLOB)
-            .exists(), "Export blob should not exist yet.");
     }
 }

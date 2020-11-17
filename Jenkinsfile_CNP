@@ -21,7 +21,6 @@ def channel = '#mi-dev'
 
 withPipeline(type, product, component) {
 
-    enableDockerBuild()
     disableLegacyDeployment()
     nonServiceApp()
 

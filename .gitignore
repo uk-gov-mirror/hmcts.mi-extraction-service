@@ -22,6 +22,12 @@ bin/main/application.yaml
 .DS_Store
 
 ### Generated Files
-CCD_EXTRACT.csv
-CCD_EXTRACT.zip
+*.csv
+*.jsonl
+*.zip
+*.gpg
+*.tmp
 unit-test-*
+tmpFile.*
+
+*-default.properties

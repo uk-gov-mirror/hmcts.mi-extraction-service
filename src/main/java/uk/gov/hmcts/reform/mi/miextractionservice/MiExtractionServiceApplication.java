@@ -1,51 +1,27 @@
 package uk.gov.hmcts.reform.mi.miextractionservice;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.applicationinsights.TelemetryClient;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Bean;
 
 import uk.gov.hmcts.reform.mi.micore.component.HealthCheck;
-import uk.gov.hmcts.reform.mi.miextractionservice.domain.SasIpWhitelist;
-import uk.gov.hmcts.reform.mi.miextractionservice.service.BlobExportService;
-
-import java.time.Clock;
+import uk.gov.hmcts.reform.mi.miextractionservice.service.export.ExportService;
 
 @Slf4j
+@AllArgsConstructor
 @SpringBootApplication(scanBasePackages = "uk.gov.hmcts.reform")
-@EnableConfigurationProperties(SasIpWhitelist.class)
-@SuppressWarnings("HideUtilityClassConstructor") // Spring needs a constructor, its not a utility class
 public class MiExtractionServiceApplication implements ApplicationRunner {
 
-    @Autowired
-    private BlobExportService blobExportService;
-    @Autowired
-    private HealthCheck healthCheck;
-    @Autowired
-    private TelemetryClient client;
-
-    @Value("${smoke.test.enabled:false}")
-    private boolean smokeTest;
-
-    @Value("${telemetry.wait.period:10000}")
-    private int waitPeriod;
-
-    @Bean
-    public Clock clock() {
-        return Clock.systemUTC();
-    }
-
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
+    private final @Value("${smoke.test.enabled:false}") boolean smokeTest;
+    private final @Value("${telemetry.wait.period:10000}") int waitPeriod;
+    private final ExportService exportService;
+    private final HealthCheck healthCheck;
+    private final TelemetryClient client;
 
     public static void main(final String[] args) {
         SpringApplication.run(MiExtractionServiceApplication.class, args);
@@ -57,10 +33,9 @@ public class MiExtractionServiceApplication implements ApplicationRunner {
             if (smokeTest) {
                 healthCheck.check();
             } else {
+                runSilentCheck();
                 log.info("Starting application runner.");
-
-                blobExportService.exportBlobs();
-
+                exportService.exportData();
                 log.info("Finished application runner.");
             }
         } catch (Exception e) {
@@ -69,6 +44,14 @@ public class MiExtractionServiceApplication implements ApplicationRunner {
         } finally {
             client.flush();
             waitTelemetryGracefulPeriod();
+        }
+    }
+
+    private void runSilentCheck() {
+        try {
+            healthCheck.check();
+        } catch (Exception e) {
+            log.warn("Health check failed", e);
         }
     }
 
