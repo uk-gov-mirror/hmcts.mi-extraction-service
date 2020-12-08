@@ -64,6 +64,7 @@ stages:
       functionalTest: true
       mutationTest: false
       helmRepo: $(helm.repo)
+      agentPool: hmcts-ss-$(environment)
       promEnv: $(env.prom)
       azureVault: $(vault)
       azureSecreKeys: 'mi-staging-storage-connection-string,mi-export-storage-connection-string,gov-uk-notify-api-key,mailing-targets'
