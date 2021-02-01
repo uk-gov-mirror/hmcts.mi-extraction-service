@@ -4,6 +4,8 @@ public interface SftpExportComponent {
 
     void copyFile(String file);
 
+    void copyFile(String file, String source);
+
     void loadFile(String file, String destinyFilePath);
 
     void checkConnection();

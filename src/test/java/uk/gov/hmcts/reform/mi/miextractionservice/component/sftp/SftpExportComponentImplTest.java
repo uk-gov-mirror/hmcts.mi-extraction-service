@@ -1,4 +1,4 @@
-package uk.gov.hmcts.reform.mi.miextractionservice.component.impl;
+package uk.gov.hmcts.reform.mi.miextractionservice.component.sftp;
 
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
@@ -13,7 +13,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import uk.gov.hmcts.reform.mi.miextractionservice.component.encryption.PgpEncryptionComponentImpl;
-import uk.gov.hmcts.reform.mi.miextractionservice.component.sftp.SftpExportComponentImpl;
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ExportException;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -38,6 +37,9 @@ class SftpExportComponentImplTest {
     private static final String SFTP_HOST = "localhost";
     private static final String SFTP_DESTINY_FOLDER = "upload/";
     private static final String FILE_NAME = "file.txt";
+
+    private static final String SOURCE = "source";
+    private static final String SOURCE_DESTINY_FOLDER = "upload/source/";
 
     private SftpExportComponentImpl classToTest;
     @Mock
@@ -214,5 +216,21 @@ class SftpExportComponentImplTest {
         assertThrows(ExportException.class, () -> classToTest.copyFile(FILE_NAME));
 
         verify(session, times(1)).disconnect();
+    }
+
+    @Test
+    void testCopyFileWithSource() throws  SftpException, JSchException {
+        when(jsch.getSession(SFTP_USER, SFTP_HOST, SFTP_PORT)).thenReturn(session);
+        when(session.openChannel(CHANNEL_TYPE)).thenReturn(channelSftp);
+        when(pgpEncryptionComponentImpl.encryptDataToFile(FILE_NAME)).thenReturn(FILE_NAME);
+
+        classToTest.copyFile(FILE_NAME, SOURCE);
+        verify(channelSftp, times(1)).put(FILE_NAME, SOURCE_DESTINY_FOLDER + FILE_NAME);
+        verify(session, times(1)).disconnect();
+        verify(channelSftp, times(1)).stat(SOURCE_DESTINY_FOLDER);
+
+        verify(session, times(1)).setPassword(SFTP_PASSWORD);
+        verify(session, times(1)).setConfig("StrictHostKeyChecking", "no");
+        verify(session, times(1)).connect(60_000);
     }
 }

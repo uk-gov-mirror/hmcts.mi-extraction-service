@@ -200,7 +200,7 @@ public class ExportServiceImpl implements ExportService {
             BlobClient blobClient = blobContainerClient.getBlobClient(blobName);
 
             blobClient.uploadFromFile(blobName, true);
-            sftpExportComponent.copyFile(blobName);
+            sftpExportComponent.copyFile(blobName, source);
         } finally {
             // Clean up
             FileUtils.deleteFile(fileName);

@@ -15,6 +15,8 @@ import uk.gov.hmcts.reform.mi.miextractionservice.component.encryption.PgpEncryp
 import uk.gov.hmcts.reform.mi.miextractionservice.exception.ExportException;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.FileUtils;
 
+import static java.util.Objects.nonNull;
+
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -23,6 +25,7 @@ public class SftpExportComponentImpl implements SftpExportComponent {
 
     private static final String PROTOCOL = "sftp";
     private static final int CONNECTION_TIMEOUT_MILLIS = 60_000;
+    private static final String FOLDER_DELIMITER = "/";
 
     @Value("${sftp.remote.host}")
     private final String remoteHost;
@@ -43,6 +46,11 @@ public class SftpExportComponentImpl implements SftpExportComponent {
 
     @Override
     public void copyFile(String file) {
+        copyFile(file, null);
+    }
+
+    @Override
+    public void copyFile(String file, String source) {
         if (enabled) {
             String fileToCopy = getEncryptedFileName(file);
             Session session = null;
@@ -50,8 +58,14 @@ public class SftpExportComponentImpl implements SftpExportComponent {
                 session = getJshSession();
                 setupStpChannel(session);
                 ChannelSftp sftpChannel = setupStpChannel(session);
-                checkFolder(sftpChannel);
-                sftpChannel.put(fileToCopy, destinyFolder + fileToCopy);
+                String folderName = destinyFolder;
+                if (nonNull(source)) {
+                    folderName = folderName
+                        .concat(source)
+                        .concat(FOLDER_DELIMITER);
+                }
+                checkFolder(sftpChannel, folderName);
+                sftpChannel.put(fileToCopy, folderName + fileToCopy);
 
             } catch (JSchException | SftpException e) {
                 throw new ExportException("Unable to send file to sftp server " + fileToCopy, e);
@@ -71,13 +85,13 @@ public class SftpExportComponentImpl implements SftpExportComponent {
         return pgpEncryptionComponentImpl.encryptDataToFile(fileName);
     }
 
-    private void checkFolder(ChannelSftp sftpChannel) throws SftpException {
+    private void checkFolder(ChannelSftp sftpChannel, String folderName) throws SftpException {
         try {
-            sftpChannel.stat(destinyFolder);
+            sftpChannel.stat(folderName);
         } catch (final SftpException e) {
             // dir does not exist.
             if (e.id == ChannelSftp.SSH_FX_NO_SUCH_FILE) {
-                sftpChannel.mkdir(destinyFolder);
+                sftpChannel.mkdir(folderName);
             } else {
                 throw e;
             }
