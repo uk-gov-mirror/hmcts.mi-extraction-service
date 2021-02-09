@@ -114,7 +114,7 @@ class ExportServiceImplTest {
     @Test
     void givenExportServicesWithWhitelist_whenExportData_thenUploadBlobForEachEnabledService() {
         Map<String, SourceProperties> sourcePropertiesMap = new ConcurrentHashMap<>();
-        sourcePropertiesMap.put(ENABLED_SOURCE_1, SourceProperties.builder().enabled(true).build());
+        sourcePropertiesMap.put(ENABLED_SOURCE_1, SourceProperties.builder().enabled(true).sftpDir("directory").build());
         sourcePropertiesMap.put(ENABLED_SOURCE_2, SourceProperties.builder().enabled(true).build());
         sourcePropertiesMap.put(DISABLED_SOURCE, SourceProperties.builder().enabled(false).build());
         when(exportProperties.getSources()).thenReturn(sourcePropertiesMap);
@@ -159,7 +159,7 @@ class ExportServiceImplTest {
         verify(stagingClient, never()).getBlobContainerClient(ENABLED_SOURCE_2);
         verify(exportContainer, times(1)).create();
         verify(exportBlob, times(1)).uploadFromFile(OUTPUT_BLOB_NAME, true);
-        verify(sftpExportComponent, times(1)).copyFile(OUTPUT_BLOB_NAME);
+        verify(sftpExportComponent, times(1)).copyFile(OUTPUT_BLOB_NAME, "directory");
         verify(compressionComponent, never()).compressFile(anyString(), anyString());
         verify(archiveComponent, never()).createArchive(anyList(), anyString());
         verify(notifyTargetsComponent, never()).sendMessage(anyString());
@@ -211,7 +211,7 @@ class ExportServiceImplTest {
         verify(stagingClient, never()).getBlobContainerClient(ENABLED_SOURCE_2);
         verify(exportContainer, times(1)).create();
         verify(exportBlob, times(1)).uploadFromFile(OUTPUT_BLOB_NAME, true);
-        verify(sftpExportComponent, times(1)).copyFile(OUTPUT_BLOB_NAME);
+        verify(sftpExportComponent, times(1)).copyFile(OUTPUT_BLOB_NAME, null);
         verify(compressionComponent, never()).compressFile(anyString(), anyString());
         verify(archiveComponent, never()).createArchive(anyList(), anyString());
         verify(notifyTargetsComponent, never()).sendMessage(anyString());
@@ -298,7 +298,7 @@ class ExportServiceImplTest {
 
         verify(exportContainer, never()).create();
         verify(exportBlob, times(1)).uploadFromFile(OUTPUT_GZIP_NAME, true);
-        verify(sftpExportComponent, times(1)).copyFile(OUTPUT_GZIP_NAME);
+        verify(sftpExportComponent, times(1)).copyFile(OUTPUT_GZIP_NAME, null);
         verify(compressionComponent, times(1)).compressFile(anyString(), anyString());
         verify(archiveComponent, never()).createArchive(anyList(), anyString());
         verify(notifyTargetsComponent, never()).sendMessage(anyString());
@@ -346,7 +346,7 @@ class ExportServiceImplTest {
 
         verify(exportContainer, never()).create();
         verify(exportBlob, times(1)).uploadFromFile(OUTPUT_ZIP_NAME, true);
-        verify(sftpExportComponent, times(1)).copyFile(OUTPUT_ZIP_NAME);
+        verify(sftpExportComponent, times(1)).copyFile(OUTPUT_ZIP_NAME, null);
         verify(compressionComponent, never()).compressFile(anyString(), anyString());
         verify(archiveComponent, times(1)).createArchive(anyList(), anyString());
         verify(notifyTargetsComponent, never()).sendMessage(anyString());
@@ -489,7 +489,7 @@ class ExportServiceImplTest {
 
         verify(exportContainer, never()).create();
         verify(exportBlob, times(1)).uploadFromFile(OUTPUT_BLOB_NAME, true);
-        verify(sftpExportComponent, times(1)).copyFile(OUTPUT_BLOB_NAME);
+        verify(sftpExportComponent, times(1)).copyFile(OUTPUT_BLOB_NAME, null);
         verify(compressionComponent, never()).compressFile(anyString(), anyString());
         verify(archiveComponent, never()).createArchive(anyList(), anyString());
         verify(notifyTargetsComponent, never()).sendMessage(anyString());

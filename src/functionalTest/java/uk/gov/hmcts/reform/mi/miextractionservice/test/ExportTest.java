@@ -191,7 +191,7 @@ public class ExportTest {
             assertEquals(TEST_JSONL + "\n", new String(gzipInputStream.readAllBytes(), StandardCharsets.UTF_8),
                          "Data for decompressed gzip file should match input string.");
         }
-        sftpExportComponent.loadFile(TEST_EXPORT_BLOB, TEST_VERIFICATION_FILENAME);
+        sftpExportComponent.loadFile(TEST_EXPORT_BLOB, "test", TEST_VERIFICATION_FILENAME);
 
         File verificationFile = new File(TEST_VERIFICATION_FILENAME);
         assertTrue(FileUtils.contentEquals(verificationFile, new File(TEST_EXPORT_BLOB)), "Should send file to sftp server");

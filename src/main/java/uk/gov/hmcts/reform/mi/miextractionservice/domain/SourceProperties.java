@@ -14,4 +14,5 @@ public class SourceProperties {
     String dateField;
     String timezone;
     SourceTypeEnum type;
+    String sftpDir;
 }

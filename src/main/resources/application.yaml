@@ -35,132 +35,174 @@ export:
       enabled: true
       date-field: ce_created_date
       type: prefix
+      sftp-dir: ccd
     notify:
       enabled: true
       date-field: created_at
       timezone: Europe/London # Dates are stored in UTC but processed by Notify in BST
       type: prefix
+      sftp-dir: notify
     payment-payment-history:
       enabled: true
       date-field: paymentDateUpdated
+      sftp-dir: payment
     payment-payment-remission:
       enabled: true
       date-field: date_updated
+      sftp-dir: payment
     payment-payment-fee:
       enabled: true
       date-field: paymentFeeLinkDateUpdated
+      sftp-dir: payment
     payment-bs-envelope:
       enabled: true
       date-field: date_updated
+      sftp-dir: payment
     payment-bs-envelope-case:
       enabled: true
       date-field: date_updated
+      sftp-dir: payment
     payment-bs-envelope-history:
       enabled: true
       date-field: date_updated
+      sftp-dir: payment
     payment-bs-envelope-metadata:
       enabled: true
       date-field: date_updated
+      sftp-dir: payment
     payment-bs-envelope-payment:
       enabled: true
       date-field: date_updated
+      sftp-dir: payment
     payment-fees-fee:
       enabled: true
       date-field: feeLastUpdated
+      sftp-dir: payment
     payment-bar-case:
       enabled: true
       date-field: extraction_date
+      sftp-dir: payment
     payment-bar-payment:
       enabled: true
       date-field: paymentInstructionStatusUpdateTime
+      sftp-dir: payment
     payment-bar-site:
       enabled: true
       date-field: extraction_date
+      sftp-dir: payment
 
     eightbyeight-agents-activities:
       enabled: true
       date-field: trans-accept-time
+      sftp-dir: 8x8
     eightbyeight-agents-interactions:
       enabled: true
       date-field: accept-timestamp
+      sftp-dir: 8x8
     eightbyeight-agents-outboundcalls:
       enabled: true
       date-field: start-time
+      sftp-dir: 8x8
     eightbyeight-agents-skills:
       enabled: true
       date-field: extraction_date
+      sftp-dir: 8x8
     eightbyeight-agents-statistics:
       enabled: true
       date-field: time-stamp
+      sftp-dir: 8x8
     eightbyeight-agents-statuses:
       enabled: true
       date-field: event-time
+      sftp-dir: 8x8
     eightbyeight-interactions:
       enabled: true
       date-field: create-timestamp
+      sftp-dir: 8x8
     eightbyeight-allinteractions:
       enabled: true
       date-field: create-timestamp
+      sftp-dir: 8x8
     eightbyeight-campaigns-interactions:
       enabled: true
       date-field: accept-timestamp
+      sftp-dir: 8x8
     eightbyeight-channels-interactions:
       enabled: true
       date-field: create-timestamp
+      sftp-dir: 8x8
     eightbyeight-channels-online-slas:
       enabled: true
       date-field: time-stamp
+      sftp-dir: 8x8
     eightbyeight-channels-statistics:
       enabled: true
       date-field: time-stamp
+      sftp-dir: 8x8
     eightbyeight-groups:
       enabled: true
       date-field: extraction_date
+      sftp-dir: 8x8
     eightbyeight-groups-activities:
       enabled: true
       date-field: trans-accept-time
+      sftp-dir: 8x8
     eightbyeight-groups-agents:
       enabled: true
       date-field: extraction_date
+      sftp-dir: 8x8
     eightbyeight-groups-interactions:
       enabled: true
       date-field: accept-timestamp
+      sftp-dir: 8x8
     eightbyeight-groups-outboundcalls:
       enabled: true
       date-field: start-time
+      sftp-dir: 8x8
     eightbyeight-groups-statuses:
       enabled: true
       date-field: event-time
+      sftp-dir: 8x8
     eightbyeight-queues-interactions:
       enabled: true
       date-field: create-timestamp
+      sftp-dir: 8x8
     eightbyeight-queues-offline-slas:
       enabled: true
       date-field: time-stamp
+      sftp-dir: 8x8
     eightbyeight-queues-online-slas:
       enabled: true
       date-field: time-stamp
+      sftp-dir: 8x8
     eightbyeight-queues-skills:
       enabled: true
       date-field: extraction_date
+      sftp-dir: 8x8
     eightbyeight-queues-statistics:
       enabled: true
       date-field: time-stamp
+      sftp-dir: 8x8
     eightbyeight-scls:
       enabled: true
       date-field: extraction_date
+      sftp-dir: 8x8
     eightbyeight-tcls:
       enabled: true
       date-field: extraction_date
+      sftp-dir: 8x8
     eightbyeight-queues:
       enabled: true
       date-field: extraction_date
+      sftp-dir: 8x8
     eightbyeight-channels:
       enabled: true
       date-field: extraction_date
+      sftp-dir: 8x8
     eightbyeight-agents:
       enabled: true
       date-field: extraction_date
+      sftp-dir: 8x8
 
 # Whitelist
 container-whitelist: ${CONTAINER_WHITELIST:}#{T(java.util.Collections).emptyList()}

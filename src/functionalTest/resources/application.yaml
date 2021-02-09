@@ -35,6 +35,7 @@ export:
       enabled: true
       date-field: date_updated
       type: prefix
+      sftp-dir: test
     extraction-test:
       enabled: true
       date-field: extraction_date

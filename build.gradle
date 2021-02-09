@@ -174,6 +174,7 @@ repositories {
 def versions = [
   azureSpringBoot  : '2.2.0',
   dumbster         : '1.7.1',
+  failsafe         : '2.4.0',
   hmctsNotify      : '3.15.1-RELEASE',
   junit            : '5.5.0',
   miCoreLib        : '3.4.4',
@@ -184,11 +185,10 @@ def versions = [
   piTestSonar      : '0.5',
   springBootMail   : '2.2.2.RELEASE',
   springfoxSwagger : '2.9.2',
-  testContainers   : '1.12.3',
+  testContainers   : '1.15.1',
   zip4j            : '2.3.1',
   jcraft           : '0.1.55',
   bouncycastle     : '1.64'
-
 ]
 
 dependencies {
@@ -201,6 +201,7 @@ dependencies {
 
   implementation group: 'com.opencsv', name: 'opencsv', version: versions.openCsv
   implementation group: 'net.lingala.zip4j', name: 'zip4j', version: versions.zip4j
+  implementation group: 'net.jodah', name: 'failsafe', version: versions.failsafe
 
   // Reform libraries
   implementation group: 'uk.gov.hmcts.reform', name: 'logging', version: versions.reformLogging
@@ -247,6 +248,7 @@ dependencies {
   functionalTestImplementation group: 'com.opencsv', name: 'opencsv', version: versions.openCsv
   functionalTestImplementation group: 'net.lingala.zip4j', name: 'zip4j', version: versions.zip4j
   functionalTestImplementation group: 'com.github.kirviq', name: 'dumbster', version: versions.dumbster
+  functionalTestImplementation group: 'net.jodah', name: 'failsafe', version: versions.failsafe
 
   functionalTestImplementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: versions.bouncycastle
   functionalTestImplementation group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: versions.bouncycastle
