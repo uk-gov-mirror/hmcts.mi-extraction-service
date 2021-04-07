@@ -17,6 +17,7 @@ import uk.gov.hmcts.reform.mi.miextractionservice.exception.ExportException;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -40,6 +41,7 @@ class SftpExportComponentImplTest {
 
     private static final String SFTP_DIR = "source";
     private static final String SFTP_DIR_DESTINY_FOLDER = "upload/source/";
+    private static final int CONNECTION_TIMEOUT_MILLIS = 60_000;
 
     private SftpExportComponentImpl classToTest;
     @Mock
@@ -87,7 +89,7 @@ class SftpExportComponentImplTest {
 
         verify(session, times(1)).setPassword(SFTP_PASSWORD);
         verify(session, times(1)).setConfig("StrictHostKeyChecking", "no");
-        verify(session, times(1)).connect(60_000);
+        verify(session, times(1)).connect(CONNECTION_TIMEOUT_MILLIS);
     }
 
     @Test
@@ -231,7 +233,7 @@ class SftpExportComponentImplTest {
 
         verify(session, times(1)).setPassword(SFTP_PASSWORD);
         verify(session, times(1)).setConfig("StrictHostKeyChecking", "no");
-        verify(session, times(1)).connect(60_000);
+        verify(session, times(1)).connect(CONNECTION_TIMEOUT_MILLIS);
     }
 
     @Test
@@ -249,33 +251,56 @@ class SftpExportComponentImplTest {
 
         verify(channelSftp, times(3)).put(FILE_NAME, SFTP_DESTINY_FOLDER + FILE_NAME);
         verify(session, times(1)).disconnect();
-        verify(channelSftp, times(1)).stat(SFTP_DESTINY_FOLDER);
+        verify(channelSftp, times(3)).stat(SFTP_DESTINY_FOLDER);
 
         verify(session, times(1)).setPassword(SFTP_PASSWORD);
         verify(session, times(1)).setConfig("StrictHostKeyChecking", "no");
-        verify(session, times(1)).connect(60_000);
+        verify(session, times(1)).connect(CONNECTION_TIMEOUT_MILLIS);
     }
 
     @Test
-    void testJschConnectionExceptionWithRetries() throws SftpException, JSchException {
+    void testJschChannelConnectionExceptionWithRetries() throws SftpException, JSchException {
         when(jsch.getSession(SFTP_USER, SFTP_HOST, SFTP_PORT)).thenReturn(session);
         when(session.openChannel(CHANNEL_TYPE)).thenReturn(channelSftp);
         when(pgpEncryptionComponentImpl.encryptDataToFile(FILE_NAME)).thenReturn(FILE_NAME);
 
-        doThrow(new JSchException("TestError"))
-            .doThrow(new JSchException("SecondTryError"))
+        doThrow(new JSchException("ConnectException"))
+            .doThrow(new JSchException("ErrorAgain"))
             .doNothing()
-            .when(channelSftp).put(FILE_NAME, SFTP_DESTINY_FOLDER + FILE_NAME);
+            .when(channelSftp).connect(anyInt());
 
         classToTest.copyFile(FILE_NAME);
 
-        verify(channelSftp, times(3)).put(FILE_NAME, SFTP_DESTINY_FOLDER + FILE_NAME);
+        verify(jsch, times(3)).getSession(SFTP_USER, SFTP_HOST, SFTP_PORT);
+        verify(channelSftp, times(3)).connect(CONNECTION_TIMEOUT_MILLIS);
+        verify(channelSftp, times(1)).put(FILE_NAME, SFTP_DESTINY_FOLDER + FILE_NAME);
+        verify(session, times(1)).disconnect();
+        verify(channelSftp, times(1)).stat(SFTP_DESTINY_FOLDER);
+
+        verify(session, times(3)).setPassword(SFTP_PASSWORD);
+        verify(session, times(3)).connect(CONNECTION_TIMEOUT_MILLIS);
+    }
+
+    @Test
+    void testJschGetSessionConnectionExceptionWithRetries() throws SftpException, JSchException {
+        when(session.openChannel(CHANNEL_TYPE)).thenReturn(channelSftp);
+        when(pgpEncryptionComponentImpl.encryptDataToFile(FILE_NAME)).thenReturn(FILE_NAME);
+
+        when(jsch.getSession(anyString(), anyString(), anyInt()))
+            .thenThrow(new JSchException("ConnectException"))
+            .thenThrow(new JSchException("ErrorAgain"))
+            .thenReturn(session);
+
+        classToTest.copyFile(FILE_NAME);
+
+        verify(jsch, times(3)).getSession(SFTP_USER, SFTP_HOST, SFTP_PORT);
+        verify(channelSftp, times(1)).connect(CONNECTION_TIMEOUT_MILLIS);
+        verify(channelSftp, times(1)).put(FILE_NAME, SFTP_DESTINY_FOLDER + FILE_NAME);
         verify(session, times(1)).disconnect();
         verify(channelSftp, times(1)).stat(SFTP_DESTINY_FOLDER);
 
         verify(session, times(1)).setPassword(SFTP_PASSWORD);
-        verify(session, times(1)).setConfig("StrictHostKeyChecking", "no");
-        verify(session, times(1)).connect(60_000);
+        verify(session, times(1)).connect(CONNECTION_TIMEOUT_MILLIS);
     }
 
     @Test

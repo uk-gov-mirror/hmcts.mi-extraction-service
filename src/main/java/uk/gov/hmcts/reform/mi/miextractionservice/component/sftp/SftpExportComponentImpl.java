@@ -19,6 +19,7 @@ import uk.gov.hmcts.reform.mi.miextractionservice.exception.ExportException;
 import uk.gov.hmcts.reform.mi.miextractionservice.util.FileUtils;
 
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.nonNull;
 
@@ -58,29 +59,42 @@ public class SftpExportComponentImpl implements SftpExportComponent {
     public void copyFile(String file, String directory) {
         if (enabled) {
             String fileToCopy = getEncryptedFileName(file);
-            Session session = null;
+            AtomicReference<Session> session = new AtomicReference<>();
             try {
-                session = getJshSession();
-                setupStpChannel(session);
-                ChannelSftp sftpChannel = setupStpChannel(session);
-                final String folderName = nonNull(directory)
-                    ? destinyFolder.concat(directory).concat(FOLDER_DELIMITER)
-                    : destinyFolder;
-                checkFolder(sftpChannel, folderName);
-
-                RetryPolicy<Object> retryPolicy = new RetryPolicy<>()
-                    .handle(SftpException.class, JSchException.class)
+                RetryPolicy<Object> connectRetryPolicy = new RetryPolicy<>()
+                    .handle(JSchException.class)
                     .withDelay(Duration.ofSeconds(2L))
                     .withMaxRetries(3);
 
-                Failsafe.with(retryPolicy).run(
-                    () -> sftpChannel.put(fileToCopy, folderName + fileToCopy)
+                AtomicReference<ChannelSftp> sftpChannel = new AtomicReference<>();
+
+                Failsafe.with(connectRetryPolicy).run(
+                    () -> {
+                        session.set(getJshSession());
+                        sftpChannel.set(setupStpChannel(session.get()));
+                    }
                 );
-            } catch (JSchException | SftpException | FailsafeException e) {
+
+                final String folderName = nonNull(directory)
+                    ? destinyFolder.concat(directory).concat(FOLDER_DELIMITER)
+                    : destinyFolder;
+
+                RetryPolicy<Object> sftpPutRetryPolicy = new RetryPolicy<>()
+                    .handle(SftpException.class)
+                    .withDelay(Duration.ofSeconds(2L))
+                    .withMaxRetries(3);
+
+                Failsafe.with(sftpPutRetryPolicy).run(
+                    () -> {
+                        checkFolder(sftpChannel.get(), folderName);
+                        sftpChannel.get().put(fileToCopy, folderName + fileToCopy);
+                    }
+                );
+            } catch (FailsafeException e) {
                 throw new ExportException("Unable to send file to sftp server " + fileToCopy, e);
             } finally {
-                if (session != null) {
-                    session.disconnect();
+                if (session.get() != null) {
+                    session.get().disconnect();
                 }
                 FileUtils.deleteFile(fileToCopy);
             }
