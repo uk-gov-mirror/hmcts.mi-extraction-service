@@ -69,7 +69,7 @@ public class SftpExportComponentImpl implements SftpExportComponent {
                 checkFolder(sftpChannel, folderName);
 
                 RetryPolicy<Object> retryPolicy = new RetryPolicy<>()
-                    .handle(SftpException.class)
+                    .handle(SftpException.class, JSchException.class)
                     .withDelay(Duration.ofSeconds(2L))
                     .withMaxRetries(3);
 

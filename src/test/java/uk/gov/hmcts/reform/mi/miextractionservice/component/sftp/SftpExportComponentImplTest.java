@@ -256,6 +256,27 @@ class SftpExportComponentImplTest {
         verify(session, times(1)).connect(60_000);
     }
 
+    @Test
+    void testJschConnectionExceptionWithRetries() throws SftpException, JSchException {
+        when(jsch.getSession(SFTP_USER, SFTP_HOST, SFTP_PORT)).thenReturn(session);
+        when(session.openChannel(CHANNEL_TYPE)).thenReturn(channelSftp);
+        when(pgpEncryptionComponentImpl.encryptDataToFile(FILE_NAME)).thenReturn(FILE_NAME);
+
+        doThrow(new JSchException("TestError"))
+            .doThrow(new JSchException("SecondTryError"))
+            .doNothing()
+            .when(channelSftp).put(FILE_NAME, SFTP_DESTINY_FOLDER + FILE_NAME);
+
+        classToTest.copyFile(FILE_NAME);
+
+        verify(channelSftp, times(3)).put(FILE_NAME, SFTP_DESTINY_FOLDER + FILE_NAME);
+        verify(session, times(1)).disconnect();
+        verify(channelSftp, times(1)).stat(SFTP_DESTINY_FOLDER);
+
+        verify(session, times(1)).setPassword(SFTP_PASSWORD);
+        verify(session, times(1)).setConfig("StrictHostKeyChecking", "no");
+        verify(session, times(1)).connect(60_000);
+    }
 
     @Test
     void testLoadFileWithDirectory() throws SftpException, JSchException {
