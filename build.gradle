@@ -167,7 +167,7 @@ repositories {
   jcenter()
   mavenCentral()
   maven {
-    url "https://dl.bintray.com/hmcts/hmcts-maven"
+    url "https://jitpack.io"
   }
 }
 
@@ -177,8 +177,8 @@ def versions = [
   failsafe         : '2.4.0',
   hmctsNotify      : '3.15.1-RELEASE',
   junit            : '5.5.0',
-  miCoreLib        : '3.4.4',
-  reformLogging    : '5.1.5',
+  miCoreLib        : '3.5.2',
+  reformLogging    : '5.1.1',
   openCsv          : '5.1',
   piTest           : '1.5.2',
   piTestGradle     : '1.5.2',
@@ -198,22 +198,22 @@ dependencies {
 
   implementation group: 'com.microsoft.azure', name: 'azure-spring-boot-starter', version: versions.azureSpringBoot
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-mail', version: versions.springBootMail
+  implementation group: 'com.microsoft.azure', name: 'applicationinsights-spring-boot-starter', version: '2.4.0'
 
   implementation group: 'com.opencsv', name: 'opencsv', version: versions.openCsv
   implementation group: 'net.lingala.zip4j', name: 'zip4j', version: versions.zip4j
   implementation group: 'net.jodah', name: 'failsafe', version: versions.failsafe
+  implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
 
   // Reform libraries
-  implementation group: 'uk.gov.hmcts.reform', name: 'logging', version: versions.reformLogging
-  implementation group: 'uk.gov.hmcts.reform', name: 'logging-appinsights', version: versions.reformLogging
   implementation('uk.gov.hmcts.reform:properties-volume-spring-boot-starter:0.1.0') {
     exclude group: 'org.springframework.boot', module: 'spring-boot-starter-web'
   }
   implementation group: 'com.jcraft', name: 'jsch', version: versions.jcraft
 
-  implementation group: 'uk.gov.hmcts.reform.mi', name: 'mi-core-lib', version: versions.miCoreLib
-  implementation group: 'uk.gov.hmcts.reform', name: 'logging', version: versions.reformLogging
-  implementation group: 'uk.gov.hmcts.reform', name: 'logging-appinsights', version: versions.reformLogging
+  implementation group: 'com.github.hmcts', name: 'mi-core-lib', version: versions.miCoreLib
+  //  implementation group: 'com.github.hmcts.java-logging', name: 'logging', version: versions.reformLogging
+  //  implementation group: 'com.github.hmcts.java-logging', name: 'logging-appinsights', version: versions.reformLogging
   implementation group: 'uk.gov.service.notify', name: 'notifications-java-client', version: versions.hmctsNotify
 
   implementation group: 'org.pitest', name: 'pitest', version: versions.piTest
@@ -235,7 +235,7 @@ dependencies {
 
   functionalTestImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-mail', version: versions.springBootMail
 
-  functionalTestImplementation group: 'uk.gov.hmcts.reform.mi', name: 'mi-core-lib', version: versions.miCoreLib
+  functionalTestImplementation group: 'com.github.hmcts', name: 'mi-core-lib', version: versions.miCoreLib
 
   functionalTestImplementation group: 'uk.gov.service.notify', name: 'notifications-java-client', version: versions.hmctsNotify
 
@@ -262,7 +262,7 @@ dependencies {
   integrationTestAnnotationProcessor 'org.projectlombok:lombok'
   integrationTestImplementation group: 'com.jcraft', name: 'jsch', version: versions.jcraft
 
-  integrationTestImplementation group: 'uk.gov.hmcts.reform.mi', name: 'mi-core-lib', version: versions.miCoreLib
+  integrationTestImplementation group: 'com.github.hmcts', name: 'mi-core-lib', version: versions.miCoreLib
 
   integrationTestImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: versions.junit
   integrationTestImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: versions.junit

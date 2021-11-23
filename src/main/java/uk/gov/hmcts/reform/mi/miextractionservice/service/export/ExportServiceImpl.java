@@ -125,6 +125,7 @@ public class ExportServiceImpl implements ExportService {
 
         try (BufferedWriter writer = FileUtils.openBufferedWriter(fileName)) {
             for (BlobContainerItem containerItem : containersToParse) {
+                log.info("Parsing container {} for export.", containerItem.getName());
                 totalRecords += parseContainerForData(stagingClient, writer, containerItem.getName(),
                                                       properties, fromDate, toDate, datesToParse);
             }

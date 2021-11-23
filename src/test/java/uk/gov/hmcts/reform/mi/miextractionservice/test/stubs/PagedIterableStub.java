@@ -14,6 +14,7 @@ public class PagedIterableStub<T> extends PagedIterable<T> {
 
     private final List<T> target;
 
+    @SuppressWarnings("unchecked")
     public PagedIterableStub(T... target) {
         super((PagedFlux<T>)mock(PagedFlux.class));
         this.target = Arrays.asList(target);

@@ -1,6 +1,6 @@
 package uk.gov.hmcts.reform.mi.miextractionservice.component.encryption;
 
-import com.microsoft.applicationinsights.core.dependencies.io.grpc.internal.IoUtils;
+import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
@@ -106,7 +106,7 @@ public final class PgpDecryptionHelper {
         throws IOException, PGPException {
         try (InputStream unc = literalData.getInputStream();
              ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
-            IoUtils.copy(unc, byteArrayOutputStream);
+            IOUtils.copy(unc, byteArrayOutputStream);
 
             if (pbe.isIntegrityProtected() && !pbe.verify()) {
                 throw new PGPException("Message failed integrity check");

@@ -2,6 +2,7 @@ package uk.gov.hmcts.reform.mi.miextractionservice.test;
 
 import com.azure.storage.blob.BlobServiceClient;
 import com.jcraft.jsch.SftpException;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.EXPO
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_EXPORT_BLOB;
 import static uk.gov.hmcts.reform.mi.miextractionservice.test.util.TestUtils.cleanUpTestFiles;
 
+@Slf4j
 @SpringBootTest(classes = TestConfig.class)
 public class PostDeployTest {
 
@@ -50,6 +52,8 @@ public class PostDeployTest {
             .getBlobClientWithConnectionString(exportConnectionString);
 
         exportContainer = buildVersion + DASH_DELIMITER + EXPORT_CONTAINER_NAME;
+
+        log.info("Export container for test is: {}", exportContainer);
     }
 
     @AfterEach

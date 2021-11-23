@@ -1,6 +1,9 @@
 package uk.gov.hmcts.reform.mi.miextractionservice.test;
 
+import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobServiceClient;
+
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +17,7 @@ import java.io.ByteArrayInputStream;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.DASH_DELIMITER;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.EXPORT_CONTAINER_NAME;
 import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST_BLOB_NAME;
@@ -22,6 +26,7 @@ import static uk.gov.hmcts.reform.mi.miextractionservice.data.TestConstants.TEST
 import static uk.gov.hmcts.reform.mi.miextractionservice.test.util.TestUtils.cleanUpTestFiles;
 import static uk.gov.hmcts.reform.mi.miextractionservice.test.util.TestUtils.createTestBlob;
 
+@Slf4j
 @SpringBootTest(classes = TestConfig.class)
 public class PreDeployTest {
 
@@ -69,9 +74,14 @@ public class PreDeployTest {
             .exists(), "Test blob should not exist in staging storage.");
 
         // Upload to landing service storage account.
-        createTestBlob(stagingBlobServiceClient, testContainer, TEST_BLOB_NAME)
+        BlobClient blobClient = createTestBlob(stagingBlobServiceClient, testContainer, TEST_BLOB_NAME);
+
+        blobClient
             .getBlockBlobClient()
             .upload(inputStreamOne, testData.length);
+
+        log.info("Created blob {} in staging container {} for export test",
+                 blobClient.getBlobName(), blobClient.getContainerName());
 
         // Verify blobs exists in source storage account.
         assertTrue(stagingBlobServiceClient
