@@ -3,12 +3,12 @@ plugins {
   id 'checkstyle'
   id 'pmd'
   id 'jacoco'
-  id 'io.spring.dependency-management' version '1.0.10.RELEASE'
-  id 'org.springframework.boot' version '2.3.5.RELEASE'
-  id 'org.owasp.dependencycheck' version '6.0.4'
-  id 'com.github.ben-manes.versions' version '0.36.0'
-  id 'org.sonarqube' version '3.0'
-  id 'info.solidsoft.pitest' version '1.5.2'
+  id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+  id 'org.springframework.boot' version '2.6.1'
+  id 'org.owasp.dependencycheck' version '6.5.0.1'
+  id 'com.github.ben-manes.versions' version '0.39.0'
+  id 'org.sonarqube' version '3.3'
+  id 'info.solidsoft.pitest' version '1.7.0'
 }
 
 group = 'uk.gov.hmcts.reform'
@@ -78,11 +78,19 @@ task smoke(type: Test) {
   classpath = sourceSets.smokeTest.runtimeClasspath
 }
 
+rootProject.tasks.named("processFunctionalTestResources") {
+  duplicatesStrategy = 'include'
+}
+
+rootProject.tasks.named("processIntegrationTestResources") {
+  duplicatesStrategy = 'include'
+}
+
 checkstyle {
   maxWarnings = 0
   toolVersion = '8.24'
   // need to set configDir to rootDir otherwise submodule will use submodule/config/checkstyle
-  configDir = new File(rootDir, 'config/checkstyle')
+  configDirectory = new File(rootDir, 'config/checkstyle')
 }
 
 pmd {
@@ -137,6 +145,27 @@ dependencyUpdates.resolutionStrategy {
   }
 }
 
+def versions = [
+  azureSpringBoot  : '3.11.0',
+  azureStorage     : '12.14.2',
+  commonsIo        : '2.11.0',
+  dumbster         : '1.7.1',
+  failsafe         : '2.4.4',
+  hmctsLogging     : '5.1.9',
+  hmctsNotify      : '3.17.2-RELEASE',
+  junit            : '5.8.2',
+  miCoreLib        : '3.6.0',
+  openCsv          : '5.5.2',
+  piTest           : '1.7.3',
+  piTestGradle     : '1.7.0',
+  piTestSonar      : '0.5',
+  springBootMail   : '2.6.1',
+  testContainers   : '1.16.2',
+  zip4j            : '2.9.1',
+  jcraft           : '0.1.55',
+  bouncycastle     : '1.70'
+]
+
 // https://jeremylong.github.io/DependencyCheck/dependency-check-gradle/configuration.html
 dependencyCheck {
   // Specifies if the build should be failed if a CVSS score above a specified level is identified.
@@ -147,18 +176,44 @@ dependencyCheck {
 
 dependencyManagement {
   dependencies {
-    dependency group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.68'
+    dependency group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.70'
     // CVE-2018-10237 - Unbounded memory allocation
-    dependencySet(group: 'com.google.guava', version: '30.1-jre') {
+    dependencySet(group: 'com.google.guava', version: '31.0.1-jre') {
       entry 'guava'
     }
     dependency group: 'com.squareup.retrofit2', name: 'retrofit', version: '2.9.0'
     dependency group: 'com.squareup.retrofit2', name: 'adapter-rxjava', version: '2.9.0'
     // CVE-2020-9488
-    dependencySet(group: 'org.apache.logging.log4j', version: '2.16.0') {
+    dependencySet(group: 'org.apache.logging.log4j', version: '2.17.1') {
       entry 'log4j-to-slf4j'
       entry 'log4j-api'
     }
+    dependencySet(group: 'ch.qos.logback', version: '1.2.10') {
+      entry 'logback-classic'
+      entry 'logback-core'
+    }
+    dependencySet(group: 'io.netty', version: '4.1.72.Final') {
+      entry 'netty-buffer'
+      entry 'netty-codec'
+      entry 'netty-codec-dns'
+      entry 'netty-codec-http'
+      entry 'netty-codec-http2'
+      entry 'netty-codec-socks'
+      entry 'netty-common'
+      entry 'netty-handler'
+      entry 'netty-handler-proxy'
+      entry 'netty-resolver'
+      entry 'netty-resolver-dns'
+      entry 'netty-resolver-dns-classes-macos'
+      entry 'netty-resolver-dns-native-macos'
+      entry 'netty-transport'
+      entry 'netty-transport-classes-epoll'
+      entry 'netty-transport-native-epoll'
+      entry 'netty-transport-classes-kqueue'
+      entry 'netty-transport-native-kqueue'
+      entry 'netty-transport-native-unix-common'
+    }
+    dependency group: 'commons-io', name: 'commons-io', version: versions.commonsIo
   }
 }
 
@@ -171,49 +226,26 @@ repositories {
   }
 }
 
-def versions = [
-  azureSpringBoot  : '2.2.0',
-  dumbster         : '1.7.1',
-  failsafe         : '2.4.0',
-  hmctsNotify      : '3.15.1-RELEASE',
-  junit            : '5.5.0',
-  miCoreLib        : '3.5.2',
-  reformLogging    : '5.1.1',
-  openCsv          : '5.1',
-  piTest           : '1.5.2',
-  piTestGradle     : '1.5.2',
-  piTestSonar      : '0.5',
-  springBootMail   : '2.2.2.RELEASE',
-  springfoxSwagger : '2.9.2',
-  testContainers   : '1.15.1',
-  zip4j            : '2.3.1',
-  jcraft           : '0.1.55',
-  bouncycastle     : '1.64'
-]
-
 dependencies {
 
   implementation 'org.projectlombok:lombok'
   annotationProcessor 'org.projectlombok:lombok'
 
-  implementation group: 'com.microsoft.azure', name: 'azure-spring-boot-starter', version: versions.azureSpringBoot
+  implementation group: 'com.azure.spring', name: 'azure-spring-boot-starter', version: versions.azureSpringBoot
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-mail', version: versions.springBootMail
-  implementation group: 'com.microsoft.azure', name: 'applicationinsights-spring-boot-starter', version: '2.4.0'
+  implementation group: 'com.azure', name: 'azure-storage-blob', version: versions.azureStorage
 
   implementation group: 'com.opencsv', name: 'opencsv', version: versions.openCsv
   implementation group: 'net.lingala.zip4j', name: 'zip4j', version: versions.zip4j
   implementation group: 'net.jodah', name: 'failsafe', version: versions.failsafe
-  implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
+  implementation group: 'commons-io', name: 'commons-io', version: versions.commonsIo
 
   // Reform libraries
-  implementation('uk.gov.hmcts.reform:properties-volume-spring-boot-starter:0.1.0') {
-    exclude group: 'org.springframework.boot', module: 'spring-boot-starter-web'
-  }
   implementation group: 'com.jcraft', name: 'jsch', version: versions.jcraft
 
   implementation group: 'com.github.hmcts', name: 'mi-core-lib', version: versions.miCoreLib
-  //  implementation group: 'com.github.hmcts.java-logging', name: 'logging', version: versions.reformLogging
-  //  implementation group: 'com.github.hmcts.java-logging', name: 'logging-appinsights', version: versions.reformLogging
+  implementation group: 'com.github.hmcts.java-logging', name: 'logging', version: versions.hmctsLogging
+  implementation group: 'com.github.hmcts.java-logging', name: 'logging-appinsights', version: versions.hmctsLogging
   implementation group: 'uk.gov.service.notify', name: 'notifications-java-client', version: versions.hmctsNotify
 
   implementation group: 'org.pitest', name: 'pitest', version: versions.piTest
@@ -225,23 +257,20 @@ dependencies {
   implementation group: 'org.bouncycastle', name: 'bcpg-jdk15on', version: versions.bouncycastle
 
 
-  testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: versions.junit
-  testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: versions.junit
-  testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: versions.junit
+  testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter', version: versions.junit
 
   testImplementation('org.springframework.boot:spring-boot-starter-test') {
     exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
   }
 
   functionalTestImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-mail', version: versions.springBootMail
+  functionalTestImplementation group: 'com.azure', name: 'azure-storage-blob', version: versions.azureStorage
 
   functionalTestImplementation group: 'com.github.hmcts', name: 'mi-core-lib', version: versions.miCoreLib
 
   functionalTestImplementation group: 'uk.gov.service.notify', name: 'notifications-java-client', version: versions.hmctsNotify
 
-  functionalTestImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: versions.junit
-  functionalTestImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: versions.junit
-  functionalTestRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: versions.junit
+  functionalTestImplementation group: 'org.junit.jupiter', name: 'junit-jupiter', version: versions.junit
   functionalTestImplementation group: 'com.jcraft', name: 'jsch', version: versions.jcraft
 
   functionalTestImplementation group: 'org.testcontainers', name: 'junit-jupiter', version: versions.testContainers
@@ -262,11 +291,11 @@ dependencies {
   integrationTestAnnotationProcessor 'org.projectlombok:lombok'
   integrationTestImplementation group: 'com.jcraft', name: 'jsch', version: versions.jcraft
 
+  integrationTestImplementation group: 'com.azure', name: 'azure-storage-blob', version: versions.azureStorage
+
   integrationTestImplementation group: 'com.github.hmcts', name: 'mi-core-lib', version: versions.miCoreLib
 
-  integrationTestImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: versions.junit
-  integrationTestImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: versions.junit
-  integrationTestRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: versions.junit
+  integrationTestImplementation group: 'org.junit.jupiter', name: 'junit-jupiter', version: versions.junit
 
   integrationTestImplementation('org.springframework.boot:spring-boot-starter-test') {
     exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'

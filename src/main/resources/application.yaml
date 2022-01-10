@@ -2,6 +2,10 @@
 spring:
   application:
     name: mi-extraction-service
+  main:
+    web-application-type: none
+  config:
+    import: optional:configtree:/mnt/secrets/mi-vault/
 
 info:
   app:
@@ -17,16 +21,16 @@ application-insights:
 # Azure
 azure:
   application-insights:
-    instrumentation-key: ${APPINSIGHTS_INSTRUMENTATIONKEY:""}
+    instrumentation-key: ${APPINSIGHTS_INSTRUMENTATIONKEY:${appinsights-instrumentationkey:""}}
   managed-identity:
     client-id: ${MI_CLIENT_ID:}
   storage-account:
     staging:
       name: ${STORAGE_STAGING_NAME:}
-      connection-string: ${STORAGE_STAGING_CONNECTION_STRING:}
+      connection-string: ${STORAGE_STAGING_CONNECTION_STRING:${mi-staging-storage-connection-string:}}
     export:
       name: ${STORAGE_EXPORT_NAME:}
-      connection-string: ${STORAGE_EXPORT_CONNECTION_STRING:}
+      connection-string: ${STORAGE_EXPORT_CONNECTION_STRING:${mi-export-storage-connection-string:}}
 
 # Export
 export:
@@ -225,9 +229,9 @@ archive:
 # Mail
 mail:
   enabled: false
-  targets: ${MAIL_TARGETS:}
+  targets: ${MAIL_TARGETS:${mailing-targets:}}
   gov-uk:
-    api-key: ${GOV_UK_NOTIFY_API_KEY:}
+    api-key: ${GOV_UK_NOTIFY_API_KEY:${gov-uk-notify-api-key:}}
     templates:
       blob-url: ${GOV_UK_NOTIFY_BLOB_URL_TEMPLATE_ID:de8b6fb6-8737-46f3-9c16-a1e79a3c781d}
 
@@ -240,12 +244,12 @@ sftp:
   forceCheck: false
   remote:
     host: localhost
-    user: testUser
-    password: testPassword
+    user: ${sftp-remote-user:"testUser"}
+    password: ${sftp-remote-password:"testPassword"}
     port: 22
     folder: /files/mi-platform-export/
   enabled: false
   file:
     encryption:
       enabled: false
-      publicKey:
+      publicKey: ${encryption-publicKey:}

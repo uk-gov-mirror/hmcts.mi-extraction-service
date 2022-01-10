@@ -3,6 +3,7 @@ package uk.gov.hmcts.reform.mi.miextractionservice.component.encryption;
 import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPCompressedData;
+import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
@@ -55,12 +56,12 @@ public final class PgpDecryptionHelper {
         PGPEncryptedDataList encryptedDataList = getPgpEncryptedDataList(in);
 
         // find the secret key
-        Iterator<PGPPublicKeyEncryptedData> it = encryptedDataList.getEncryptedDataObjects();
+        Iterator<PGPEncryptedData> it = encryptedDataList.getEncryptedDataObjects();
         PGPPrivateKey pgpPrivateKey = null;
         PGPPublicKeyEncryptedData pbe = null;
 
         while (pgpPrivateKey == null && it.hasNext()) {
-            pbe = it.next();
+            pbe = (PGPPublicKeyEncryptedData) it.next();
 
             pgpPrivateKey = findPrivateKey(keyIn, pbe.getKeyID(), passwd);
         }

@@ -83,3 +83,4 @@ sftp:
   file:
     encryption:
       enabled: false
+      publicKey: replaceme

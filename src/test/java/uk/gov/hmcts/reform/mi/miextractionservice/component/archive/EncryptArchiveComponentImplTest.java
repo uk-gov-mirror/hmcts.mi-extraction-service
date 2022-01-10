@@ -51,17 +51,21 @@ class EncryptArchiveComponentImplTest {
 
         classToTest.createArchive(Collections.singletonList(TEST_FILE_NAME), TEST_ZIP_NAME);
 
-        ZipFile testZip = new ZipFile(TEST_ZIP_NAME);
+        try (ZipFile testZip = new ZipFile(TEST_ZIP_NAME)) {
+            assertTrue(
+                testZip.isEncrypted(),
+                "Zip file should be encrypted."
+            );
 
-        assertTrue(testZip.isEncrypted(),
-                   "Zip file should be encrypted.");
-
-        try {
-            testZip.extractFile(TEST_FILE_NAME, ".");
-            fail("Should not reach this point. The method call before this line should have thrown an exception.");
-        } catch (ZipException e) {
-            assertTrue(e.getMessage().contains("empty or null password"),
-                       "Error message should be returned for missing password.");
+            try {
+                testZip.extractFile(TEST_FILE_NAME, ".");
+                fail("Should not reach this point. The method call before this line should have thrown an exception.");
+            } catch (ZipException e) {
+                assertTrue(
+                    e.getMessage().contains("empty or null password"),
+                    "Error message should be returned for missing password."
+                );
+            }
         }
 
         assertDoesNotThrow(() -> new ZipFile(TEST_ZIP_NAME, TEST_ARCHIVE_PASSWORD.toCharArray())

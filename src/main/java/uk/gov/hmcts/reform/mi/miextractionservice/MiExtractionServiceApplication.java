@@ -1,6 +1,8 @@
 package uk.gov.hmcts.reform.mi.miextractionservice;
 
+import com.azure.spring.autoconfigure.storage.StorageAutoConfiguration;
 import com.microsoft.applicationinsights.TelemetryClient;
+import com.microsoft.applicationinsights.autoconfigure.ApplicationInsightsWebMvcAutoConfiguration;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,7 +16,8 @@ import uk.gov.hmcts.reform.mi.miextractionservice.service.export.ExportService;
 
 @Slf4j
 @AllArgsConstructor
-@SpringBootApplication(scanBasePackages = "uk.gov.hmcts.reform")
+@SpringBootApplication(scanBasePackages = "uk.gov.hmcts.reform", exclude = { StorageAutoConfiguration.class,
+    ApplicationInsightsWebMvcAutoConfiguration.class })
 public class MiExtractionServiceApplication implements ApplicationRunner {
 
     private final @Value("${smoke.test.enabled:false}") boolean smokeTest;
